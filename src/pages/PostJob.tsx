@@ -166,19 +166,38 @@ const PostJob: React.FC = () => {
       try {
         setIsSubmitting(true);
         saveDraft(job);
-        const endpoint = process.env.NODE_ENV === 'production'
-          ? '/api/create-checkout-session'
-          : 'http://localhost:4242/create-checkout-session';
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: job.title || 'Job Post',
-            successUrl: `${window.location.origin}/post-job?paid=1`,
-            cancelUrl: `${window.location.origin}/post-job?paid=0`,
-            currency: 'gbp',
-          }),
-        });
+        const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)/.test(window.location.hostname);
+        let endpoint = isLocal ? 'http://localhost:4242/create-checkout-session' : '/api/create-checkout-session';
+        let res: Response;
+        try {
+          res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: job.title || 'Job Post',
+              successUrl: `${window.location.origin}/post-job?paid=1`,
+              cancelUrl: `${window.location.origin}/post-job?paid=0`,
+              currency: 'gbp',
+            }),
+          });
+        } catch (e) {
+          // Fallback: if localhost is unreachable (e.g., in production), try serverless API
+          if (isLocal) {
+            endpoint = '/api/create-checkout-session';
+            res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: job.title || 'Job Post',
+                successUrl: `${window.location.origin}/post-job?paid=1`,
+                cancelUrl: `${window.location.origin}/post-job?paid=0`,
+                currency: 'gbp',
+              }),
+            });
+          } else {
+            throw e;
+          }
+        }
         const data = await res.json();
         if (!res.ok || !data?.url) throw new Error(data?.error || 'Failed to initiate checkout');
         window.location.href = data.url;
