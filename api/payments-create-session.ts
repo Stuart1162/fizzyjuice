@@ -12,6 +12,7 @@ function setCors(res: any, origin?: string | string[]) {
 
 export default async function handler(req: any, res: any) {
   setCors(res, req.headers.origin);
+  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -23,7 +24,16 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { title, successUrl, cancelUrl, currency } = req.body || {};
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return res.status(500).json({ error: 'Missing STRIPE_SECRET_KEY configuration' });
+    }
+
+    let body: any = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch (_) { body = {}; }
+    }
+
+    const { title, successUrl, cancelUrl, currency } = body || {};
     const origin = req.headers.origin || (process.env.PUBLIC_URL ?? '');
     const success_url = successUrl || `${origin}/post-job?paid=1`;
     const cancel_url = cancelUrl || `${origin}/post-job?paid=0`;
@@ -50,6 +60,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({ url: session.url });
   } catch (err: any) {
     console.error('payments-create-session error', err);
-    return res.status(500).json({ error: err?.message || 'Internal Server Error' });
+    const message = (err && (err.message || err.toString())) || 'Internal Server Error';
+    return res.status(500).json({ error: message });
   }
 }

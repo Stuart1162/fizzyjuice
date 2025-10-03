@@ -166,9 +166,21 @@ const PostJob: React.FC = () => {
             }),
           });
         }
-        const data = await res.json();
-        if (!res.ok || !data?.url) throw new Error(data?.error || 'Failed to initiate checkout');
-        window.location.href = data.url;
+        const contentType = res.headers.get('content-type') || '';
+        const rawBody = await res.text();
+        let data: any = null;
+        if (contentType.includes('application/json')) {
+          try { data = JSON.parse(rawBody); } catch (_) { /* ignore JSON parse error */ }
+        }
+        if (!res.ok) {
+          const msg = (data && (data.error || data.message)) || rawBody || 'Failed to initiate checkout';
+          throw new Error(typeof msg === 'string' ? msg : 'Failed to initiate checkout');
+        }
+        const checkoutUrl = data?.url;
+        if (!checkoutUrl) {
+          throw new Error('Checkout URL missing from server response');
+        }
+        window.location.href = checkoutUrl;
         return;
       } catch (err: any) {
         console.error('Stripe checkout error', err);
