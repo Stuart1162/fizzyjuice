@@ -5,9 +5,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-06-20',
 });
 
+function setCors(res: VercelResponse, origin?: string | string[]) {
+  res.setHeader('Access-Control-Allow-Origin', typeof origin === 'string' ? origin : '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCors(res, req.headers.origin);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
