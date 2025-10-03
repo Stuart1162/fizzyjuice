@@ -116,38 +116,7 @@ const PostJob: React.FC = () => {
     }));
   };
 
-  const handlePayToPost = async () => {
-    try {
-      setError('');
-      const res = await fetch('http://localhost:4242/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: job.title || 'Job Post',
-          successUrl: `${window.location.origin}/post-job?paid=1`,
-          cancelUrl: `${window.location.origin}/post-job?paid=0`,
-          currency: 'gbp',
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.url) {
-        throw new Error(data?.error || 'Failed to initiate checkout');
-      }
-      window.location.href = data.url;
-    } catch (err: any) {
-      console.error('Stripe checkout error', err);
-      setError(err?.message || 'Payment initialization failed');
-    }
-  };
-
-  const handleRolesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target as unknown as { value: string | string[] };
-    const next = Array.isArray(value) ? value : (value ? value.split(',') : []);
-    setJob(prev => ({
-      ...prev,
-      roles: next as NonNullable<Job['roles']>,
-    }));
-  };
+  // deprecated helpers removed (payment and roles handlers now handled inline)
 
   // Requirements and skills removed from posting flow
 
