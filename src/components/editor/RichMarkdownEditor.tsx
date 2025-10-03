@@ -1,0 +1,212 @@
+import React, { useEffect } from 'react';
+import { Box, ToggleButton, ToggleButtonGroup, Tooltip, Divider } from '@mui/material';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import StrikethroughSIcon from '@mui/icons-material/StrikethroughS';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import CodeIcon from '@mui/icons-material/Code';
+import CodeOffIcon from '@mui/icons-material/CodeOff';
+import LinkIcon from '@mui/icons-material/Link';
+import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
+import LooksOneIcon from '@mui/icons-material/LooksOne';
+import LooksTwoIcon from '@mui/icons-material/LooksTwo';
+import Looks3Icon from '@mui/icons-material/Looks3';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Heading from '@tiptap/extension-heading';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight, common } from 'lowlight';
+// Use tiptap-markdown package (since @tiptap/extension-markdown isn't published on npm)
+import { Markdown } from 'tiptap-markdown';
+
+export interface RichMarkdownEditorProps {
+  value: string;
+  onChange: (markdown: string) => void;
+  height?: number;
+}
+
+const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange, height = 420 }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        codeBlock: false,
+      }),
+      CodeBlockLowlight.configure({ lowlight: createLowlight(common) }),
+      Heading.configure({ levels: [1, 2, 3, 4] }),
+      Link.configure({ openOnClick: true, autolink: true }),
+      Placeholder.configure({ placeholder: 'Write the job description…' }),
+      Markdown.configure({ html: false }) as any,
+    ],
+    content: '',
+    autofocus: false,
+    onUpdate({ editor }: { editor: any }) {
+      try {
+        // @ts-ignore markdown storage helper
+        const md = editor.storage.markdown?.getMarkdown?.() ?? '';
+        onChange(md);
+      } catch {
+        // fallback: plain text
+        onChange(editor.getText());
+      }
+    },
+    editorProps: {
+      attributes: {
+        style: `min-height:${height}px; padding:12px; border:1px solid var(--mui-palette-divider); border-radius:8px; background: var(--mui-palette-background-paper);`,
+      },
+    },
+  });
+
+  // Set initial markdown value
+  useEffect(() => {
+    if (!editor) return;
+    try {
+      // Prevent cursor jump if already equal
+      // @ts-ignore markdown helper
+      const current = editor.storage.markdown?.getMarkdown?.();
+      if (current === value) return;
+      // @ts-ignore markdown helper
+      editor.commands.setMarkdown?.(value || '');
+    } catch {
+      editor.commands.setContent(value || '');
+    }
+  }, [editor, value]);
+
+  if (!editor) return null;
+
+  const toggleLink = () => {
+    const url = window.prompt('Enter URL');
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const isActive = (name: string, attrs?: any) => editor.isActive(name as any, attrs);
+
+  return (
+    <Box sx={{
+      border: 1,
+      borderColor: 'divider',
+      borderRadius: 2,
+      bgcolor: 'background.paper',
+    }}>
+      <Box sx={{
+        px: 1,
+        py: 0.5,
+        borderBottom: 1,
+        borderColor: 'divider',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+        bgcolor: 'background.paper',
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
+      }}>
+        <ToggleButtonGroup size="small" exclusive sx={{ flexWrap: 'wrap' }}>
+          <Tooltip title="Heading 1">
+            <ToggleButton value="h1" selected={isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+              <LooksOneIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Heading 2">
+            <ToggleButton value="h2" selected={isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+              <LooksTwoIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Heading 3">
+            <ToggleButton value="h3" selected={isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+              <Looks3Icon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <ToggleButtonGroup size="small" exclusive sx={{ flexWrap: 'wrap' }}>
+          <Tooltip title="Bold">
+            <ToggleButton value="bold" selected={isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
+              <FormatBoldIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Italic">
+            <ToggleButton value="italic" selected={isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}>
+              <FormatItalicIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Strikethrough">
+            <ToggleButton value="strike" selected={isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}>
+              <StrikethroughSIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <ToggleButtonGroup size="small" exclusive sx={{ flexWrap: 'wrap' }}>
+          <Tooltip title="Bullet List">
+            <ToggleButton value="bullet" selected={isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+              <FormatListBulletedIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Numbered List">
+            <ToggleButton value="ordered" selected={isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+              <FormatListNumberedIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Quote">
+            <ToggleButton value="quote" selected={isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+              <FormatQuoteIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <ToggleButtonGroup size="small" exclusive sx={{ flexWrap: 'wrap' }}>
+          <Tooltip title="Inline Code">
+            <ToggleButton value="code" selected={isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>
+              <CodeIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Code Block">
+            <ToggleButton value="codeBlock" selected={isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+              <CodeOffIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Link">
+            <ToggleButton value="link" selected={isActive('link')} onClick={toggleLink}>
+              <LinkIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Horizontal Rule">
+            <ToggleButton value="hr" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+              <HorizontalRuleIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+        <ToggleButtonGroup size="small" exclusive sx={{ flexWrap: 'wrap' }}>
+          <Tooltip title="Undo">
+            <ToggleButton value="undo" onClick={() => editor.chain().focus().undo().run()}>
+              <UndoIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Redo">
+            <ToggleButton value="redo" onClick={() => editor.chain().focus().redo().run()}>
+              <RedoIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+      </Box>
+      <EditorContent editor={editor} />
+    </Box>
+  );
+};
+
+export default RichMarkdownEditor;
