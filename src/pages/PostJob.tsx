@@ -55,7 +55,6 @@ const PostJob: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const descRef = useRef<HTMLTextAreaElement | null>(null);
   const [paid, setPaid] = useState(false);
   const autoSubmitRef = useRef(false);
 
@@ -69,18 +68,18 @@ const PostJob: React.FC = () => {
   const saveDraft = (data: typeof job) => {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch {}
   };
-  const getDraft = (): typeof job | null => {
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      return raw ? (JSON.parse(raw) as typeof job) : null;
-    } catch { return null; }
-  };
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   // If returning from Stripe with paid=1 and we have a draft, auto-submit it
   useEffect(() => {
     if (paid && !autoSubmitRef.current) {
-      const draft = getDraft();
+      let draft: typeof job | null = null;
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        draft = raw ? (JSON.parse(raw) as typeof job) : null;
+      } catch {
+        draft = null;
+      }
       if (draft) {
         autoSubmitRef.current = true;
         void (async () => {
@@ -107,7 +106,7 @@ const PostJob: React.FC = () => {
         })();
       }
     }
-  }, [paid]);
+  }, [paid, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
