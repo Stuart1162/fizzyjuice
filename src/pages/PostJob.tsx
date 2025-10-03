@@ -135,7 +135,10 @@ const PostJob: React.FC = () => {
         setIsSubmitting(true);
         saveDraft(job);
         const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)/.test(window.location.hostname);
-        let endpoint = isLocal ? 'http://localhost:4242/create-checkout-session' : '/api/create-checkout-session';
+        // Prefer a name less likely to be blocked by ad/content blockers
+        const primaryProdApi = '/api/payments-create-session';
+        const secondaryProdApi = '/api/create-checkout-session';
+        let endpoint = isLocal ? 'http://localhost:4242/create-checkout-session' : primaryProdApi;
         let res: Response;
         try {
           res = await fetch(endpoint, {
@@ -151,7 +154,7 @@ const PostJob: React.FC = () => {
         } catch (e) {
           // Fallback: if localhost is unreachable (e.g., in production), try serverless API
           if (isLocal) {
-            endpoint = '/api/create-checkout-session';
+            endpoint = primaryProdApi;
             res = await fetch(endpoint, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -162,6 +165,20 @@ const PostJob: React.FC = () => {
                 currency: 'gbp',
               }),
             });
+            if (!res.ok) {
+              // Final fallback to legacy route name
+              endpoint = secondaryProdApi;
+              res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: job.title || 'Job Post',
+                  successUrl: `${window.location.origin}/post-job?paid=1`,
+                  cancelUrl: `${window.location.origin}/post-job?paid=0`,
+                  currency: 'gbp',
+                }),
+              });
+            }
           } else {
             throw e;
           }
