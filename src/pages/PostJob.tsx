@@ -134,11 +134,11 @@ const PostJob: React.FC = () => {
       try {
         setIsSubmitting(true);
         saveDraft(job);
-        const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)/.test(window.location.hostname);
-        // Prefer a name less likely to be blocked by ad/content blockers
+        // Always use serverless endpoints in browser to avoid accidental localhost usage in production
         const primaryProdApi = '/api/payments-create-session';
         const secondaryProdApi = '/api/create-checkout-session';
-        let endpoint = isLocal ? 'http://localhost:4242/create-checkout-session' : primaryProdApi;
+        let endpoint = primaryProdApi;
+        console.info('[PostJob] creating checkout session via', endpoint);
         let res: Response;
         try {
           res = await fetch(endpoint, {
@@ -152,36 +152,19 @@ const PostJob: React.FC = () => {
             }),
           });
         } catch (e) {
-          // Fallback: if localhost is unreachable (e.g., in production), try serverless API
-          if (isLocal) {
-            endpoint = primaryProdApi;
-            res = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title: job.title || 'Job Post',
-                successUrl: `${window.location.origin}/post-job?paid=1`,
-                cancelUrl: `${window.location.origin}/post-job?paid=0`,
-                currency: 'gbp',
-              }),
-            });
-            if (!res.ok) {
-              // Final fallback to legacy route name
-              endpoint = secondaryProdApi;
-              res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: job.title || 'Job Post',
-                  successUrl: `${window.location.origin}/post-job?paid=1`,
-                  cancelUrl: `${window.location.origin}/post-job?paid=0`,
-                  currency: 'gbp',
-                }),
-              });
-            }
-          } else {
-            throw e;
-          }
+          // Final fallback to legacy route name
+          endpoint = secondaryProdApi;
+          console.info('[PostJob] primary API failed, retrying via', endpoint);
+          res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: job.title || 'Job Post',
+              successUrl: `${window.location.origin}/post-job?paid=1`,
+              cancelUrl: `${window.location.origin}/post-job?paid=0`,
+              currency: 'gbp',
+            }),
+          });
         }
         const data = await res.json();
         if (!res.ok || !data?.url) throw new Error(data?.error || 'Failed to initiate checkout');

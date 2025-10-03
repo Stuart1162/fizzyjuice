@@ -1,17 +1,16 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-06-20',
 });
 
-function setCors(res: VercelResponse, origin?: string | string[]) {
+function setCors(res: any, origin?: string | string[]) {
   res.setHeader('Access-Control-Allow-Origin', typeof origin === 'string' ? origin : '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   setCors(res, req.headers.origin);
 
   if (req.method === 'OPTIONS') {
