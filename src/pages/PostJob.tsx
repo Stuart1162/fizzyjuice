@@ -166,7 +166,10 @@ const PostJob: React.FC = () => {
       try {
         setIsSubmitting(true);
         saveDraft(job);
-        const res = await fetch('http://localhost:4242/create-checkout-session', {
+        const endpoint = process.env.NODE_ENV === 'production'
+          ? '/api/create-checkout-session'
+          : 'http://localhost:4242/create-checkout-session';
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
