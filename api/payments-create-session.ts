@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+const Stripe = require('stripe');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2024-06-20',
@@ -10,7 +10,7 @@ function setCors(res: any, origin?: string | string[]) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-export default async function handler(req: any, res: any) {
+module.exports = async function handler(req: any, res: any) {
   setCors(res, req.headers.origin);
   res.setHeader('Content-Type', 'application/json');
 
@@ -63,5 +63,5 @@ export default async function handler(req: any, res: any) {
     const message = (err && (err.message || err.toString())) || 'Internal Server Error';
     return res.status(500).json({ error: message });
   }
-}
+};
 // Trigger deployment test
