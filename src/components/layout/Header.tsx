@@ -1,10 +1,12 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Container, Box, Badge } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSavedJobs } from '../../contexts/SavedJobsContext';
 
 const Header: React.FC = () => {
   const { currentUser, signOut } = useAuth();
+  const { savedJobs } = useSavedJobs();
   return (
     <AppBar position="static">
       <Container maxWidth="lg">
@@ -20,7 +22,9 @@ const Header: React.FC = () => {
           {currentUser ? (
             <Box display="flex" alignItems="center" gap={2}>
               <Button color="inherit" component={RouterLink} to="/dashboard">
-                Dashboard
+                <Badge color="secondary" badgeContent={savedJobs.length} overlap="rectangular">
+                  Dashboard
+                </Badge>
               </Button>
               <Typography variant="body2">Hello, {currentUser.displayName || currentUser.email}</Typography>
               <Button color="inherit" onClick={signOut}>

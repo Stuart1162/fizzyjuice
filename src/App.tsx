@@ -13,6 +13,7 @@ import { SnackbarProvider } from 'notistack';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Dashboard from './pages/Dashboard';
 import EditJob from './pages/EditJob';
+import { SavedJobsProvider } from './contexts/SavedJobsContext';
 
 // Create a theme instance
 const theme = createTheme({
@@ -81,8 +82,9 @@ function App() {
       <CssBaseline />
       <SnackbarProvider maxSnack={3}>
         <AuthProvider>
-          <Router>
-            <div className="app">
+          <SavedJobsProvider>
+            <Router>
+              <div className="app">
               <Header />
               <main style={{ minHeight: 'calc(100vh - 64px - 56px)', padding: '20px 0' }}>
                 <Routes>
@@ -122,8 +124,9 @@ function App() {
                   © {new Date().getFullYear()} Jobs Board. All rights reserved.
                 </Typography>
               </footer>
-            </div>
-          </Router>
+              </div>
+            </Router>
+          </SavedJobsProvider>
         </AuthProvider>
       </SnackbarProvider>
     </ThemeProvider>

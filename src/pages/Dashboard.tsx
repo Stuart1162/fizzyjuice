@@ -21,9 +21,11 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Link as RouterLink } from 'react-router-dom';
+import { useSavedJobs } from '../contexts/SavedJobsContext';
 
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
+  const { savedJobs, loading: savedLoading, unsaveJob } = useSavedJobs();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,8 +80,40 @@ const Dashboard: React.FC = () => {
         {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
       </Typography>
       <Typography variant="body1" color="text.secondary" gutterBottom>
-        {isSuperAdmin ? 'Manage all job posts on the site.' : 'Manage the jobs you have posted.'}
+        {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
       </Typography>
+
+      {/* Saved Jobs Section */}
+      <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Typography variant="h6">Saved Jobs</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
+          </Typography>
+        </Box>
+        {savedLoading ? (
+          <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
+        ) : savedJobs.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
+          </Typography>
+        ) : (
+          <Box display="grid" gap={1.5}>
+            {savedJobs.map((s) => (
+              <Box key={s.jobId} display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                  <Typography variant="subtitle1">{s.title}</Typography>
+                  <Typography variant="body2" color="text.secondary">{s.company} • {s.location}</Typography>
+                </Box>
+                <Box display="flex" gap={1}>
+                  <Button component={RouterLink} to={`/jobs/${s.jobId}`} variant="outlined" size="small">View</Button>
+                  <Button color="error" variant="text" size="small" onClick={() => unsaveJob(s.jobId)}>Unsave</Button>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Paper>
 
       {loading ? (
         <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>

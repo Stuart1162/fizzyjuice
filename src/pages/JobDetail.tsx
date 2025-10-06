@@ -26,11 +26,15 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { useSavedJobs } from '../contexts/SavedJobsContext';
 
 const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentUser, isSuperAdmin } = useAuth();
+  const { isSaved, toggleSave } = useSavedJobs();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -270,6 +274,16 @@ const JobDetail: React.FC = () => {
           Back to Jobs
         </Button>
         <Box display="flex" gap={1}>
+          {currentUser && (
+            <Button
+              variant={isSaved(job.id) ? 'contained' : 'outlined'}
+              color="primary"
+              startIcon={isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+              onClick={() => toggleSave(job)}
+            >
+              {isSaved(job.id) ? 'Saved' : 'Save'}
+            </Button>
+          )}
           {(currentUser && (isSuperAdmin || (job as any).createdBy === currentUser.uid)) && (
             <Button
               variant="outlined"

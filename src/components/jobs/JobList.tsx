@@ -21,6 +21,10 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import EmailIcon from '@mui/icons-material/Email';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { useSavedJobs } from '../../contexts/SavedJobsContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface JobListFilters {
   location?: string;
@@ -145,6 +149,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
     fetchJobs();
   }, []);
 
+  const { currentUser } = useAuth();
+  const { isSaved, toggleSave } = useSavedJobs();
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -200,9 +207,25 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
                   {job.salary && (
                     <Chip icon={<AttachMoneyIcon />} label={job.salary} variant="outlined" size="small" />
                   )}
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-                    Posted: {formatCreatedAt(job.createdAt)}
-                  </Typography>
+                  <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
+                    <Typography variant="caption" color="text.secondary">
+                      Posted: {formatCreatedAt(job.createdAt)}
+                    </Typography>
+                    {currentUser && (
+                      <Button
+                        size="small"
+                        variant={isSaved(job.id) ? 'contained' : 'outlined'}
+                        color="primary"
+                        startIcon={isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSave(job);
+                        }}
+                      >
+                        {isSaved(job.id) ? 'Saved' : 'Save'}
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
               </Box>
             </AccordionSummary>

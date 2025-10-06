@@ -12,11 +12,16 @@ import {
   FormControlLabel,
   FormGroup,
   Divider,
+  Paper,
+  Button,
+  Link,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import JobList from '../components/jobs/JobList';
 import { Job } from '../types/job';
+import { useAuth } from '../contexts/AuthContext';
+import { Link as RouterLink } from 'react-router-dom';
 
 const Home: React.FC = () => {
   const [filterText, setFilterText] = useState('');
@@ -60,16 +65,30 @@ const Home: React.FC = () => {
     remoteOptions: selectedRemote as Array<NonNullable<Job['workArrangement']>>,
   }), [locationFilter, selectedRoles, selectedContracts, selectedRemote]);
 
+  const { currentUser } = useAuth();
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Find Your Dream Job
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          Browse through our latest job listings
-        </Typography>
-      </Box> */}
+      {!currentUser && (
+        <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+            <Box>
+              <Typography variant="h6">Create an account to save jobs</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Sign up to bookmark interesting roles and view them later in your dashboard.
+              </Typography>
+            </Box>
+            <Box display="flex" gap={1}>
+              <Button variant="contained" color="primary" component={RouterLink} to="/register">
+                Sign up
+              </Button>
+              <Button variant="outlined" component={RouterLink} to="/login">
+                Log in
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      )}
 
       <Box
         sx={{
