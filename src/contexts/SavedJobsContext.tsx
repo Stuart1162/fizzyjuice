@@ -3,6 +3,7 @@ import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from 
 import { db } from '../firebase';
 import { useAuth } from './AuthContext';
 import { Job } from '../types/job';
+import { useSnackbar } from 'notistack';
 
 export type SavedJobDoc = {
   jobId: string;
@@ -11,6 +12,8 @@ export type SavedJobDoc = {
   location: string;
   createdAt?: any;
   savedAt?: any;
+  applied?: boolean;
+  appliedAt?: any;
 };
 
 type SavedJobsContextType = {
@@ -21,6 +24,8 @@ type SavedJobsContextType = {
   saveJob: (job: Job) => Promise<void>;
   unsaveJob: (jobId: string) => Promise<void>;
   toggleSave: (job: Job) => Promise<void>;
+  setApplied: (jobId: string, applied: boolean) => Promise<void>;
+  toggleApplied: (jobId: string) => Promise<void>;
 };
 
 const SavedJobsContext = createContext<SavedJobsContextType | null>(null);
@@ -35,6 +40,7 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { currentUser } = useAuth();
   const [saved, setSaved] = useState<SavedJobDoc[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     if (!currentUser) {
@@ -60,22 +66,35 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const saveJob = async (job: Job) => {
     if (!currentUser || !job.id) return;
-    const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', job.id);
-    const payload: SavedJobDoc = {
-      jobId: job.id,
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      createdAt: (job as any).createdAt,
-      savedAt: serverTimestamp(),
-    };
-    await setDoc(docRef, payload, { merge: true });
+    try {
+      const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', job.id);
+      const payload: SavedJobDoc = {
+        jobId: job.id,
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        createdAt: (job as any).createdAt,
+        savedAt: serverTimestamp(),
+        applied: false,
+      };
+      await setDoc(docRef, payload, { merge: true });
+      enqueueSnackbar('Job saved', { variant: 'success' });
+    } catch (e: any) {
+      enqueueSnackbar('Failed to save job', { variant: 'error' });
+      throw e;
+    }
   };
 
   const unsaveJob = async (jobId: string) => {
     if (!currentUser) return;
-    const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', jobId);
-    await deleteDoc(docRef);
+    try {
+      const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', jobId);
+      await deleteDoc(docRef);
+      enqueueSnackbar('Removed from saved', { variant: 'info' });
+    } catch (e: any) {
+      enqueueSnackbar('Failed to remove saved job', { variant: 'error' });
+      throw e;
+    }
   };
 
   const toggleSave = async (job: Job) => {
@@ -87,6 +106,27 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const setApplied = async (jobId: string, applied: boolean) => {
+    if (!currentUser) return;
+    try {
+      const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', jobId);
+      const patch: Partial<SavedJobDoc> = {
+        applied,
+        appliedAt: applied ? serverTimestamp() : null,
+      } as any;
+      await setDoc(docRef, patch, { merge: true });
+      enqueueSnackbar(applied ? 'Marked as applied' : 'Marked as not applied', { variant: 'success' });
+    } catch (e: any) {
+      enqueueSnackbar('Failed to update applied status', { variant: 'error' });
+      throw e;
+    }
+  };
+
+  const toggleApplied = async (jobId: string) => {
+    const current = saved.find((s) => s.jobId === jobId)?.applied || false;
+    await setApplied(jobId, !current);
+  };
+
   const value: SavedJobsContextType = {
     savedIds,
     savedJobs: saved,
@@ -95,6 +135,8 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     saveJob,
     unsaveJob,
     toggleSave,
+    setApplied,
+    toggleApplied,
   };
 
   return (

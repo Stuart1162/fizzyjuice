@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Chip,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,7 +26,7 @@ import { useSavedJobs } from '../contexts/SavedJobsContext';
 
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
-  const { savedJobs, loading: savedLoading, unsaveJob } = useSavedJobs();
+  const { savedJobs, loading: savedLoading, unsaveJob, toggleApplied } = useSavedJobs();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,11 +103,19 @@ const Dashboard: React.FC = () => {
             {savedJobs.map((s) => (
               <Box key={s.jobId} display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography variant="subtitle1">{s.title}</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="subtitle1">{s.title}</Typography>
+                    {s.applied && (
+                      <Chip label="Applied" color="success" size="small" variant="outlined" />
+                    )}
+                  </Box>
                   <Typography variant="body2" color="text.secondary">{s.company} • {s.location}</Typography>
                 </Box>
                 <Box display="flex" gap={1}>
                   <Button component={RouterLink} to={`/jobs/${s.jobId}`} variant="outlined" size="small">View</Button>
+                  <Button variant="outlined" color={s.applied ? 'warning' : 'primary'} size="small" onClick={() => toggleApplied(s.jobId)}>
+                    {s.applied ? 'Mark not applied' : 'Mark as applied'}
+                  </Button>
                   <Button color="error" variant="text" size="small" onClick={() => unsaveJob(s.jobId)}>Unsave</Button>
                 </Box>
               </Box>

@@ -239,6 +239,25 @@ const JobDetail: React.FC = () => {
           </Box>
         )}
 
+        {job.companyStrengths && job.companyStrengths.length > 0 && (
+          <Box mb={4}>
+            <Typography variant="h5" gutterBottom>
+              Company strengths
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={1}>
+              {job.companyStrengths.map((s, index) => (
+                <Chip
+                  key={index}
+                  label={s}
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                />
+              ))}
+            </Box>
+          </Box>
+        )}
+
         {job.skills && job.skills.length > 0 && (
           <Box mb={4}>
             <Typography variant="h5" gutterBottom>

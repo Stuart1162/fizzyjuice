@@ -15,4 +15,21 @@ export interface Job {
   workArrangement?: 'Remote' | 'Hybrid' | 'Office-based';
   roles?: Array<'Engineering' | 'Design' | 'Finance' | 'Management' | 'Marketing' | 'Sales' | 'Product' | 'Operations' | 'Other'>;
   applicationUrl?: string;
+  // New optional field: top 3 company strengths selected at posting time
+  companyStrengths?: Array<
+    | 'Challenging Work'
+    | 'Work-life balance'
+    | 'Recognition'
+    | 'Competitive salary'
+    | 'Great people'
+    | 'Career development'
+    | 'Meaningful work'
+    | 'Flexible work'
+    | 'Employee wellbeing'
+    | 'Transparent decision-making'
+    | 'Innovative product'
+    | 'Respectful communication'
+    | 'diversity'
+    | 'Progressive leadership'
+  >;
 }

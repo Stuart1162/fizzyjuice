@@ -13,6 +13,10 @@ import {
   MenuItem,
   Autocomplete,
   Chip,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  FormHelperText,
 } from '@mui/material';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
 
@@ -52,6 +56,7 @@ const PostJob: React.FC = () => {
     workArrangement: 'Remote' as Job['workArrangement'],
     roles: [] as NonNullable<Job['roles']>,
     applicationUrl: '',
+    companyStrengths: [] as NonNullable<Job['companyStrengths']>,
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,6 +124,37 @@ const PostJob: React.FC = () => {
   // deprecated helpers removed (payment and roles handlers now handled inline)
 
   // Requirements and skills removed from posting flow
+  const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
+    'Challenging Work',
+    'Work-life balance',
+    'Recognition',
+    'Competitive salary',
+    'Great people',
+    'Career development',
+    'Meaningful work',
+    'Flexible work',
+    'Employee wellbeing',
+    'Transparent decision-making',
+    'Innovative product',
+    'Respectful communication',
+    'diversity',
+    'Progressive leadership',
+  ];
+
+  const toggleStrength = (value: NonNullable<Job['companyStrengths']>[number]) => {
+    setJob(prev => {
+      const current = prev.companyStrengths || [];
+      const has = current.includes(value);
+      if (has) {
+        return { ...prev, companyStrengths: current.filter(v => v !== value) as any };
+      }
+      if (current.length >= 3) {
+        // ignore selecting more than 3
+        return prev;
+      }
+      return { ...prev, companyStrengths: [...current, value] as any };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,6 +299,23 @@ const PostJob: React.FC = () => {
                 <TextField {...params} label="Role (select one or more)" placeholder="Select roles" />
               )}
             />
+          </Box>
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>Top 3 company strengths</Typography>
+            <FormGroup sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 0 }}>
+              {COMPANY_STRENGTH_OPTIONS.map((opt) => {
+                const selected = (job.companyStrengths || []).includes(opt);
+                const disableUnchecked = !selected && (job.companyStrengths || []).length >= 3;
+                return (
+                  <FormControlLabel
+                    key={opt}
+                    control={<Checkbox checked={selected} onChange={() => toggleStrength(opt)} disabled={disableUnchecked} />}
+                    label={opt}
+                  />
+                );
+              })}
+            </FormGroup>
+            <FormHelperText>Choose up to 3 options.</FormHelperText>
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mt: 2 }}>
             <TextField fullWidth id="salary" name="salary" label="Salary (optional)" value={job.salary} onChange={handleInputChange} margin="normal" placeholder="e.g., $50,000 - $70,000" />
