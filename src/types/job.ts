@@ -32,4 +32,6 @@ export interface Job {
     | 'diversity'
     | 'Progressive leadership'
   >;
+  // Unique 5-digit reference assigned at creation
+  ref?: string;
 }

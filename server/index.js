@@ -17,7 +17,7 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/create-checkout-session', async (req, res) => {
+async function handleCreateCheckoutSession(req, res) {
   try {
     if (!STRIPE_SECRET_KEY) {
       return res.status(500).json({ error: 'Stripe not configured on server' });
@@ -50,7 +50,13 @@ app.post('/create-checkout-session', async (req, res) => {
     console.error('[Stripe] create-checkout-session error', err);
     res.status(500).json({ error: 'Failed to create session' });
   }
-});
+}
+
+// Legacy/root route
+app.post('/create-checkout-session', handleCreateCheckoutSession);
+// API-style routes for frontend compatibility
+app.post('/api/create-checkout-session', handleCreateCheckoutSession);
+app.post('/api/payments-create-session', handleCreateCheckoutSession);
 
 const port = process.env.PORT || 4242;
 app.listen(port, () => {

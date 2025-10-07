@@ -1,12 +1,42 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box, Badge } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { AppBar, Toolbar, Typography, Button, Container, Box } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSavedJobs } from '../../contexts/SavedJobsContext';
+import { db } from '../../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const Header: React.FC = () => {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut, isSuperAdmin } = useAuth();
   const { savedJobs } = useSavedJobs();
+  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | null>(null);
+
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) {
+        setUserRole(null);
+        return;
+      }
+      try {
+        const profileRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(profileRef);
+        if (snap.exists()) {
+          const data = snap.data() as any;
+          if (data?.role === 'jobseeker' || data?.role === 'employer') {
+            setUserRole(data.role);
+          } else {
+            setUserRole(null);
+          }
+        } else {
+          setUserRole(null);
+        }
+      } catch (e) {
+        setUserRole(null);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
+
   return (
     <AppBar position="static">
       <Container maxWidth="lg">
@@ -16,19 +46,18 @@ const Header: React.FC = () => {
               GoGraft
             </Button>
           </Typography>
-          <Button color="inherit" component={RouterLink} to="/post-job" sx={{ mr: 1 }}>
-            Post a Job
-          </Button>
+          {(!currentUser || userRole !== 'jobseeker' || isSuperAdmin) && (
+            <Button color="inherit" component={RouterLink} to="/post-job" sx={{ mr: 1 }}>
+              Post a Job
+            </Button>
+          )}
           {currentUser ? (
             <Box display="flex" alignItems="center" gap={2}>
               <Button color="inherit" component={RouterLink} to="/dashboard">
-                <Badge color="secondary" badgeContent={savedJobs.length} overlap="rectangular">
-                  Dashboard
-                </Badge>
+                Dashboard
               </Button>
-              <Typography variant="body2">Hello, {currentUser.displayName || currentUser.email}</Typography>
-              <Button color="inherit" onClick={signOut}>
-                Logout
+              <Button color="inherit" component={RouterLink} to="/profile">
+                {currentUser.displayName || currentUser.email}
               </Button>
             </Box>
           ) : (
@@ -37,7 +66,7 @@ const Header: React.FC = () => {
                 Login
               </Button>
               <Button color="inherit" component={RouterLink} to="/register">
-                Sign Up
+                Register
               </Button>
             </>
           )}

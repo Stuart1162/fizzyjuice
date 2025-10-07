@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Job } from '../types/job';
 import {
@@ -73,6 +73,21 @@ const PostJob: React.FC = () => {
   const saveDraft = (data: typeof job) => {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch {}
   };
+
+  // Generate a unique 5-digit numeric reference and ensure it is not already used
+  const getUniqueRef = async (): Promise<string> => {
+    const gen = () => (Math.floor(10000 + Math.random() * 90000)).toString();
+    let tries = 0;
+    while (tries < 10) {
+      const ref = gen();
+      const qRef = query(collection(db, 'jobs'), where('ref', '==', ref));
+      const snap = await getDocs(qRef);
+      if (snap.empty) return ref;
+      tries += 1;
+    }
+    // Fallback (extremely unlikely to hit collisions 10 times)
+    return gen();
+  };
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   // If returning from Stripe with paid=1 and we have a draft, auto-submit it
@@ -92,12 +107,14 @@ const PostJob: React.FC = () => {
           setError('');
           try {
             const user = auth.currentUser;
+            const refCode = await getUniqueRef();
             const jobData = {
               ...draft,
               requirements: [],
               skills: [],
               createdAt: serverTimestamp(),
               createdBy: user ? user.uid : 'anonymous',
+              ref: refCode,
             };
             await addDoc(collection(db, 'jobs'), jobData);
             clearDraft();
@@ -173,6 +190,9 @@ const PostJob: React.FC = () => {
         // Always use serverless endpoints in browser to avoid accidental localhost usage in production
         const primaryProdApi = '/api/payments-create-session';
         const secondaryProdApi = '/api/create-checkout-session';
+        // Local dev fallbacks hitting the Express server directly
+        const tertiaryLocalApi = 'http://localhost:4242/api/payments-create-session';
+        const quaternaryLocalApi = 'http://localhost:4242/create-checkout-session';
         let endpoint = primaryProdApi;
         console.info('[PostJob] creating checkout session via', endpoint);
         let res: Response;
@@ -202,6 +222,39 @@ const PostJob: React.FC = () => {
             }),
           });
         }
+        // If still not OK, try direct to local server
+        if (!res.ok) {
+          try {
+            endpoint = tertiaryLocalApi;
+            console.info('[PostJob] retrying via', endpoint);
+            res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: job.title || 'Job Post',
+                successUrl: `${window.location.origin}/post-job?paid=1`,
+                cancelUrl: `${window.location.origin}/post-job?paid=0`,
+                currency: 'gbp',
+              }),
+            });
+          } catch {}
+        }
+        if (!res.ok) {
+          try {
+            endpoint = quaternaryLocalApi;
+            console.info('[PostJob] retrying via', endpoint);
+            res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: job.title || 'Job Post',
+                successUrl: `${window.location.origin}/post-job?paid=1`,
+                cancelUrl: `${window.location.origin}/post-job?paid=0`,
+                currency: 'gbp',
+              }),
+            });
+          } catch {}
+        }
         const contentType = res.headers.get('content-type') || '';
         const rawBody = await res.text();
         let data: any = null;
@@ -230,12 +283,14 @@ const PostJob: React.FC = () => {
     try {
       setIsSubmitting(true);
       const user = auth.currentUser;
+      const refCode = await getUniqueRef();
       const jobData = {
         ...job,
         requirements: [],
         skills: [],
         createdAt: serverTimestamp(),
         createdBy: user ? user.uid : 'anonymous',
+        ref: refCode,
       };
       await addDoc(collection(db, 'jobs'), jobData);
       clearDraft();

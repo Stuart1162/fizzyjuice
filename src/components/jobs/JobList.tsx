@@ -36,9 +36,11 @@ interface JobListFilters {
 interface JobListProps {
   filterText?: string;
   filters?: JobListFilters;
+  // When provided, the list will render these jobs instead of fetching from Firestore
+  jobsOverride?: Job[];
 }
 
-const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
+const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverride }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
         job.location,
         job.description,
         job.workArrangement || '',
+        job.ref ? `#${job.ref}` : '',
+        job.ref || '',
         ...(job.roles || []),
         ...(job.skills || []),
         ...(job.requirements || []),
@@ -114,40 +118,35 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
   }, [jobs, filterText, filters]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchJobs = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        if (jobsOverride && Array.isArray(jobsOverride)) {
+          if (!cancelled) {
+            setJobs(jobsOverride);
+            setLoading(false);
+          }
+          return;
+        }
         const querySnapshot = await getDocs(collection(db, 'jobs'));
         const jobsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Job[];
-        // Sort by createdAt desc (newest first). Fallback to updatedAt if createdAt missing.
-        const toMillis = (ts: any): number => {
-          if (!ts) return 0;
-          if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
-          if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
-          try {
-            return new Date(ts).getTime() || 0;
-          } catch {
-            return 0;
-          }
-        };
-        jobsData.sort((a, b) => {
-          const aTime = toMillis((a as any).createdAt || (a as any).updatedAt);
-          const bTime = toMillis((b as any).createdAt || (b as any).updatedAt);
-          return bTime - aTime;
-        });
-        setJobs(jobsData);
+        if (!cancelled) setJobs(jobsData);
       } catch (err) {
         console.error('Error fetching jobs:', err);
-        setError('Failed to load jobs. Please try again later.');
+        if (!cancelled) setError('Failed to load jobs. Please try again later.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchJobs();
-  }, []);
+    return () => { cancelled = true; };
+  }, [jobsOverride]);
 
   const { currentUser } = useAuth();
   const { isSaved, toggleSave } = useSavedJobs();
@@ -231,6 +230,12 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
             </AccordionSummary>
             <AccordionDetails>
               <Box>
+                {job.ref && (
+                  <Box mb={2} display="flex" alignItems="center" gap={1}>
+                    <Typography variant="subtitle2">Reference</Typography>
+                    <Chip label={`#${job.ref}`} size="small" />
+                  </Box>
+                )}
                 {job.roles && job.roles.length > 0 && (
                   <Box mb={2}>
                     <Typography variant="subtitle2" gutterBottom>
@@ -272,6 +277,19 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters }) => {
                     {job.description}
                   </ReactMarkdown>
                 </Box>
+
+                {job.companyStrengths && job.companyStrengths.length > 0 && (
+                  <Box mt={2}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Company strengths
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {job.companyStrengths.map((s, idx) => (
+                        <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
 
                 <Box mt={2} display="flex" justifyContent="space-between">
                   <Box />

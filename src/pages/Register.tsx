@@ -14,8 +14,14 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  FormLabel,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +29,7 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: '',
     displayName: '',
+    role: 'jobseeker' as 'jobseeker' | 'employer',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,9 +61,23 @@ const Register: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      await signUp(formData.email, formData.password, formData.displayName);
+      const cred = await signUp(formData.email, formData.password, formData.displayName);
+      // Persist role to profile
+      if (cred.user?.uid) {
+        await setDoc(doc(db, 'users', cred.user.uid, 'prefs', 'profile'), {
+          role: formData.role,
+          displayName: formData.displayName,
+          email: formData.email,
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+      }
       enqueueSnackbar('Account created successfully!', { variant: 'success' });
-      navigate('/');
+      // Redirect: jobseeker -> onboarding, employer -> dashboard
+      if (formData.role === 'jobseeker') {
+        navigate('/dashboard?onboard=1');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       console.error('Registration error:', err);
       setError('Failed to create an account. ' + (err.message || 'Please try again.'));
@@ -86,6 +107,19 @@ const Register: React.FC = () => {
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <Box sx={{ mb: 1 }}>
+            <FormLabel id="role-label">I want to</FormLabel>
+            <RadioGroup
+              aria-labelledby="role-label"
+              row
+              name="role"
+              value={formData.role}
+              onChange={handleChange as any}
+            >
+              <FormControlLabel value="jobseeker" control={<Radio />} label="get hired (jobseeker)" />
+              <FormControlLabel value="employer" control={<Radio />} label="post a job (employer)" />
+            </RadioGroup>
+          </Box>
           <TextField
             margin="normal"
             required

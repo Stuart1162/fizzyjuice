@@ -14,6 +14,8 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import Dashboard from './pages/Dashboard';
 import EditJob from './pages/EditJob';
 import { SavedJobsProvider } from './contexts/SavedJobsContext';
+import Personalise from './pages/Personalise';
+import Profile from './pages/Profile';
 
 // Create a theme instance
 const theme = createTheme({
@@ -106,6 +108,22 @@ function App() {
                     element={
                       <PrivateRoute>
                         <Dashboard />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/personalise"
+                    element={
+                      <PrivateRoute>
+                        <Personalise />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <PrivateRoute>
+                        <Profile />
                       </PrivateRoute>
                     }
                   />
