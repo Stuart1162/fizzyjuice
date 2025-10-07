@@ -38,7 +38,7 @@ const Header: React.FC = () => {
   }, [currentUser]);
 
   return (
-    <AppBar position="static">
+    <AppBar position="fixed">
       <Container maxWidth="lg">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
