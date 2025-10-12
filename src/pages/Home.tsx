@@ -15,8 +15,10 @@ import {
   Paper,
   Button,
   Link,
+  IconButton,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import JobList from '../components/jobs/JobList';
 import { Job } from '../types/job';
@@ -106,6 +108,18 @@ const Home: React.FC = () => {
                 startAdornment: (
                   <InputAdornment position="start">
                     <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: filterText && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setFilterText('')}
+                      edge="end"
+                      aria-label="clear search"
+                    >
+                      <ClearIcon />
+                    </IconButton>
                   </InputAdornment>
                 ),
               }}
