@@ -16,6 +16,8 @@ import EditJob from './pages/EditJob';
 import { SavedJobsProvider } from './contexts/SavedJobsContext';
 import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
+import SeedUser from './pages/SeedUser';
+import SeedJobs from './pages/SeedJobs';
 
 // Create a theme instance
 const theme = createTheme({
@@ -112,6 +114,14 @@ function App() {
                     }
                   />
                   <Route
+                    path="/dashboard/edit/:id"
+                    element={
+                      <PrivateRoute>
+                        <EditJob />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
                     path="/dashboard/personalise"
                     element={
                       <PrivateRoute>
@@ -127,14 +137,8 @@ function App() {
                       </PrivateRoute>
                     }
                   />
-                  <Route
-                    path="/dashboard/edit/:id"
-                    element={
-                      <PrivateRoute>
-                        <EditJob />
-                      </PrivateRoute>
-                    }
-                  />
+                  <Route path="/seed-user" element={<SeedUser />} />
+                  <Route path="/seed-jobs" element={<SeedJobs />} />
                 </Routes>
               </main>
               <footer style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f5f5f5' }}>

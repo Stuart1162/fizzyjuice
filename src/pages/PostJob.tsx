@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { addDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
 import { Job } from '../types/job';
 import {
   Container,
@@ -24,39 +26,46 @@ const jobTypes = [
   'Full-time',
   'Part-time',
   'Contract',
-  'Internship',
   'Temporary',
 ];
 
-const WORK_ARRANGEMENTS: Array<Job['workArrangement']> = ['Remote', 'Hybrid', 'Office-based'];
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
-  'Engineering',
-  'Design',
-  'Finance',
-  'Management',
-  'Marketing',
-  'Sales',
-  'Product',
-  'Operations',
+  'Baker',
+  'Chef',
+  'Head Chef',
+  'Barista',
+  'Front of House',
+  'Catering',
+  'Kitchen Porter',
+  'Butcher',
+  'Breakfast Chef',
+  'Pizza Chef',
+  'Manager',
   'Other',
 ];
+const SHIFT_OPTIONS: NonNullable<Job['shifts']> = ['morning', 'afternoon', 'evening'];
 
 const PostJob: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser, isSuperAdmin } = useAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
   // Form state excluding requirements and skills (removed from posting UI)
   const [job, setJob] = useState({
     title: '',
     company: '',
     location: '',
+    postcode: '',
     description: '',
     jobType: 'Full-time' as Job['jobType'],
-    salary: '',
+    wage: '',
     contactEmail: '',
-    workArrangement: 'Remote' as Job['workArrangement'],
     roles: [] as NonNullable<Job['roles']>,
+    shifts: [] as NonNullable<Job['shifts']>,
     applicationUrl: '',
     companyStrengths: [] as NonNullable<Job['companyStrengths']>,
+    wordOnTheStreet: '',
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +76,46 @@ const PostJob: React.FC = () => {
     const params = new URLSearchParams(location.search);
     setPaid(params.get('paid') === '1');
   }, [location.search]);
+
+  // Determine if current user is an admin (from profile prefs)
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) { setIsAdmin(false); setUserRole(null); return; }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        setIsAdmin(role === 'admin');
+        setUserRole(role as 'jobseeker' | 'employer' | 'admin' | null);
+      } catch {
+        setIsAdmin(false);
+        setUserRole(null);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
+
+  // Load draft from localStorage if exists
+  useEffect(() => {
+    if (!paid) {
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        const draft = raw ? (JSON.parse(raw) as typeof job) : null;
+        if (draft) {
+          setJob(draft);
+        }
+      } catch {
+        // Ignore JSON parse errors
+      }
+    }
+  }, [paid]);
+
+  // Autopopulate contact email for employers
+  useEffect(() => {
+    if (currentUser && userRole === 'employer' && !job.contactEmail) {
+      setJob(prev => ({ ...prev, contactEmail: currentUser.email || '' }));
+    }
+  }, [currentUser, userRole, job.contactEmail]);
 
   // Persist and retrieve draft between checkout redirects
   const DRAFT_KEY = 'pendingJobPost';
@@ -142,20 +191,23 @@ const PostJob: React.FC = () => {
 
   // Requirements and skills removed from posting flow
   const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
-    'Challenging Work',
-    'Work-life balance',
-    'Recognition',
-    'Competitive salary',
-    'Great people',
-    'Career development',
-    'Meaningful work',
-    'Flexible work',
-    'Employee wellbeing',
-    'Transparent decision-making',
-    'Innovative product',
-    'Respectful communication',
-    'diversity',
-    'Progressive leadership',
+    'Flexible hours',
+    'Early finish',
+    'Consistent rota',
+    'No late finishes',
+    'Paid breaks',
+    'Actual breaks',
+    'Living wage',
+    'Tips shared fairly',
+    'Staff meals',
+    'Free parking',
+    'Paid holidays',
+    'Inclusive and diverse team',
+    'LGBTQ+ Friendly',
+    'Female run',
+    'Friendly team',
+    'Team socials',
+    'Sustainable sourcing',
   ];
 
   const toggleStrength = (value: NonNullable<Job['companyStrengths']>[number]) => {
@@ -176,14 +228,80 @@ const PostJob: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Basic validation
     if (!job.title || !job.company || !job.location || !job.description || !job.contactEmail) {
       setError('Please fill in all required fields');
       return;
     }
+
+    console.log('handleSubmit called with userRole:', userRole, 'isSuperAdmin:', isSuperAdmin, 'isAdmin:', isAdmin);
+
+    // Employers can post as draft without paying - always use draft path
+    if (userRole === 'employer') {
+      console.log('Taking employer draft path');
+      try {
+        setIsSubmitting(true);
+        const user = auth.currentUser;
+        const refCode = await getUniqueRef();
+        const jobData = {
+          ...job,
+          requirements: [],
+          skills: [],
+          createdAt: serverTimestamp(),
+          createdBy: user ? user.uid : 'anonymous',
+          ref: refCode,
+          draft: true, // Pending admin approval
+        };
+        await addDoc(collection(db, 'jobs'), jobData);
+        clearDraft();
+        // Show success message and redirect
+        setError('');
+        setIsSubmitting(false);
+        navigate('/');
+      } catch (err) {
+        console.error('Error posting job as draft:', err);
+        setError('Failed to post job. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // Admins and superadmins can post without paying
+    if (isSuperAdmin || isAdmin) {
+      console.log('Taking admin path');
+      try {
+        setIsSubmitting(true);
+        const user = auth.currentUser;
+        const refCode = await getUniqueRef();
+        const jobData = {
+          ...job,
+          requirements: [],
+          skills: [],
+          createdAt: serverTimestamp(),
+          createdBy: user ? user.uid : 'anonymous',
+          ref: refCode,
+          draft: false, // Approved immediately for admins
+        };
+        await addDoc(collection(db, 'jobs'), jobData);
+        clearDraft();
+        navigate('/');
+      } catch (err) {
+        console.error('Error posting job as admin:', err);
+        setError('Failed to post job. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    console.log('No special role detected, checking payment status. paid:', paid);
+
+    // For other users, still require payment (or disable for now)
     // If not paid yet, create checkout session and redirect
     if (!paid) {
+      console.log('Trying Stripe payment');
       try {
         setIsSubmitting(true);
         saveDraft(job);
@@ -280,6 +398,7 @@ const PostJob: React.FC = () => {
     }
 
     // Already paid: submit immediately
+    console.log('Already paid, submitting job');
     try {
       setIsSubmitting(true);
       const user = auth.currentUser;
@@ -319,14 +438,10 @@ const PostJob: React.FC = () => {
             <TextField required fullWidth id="title" name="title" label="Job Title" value={job.title} onChange={handleInputChange} margin="normal" />
             <TextField required fullWidth id="company" name="company" label="Company Name" value={job.company} onChange={handleInputChange} margin="normal" />
             <TextField required fullWidth id="location" name="location" label="Location" value={job.location} onChange={handleInputChange} margin="normal" />
+            <TextField fullWidth id="postcode" name="postcode" label="Postcode (optional)" value={job.postcode} onChange={handleInputChange} margin="normal" placeholder="e.g., SW1A 1AA" />
             <TextField select fullWidth id="jobType" name="jobType" label="Job Type" value={job.jobType} onChange={handleInputChange} margin="normal">
               {jobTypes.map((type) => (
                 <MenuItem key={type} value={type}>{type}</MenuItem>
-              ))}
-            </TextField>
-            <TextField select fullWidth id="workArrangement" name="workArrangement" label="Remote / Hybrid / Office-based" value={job.workArrangement} onChange={handleInputChange} margin="normal">
-              {WORK_ARRANGEMENTS.map((opt) => (
-                <MenuItem key={opt} value={opt || ''}>{opt}</MenuItem>
               ))}
             </TextField>
           </Box>
@@ -355,6 +470,30 @@ const PostJob: React.FC = () => {
               )}
             />
           </Box>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>Shifts</Typography>
+            <FormGroup row sx={{ mb: 2 }}>
+              {SHIFT_OPTIONS.map((shift) => (
+                <FormControlLabel
+                  key={shift}
+                  control={
+                    <Checkbox
+                      checked={(job.shifts || []).includes(shift)}
+                      onChange={() =>
+                        setJob(prev => ({
+                          ...prev,
+                          shifts: prev.shifts?.includes(shift)
+                            ? prev.shifts.filter(s => s !== shift)
+                            : [...(prev.shifts || []), shift]
+                        }))
+                      }
+                    />
+                  }
+                  label={shift.charAt(0).toUpperCase() + shift.slice(1)}
+                />
+              ))}
+            </FormGroup>
+          </Box>
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom>Top 3 company strengths</Typography>
             <FormGroup sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 0 }}>
@@ -372,9 +511,24 @@ const PostJob: React.FC = () => {
             </FormGroup>
             <FormHelperText>Choose up to 3 options.</FormHelperText>
           </Box>
+          {(isSuperAdmin || isAdmin) && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>Word on the street (Admin only)</Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                name="wordOnTheStreet"
+                label="Internal notes about company culture, team dynamics, etc."
+                value={job.wordOnTheStreet}
+                onChange={handleInputChange}
+                placeholder="Share insights about the workplace culture, team atmosphere, or any other internal notes that might be helpful for other admins..."
+              />
+            </Box>
+          )}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mt: 2 }}>
-            <TextField fullWidth id="salary" name="salary" label="Salary (optional)" value={job.salary} onChange={handleInputChange} margin="normal" placeholder="e.g., $50,000 - $70,000" />
-            <TextField required fullWidth id="contactEmail" name="contactEmail" label="Contact Email" type="email" value={job.contactEmail} onChange={handleInputChange} margin="normal" />
+            <TextField fullWidth id="wage" name="wage" label="Wage (optional)" value={job.wage} onChange={handleInputChange} margin="normal" placeholder="e.g., £10-15/hour" />
+            <TextField required fullWidth id="contactEmail" name="contactEmail" label="Application Email" type="email" value={job.contactEmail} onChange={handleInputChange} margin="normal" helperText="This is where applications will be sent" />
             <TextField fullWidth id="applicationUrl" name="applicationUrl" label="Application URL (optional)" type="url" value={job.applicationUrl} onChange={handleInputChange} margin="normal" />
           </Box>
           <Box mt={4} display="flex" justifyContent="space-between" alignItems="center">

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
 import {
   Container,
@@ -14,27 +15,33 @@ import {
 } from '@mui/material';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
 
-const jobTypes: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Temporary'];
-const WORK_ARRANGEMENTS: Array<Job['workArrangement']> = ['Remote', 'Hybrid', 'Office-based'];
+const jobTypes: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Temporary'];
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
-  'Engineering',
-  'Design',
-  'Finance',
-  'Management',
-  'Marketing',
-  'Sales',
-  'Product',
-  'Operations',
+  'Baker',
+  'Chef',
+  'Head Chef',
+  'Barista',
+  'Front of House',
+  'Catering',
+  'Kitchen Porter',
+  'Butcher',
+  'Breakfast Chef',
+  'Pizza Chef',
+  'Manager',
   'Other',
 ];
+const SHIFT_OPTIONS: NonNullable<Job['shifts']> = ['morning', 'afternoon', 'evening'];
 
 const EditJob: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { currentUser, isSuperAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<Partial<Job>>({});
   const [rolesDisplay, setRolesDisplay] = useState<string[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminCheckComplete, setAdminCheckComplete] = useState<boolean>(false);
 
   useEffect(() => {
     const load = async () => {
@@ -56,13 +63,15 @@ const EditJob: React.FC = () => {
           title: data.title,
           company: data.company,
           location: data.location,
+          postcode: data.postcode || '',
           description: data.description,
           jobType: data.jobType,
-          salary: data.salary || '',
+          wage: data.wage || '',
           contactEmail: data.contactEmail,
-          workArrangement: data.workArrangement || 'Remote',
           roles: data.roles || [],
+          shifts: data.shifts || [],
           applicationUrl: data.applicationUrl || '',
+          wordOnTheStreet: data.wordOnTheStreet || '',
         });
         setRolesDisplay(data.roles || []);
       } catch (e) {
@@ -74,6 +83,44 @@ const EditJob: React.FC = () => {
     };
     load();
   }, [id]);
+
+  // Check permissions after job data and admin state are loaded
+  useEffect(() => {
+    if (!adminCheckComplete || !job.title) return;
+
+    if (isSuperAdmin || isAdmin || (currentUser && job.createdBy === currentUser.uid)) {
+      // User has permission - clear any previous error
+      if (error === 'You do not have permission to edit this job') {
+        setError(null);
+      }
+      return;
+    } else if (currentUser && job.createdBy !== currentUser.uid) {
+      // User doesn't have permission
+      setError('You do not have permission to edit this job');
+    }
+  }, [job, isSuperAdmin, isAdmin, currentUser, adminCheckComplete, error]);
+
+  // Determine if current user is an admin (from profile prefs)
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) { 
+        setIsAdmin(false); 
+        setAdminCheckComplete(true);
+        return; 
+      }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        setIsAdmin(role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      } finally {
+        setAdminCheckComplete(true);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -110,13 +157,15 @@ const EditJob: React.FC = () => {
         title: job.title,
         company: job.company,
         location: job.location,
+        postcode: job.postcode || '',
         description: job.description,
         jobType: job.jobType,
-        salary: job.salary || '',
+        wage: job.wage || '',
         contactEmail: job.contactEmail,
-        workArrangement: job.workArrangement || 'Remote',
         roles: job.roles || [],
+        shifts: job.shifts || [],
         applicationUrl: job.applicationUrl || '',
+        wordOnTheStreet: job.wordOnTheStreet || '',
         updatedAt: serverTimestamp(),
       };
       await updateDoc(ref, payload as any);
@@ -127,7 +176,7 @@ const EditJob: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || !adminCheckComplete) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
         <Typography>Loading...</Typography>
@@ -177,6 +226,13 @@ const EditJob: React.FC = () => {
             onChange={handleInputChange}
           />
           <TextField
+            label="Postcode (optional)"
+            name="postcode"
+            value={job.postcode || ''}
+            onChange={handleInputChange}
+            placeholder="e.g., SW1A 1AA"
+          />
+          <TextField
             select
             label="Job Type"
             name="jobType"
@@ -205,31 +261,40 @@ const EditJob: React.FC = () => {
           mt: 2,
         }}>
           <TextField
-            label="Salary (optional)"
-            name="salary"
-            value={job.salary || ''}
+            label="Wage (optional)"
+            name="wage"
+            value={job.wage || ''}
             onChange={handleInputChange}
-            placeholder="e.g., $50,000 - $70,000"
+            placeholder="e.g., £10-15/hour"
           />
           <TextField
+            label="Postcode (optional)"
+            name="postcode"
+            value={job.postcode || ''}
+            onChange={handleInputChange}
+            placeholder="e.g., SW1A 1AA"
+          />
+          <TextField
+            select
+            label="Role (select one or more)"
+            name="roles"
+            value={rolesDisplay}
+            onChange={handleRolesChange}
+            SelectProps={{ multiple: true, renderValue: (selected) => (selected as string[]).join(', ') }}
+          >
+            {ROLE_OPTIONS.map((role) => (
+              <MenuItem key={role} value={role}>{role}</MenuItem>
+            ))}
+          </TextField>
+          <TextField
             required
-            label="Contact Email"
+            label="Application Email"
             name="contactEmail"
             type="email"
             value={job.contactEmail || ''}
             onChange={handleInputChange}
+            helperText="This is where applications will be sent"
           />
-          <TextField
-            select
-            label="Remote / Hybrid / Office-based"
-            name="workArrangement"
-            value={job.workArrangement || 'Remote'}
-            onChange={handleInputChange}
-          >
-            {WORK_ARRANGEMENTS.map((wa) => (
-              <MenuItem key={wa} value={wa || ''}>{wa}</MenuItem>
-            ))}
-          </TextField>
           <TextField
             select
             label="Role (select one or more)"
@@ -251,6 +316,22 @@ const EditJob: React.FC = () => {
             placeholder="https://company.com/apply/your-role"
           />
         </Box>
+
+        {(isSuperAdmin || isAdmin) && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>Word on the street (Admin only)</Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              name="wordOnTheStreet"
+              label="Internal notes about company culture, team dynamics, etc."
+              value={job.wordOnTheStreet || ''}
+              onChange={handleInputChange}
+              placeholder="Share insights about the workplace culture, team atmosphere, or any other internal notes that might be helpful for other admins..."
+            />
+          </Box>
+        )}
 
         <Box mt={4} display="flex" justifyContent="space-between">
           <Button variant="outlined" onClick={() => navigate('/dashboard')}>Cancel</Button>

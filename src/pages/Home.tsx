@@ -27,32 +27,34 @@ const Home: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const ROLE_OPTIONS: NonNullable<Job['roles']> = [
-    'Engineering',
-    'Design',
-    'Finance',
-    'Management',
-    'Marketing',
-    'Sales',
-    'Product',
-    'Operations',
+    'Baker',
+    'Chef',
+    'Head Chef',
+    'Barista',
+    'Front of House',
+    'Catering',
+    'Kitchen Porter',
+    'Butcher',
+    'Breakfast Chef',
+    'Pizza Chef',
+    'Manager',
     'Other',
   ];
   const CONTRACT_TYPES: Job['jobType'][] = [
     'Full-time',
     'Part-time',
     'Contract',
-    'Internship',
     'Temporary',
   ];
-  const REMOTE_OPTIONS: Array<NonNullable<Job['workArrangement']>> = [
-    'Remote',
-    'Hybrid',
-    'Office-based',
+  const SHIFT_OPTIONS: NonNullable<Job['shifts']> = [
+    'morning',
+    'afternoon',
+    'evening',
   ];
 
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
-  const [selectedRemote, setSelectedRemote] = useState<string[]>([]);
+  const [selectedShifts, setSelectedShifts] = useState<string[]>([]);
 
   const handleToggle = (setter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
     setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
@@ -62,8 +64,8 @@ const Home: React.FC = () => {
     location: locationFilter,
     roles: selectedRoles as NonNullable<Job['roles']>,
     contractTypes: selectedContracts as Job['jobType'][],
-    remoteOptions: selectedRemote as Array<NonNullable<Job['workArrangement']>>,
-  }), [locationFilter, selectedRoles, selectedContracts, selectedRemote]);
+    shifts: selectedShifts as NonNullable<Job['shifts']>,
+  }), [locationFilter, selectedRoles, selectedContracts, selectedShifts]);
 
   const { currentUser } = useAuth();
 
@@ -114,7 +116,7 @@ const Home: React.FC = () => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Location</Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
               <TextField
                 fullWidth
                 size="small"
@@ -129,7 +131,7 @@ const Home: React.FC = () => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Role</Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
               <FormGroup>
                 {ROLE_OPTIONS.map((role) => (
                   <FormControlLabel
@@ -151,7 +153,7 @@ const Home: React.FC = () => {
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Contract Type</Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
               <FormGroup>
                 {CONTRACT_TYPES.map((ct) => (
                   <FormControlLabel
@@ -171,25 +173,26 @@ const Home: React.FC = () => {
 
           <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>Remote friendly</Typography>
+              <Typography>Shifts</Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
               <FormGroup>
-                {REMOTE_OPTIONS.map((opt) => (
+                {SHIFT_OPTIONS.map((shift) => (
                   <FormControlLabel
-                    key={opt}
+                    key={shift}
                     control={
                       <Checkbox
-                        checked={selectedRemote.includes(opt)}
-                        onChange={() => handleToggle(setSelectedRemote, opt)}
+                        checked={selectedShifts.includes(shift)}
+                        onChange={() => handleToggle(setSelectedShifts, shift)}
                       />
                     }
-                    label={opt}
+                    label={shift.charAt(0).toUpperCase() + shift.slice(1)}
                   />
                 ))}
               </FormGroup>
             </AccordionDetails>
           </Accordion>
+
         </Box>
 
         {/* Main column */}

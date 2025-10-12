@@ -38,6 +38,7 @@ const JobDetail: React.FC = () => {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -66,6 +67,22 @@ const JobDetail: React.FC = () => {
 
     fetchJob();
   }, [id]);
+
+  // Determine if current user is an admin (from profile prefs)
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) { setIsAdmin(false); return; }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        setIsAdmin(role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
 
   if (loading) {
     return (
@@ -145,18 +162,10 @@ const JobDetail: React.FC = () => {
               variant="outlined"
               size="medium"
             />
-            {job.workArrangement && (
-              <Chip
-                icon={<AccessTimeIcon />}
-                label={job.workArrangement}
-                variant="outlined"
-                size="medium"
-              />
-            )}
-            {job.salary && (
+            {job.wage && (
               <Chip
                 icon={<AttachMoneyIcon />}
-                label={job.salary}
+                label={job.wage}
                 variant="outlined"
                 size="medium"
               />
@@ -273,6 +282,40 @@ const JobDetail: React.FC = () => {
                   size="small"
                 />
               ))}
+            </Box>
+          </Box>
+        )}
+
+        {(isSuperAdmin || isAdmin) && job.wordOnTheStreet && (
+          <Box mb={4}>
+            <Typography variant="h5" gutterBottom>
+              Word on the street (Admin only)
+            </Typography>
+            <Box sx={{
+              typography: 'body1',
+              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+              '& p': { mb: 2 },
+              '& ul': { pl: 3, mb: 2 },
+              '& ol': { pl: 3, mb: 2 },
+              '& code': {
+                bgcolor: 'action.hover',
+                px: 0.5,
+                py: 0.25,
+                borderRadius: 0.5,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              },
+              '& pre': {
+                bgcolor: 'action.hover',
+                p: 2,
+                borderRadius: 1,
+                overflow: 'auto',
+                mb: 2,
+              },
+              '& a': { color: 'primary.main' },
+            }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {job.wordOnTheStreet}
+              </ReactMarkdown>
             </Box>
           </Box>
         )}

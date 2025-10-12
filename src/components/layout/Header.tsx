@@ -43,7 +43,7 @@ const Header: React.FC = () => {
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <Button color="inherit" component={RouterLink} to="/">
-              GoGraft
+              Fizzy Juice
             </Button>
           </Typography>
           {(!currentUser || userRole !== 'jobseeker' || isSuperAdmin) && (

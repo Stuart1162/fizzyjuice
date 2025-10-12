@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc, setDoc, collectionGroup } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
@@ -18,16 +18,24 @@ import {
   DialogActions,
   TextField,
   Chip,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Pagination,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import BusinessIcon from '@mui/icons-material/Business';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import EmailIcon from '@mui/icons-material/Email';
 import { Link as RouterLink } from 'react-router-dom';
-import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { useLocation } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { useSnackbar } from 'notistack';
 import JobList from '../components/jobs/JobList';
 
@@ -43,11 +51,10 @@ const Dashboard: React.FC = () => {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [userStrengths, setUserStrengths] = useState<NonNullable<Job['companyStrengths']>>([] as any);
-  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | null>(null);
+  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
   const [prefsLoading, setPrefsLoading] = useState<boolean>(false);
   const [savingPrefs, setSavingPrefs] = useState<boolean>(false);
   // Extended personalisation preferences (loaded from / saved to prefs doc, edited on Personalise page)
-  const [prefWorkArrangements, setPrefWorkArrangements] = useState<Array<NonNullable<Job['workArrangement']>>>([]);
   const [prefRoles, setPrefRoles] = useState<NonNullable<Job['roles']>>([] as any);
   const [prefContractTypes, setPrefContractTypes] = useState<Job['jobType'][]>([]);
   const [prefLocation, setPrefLocation] = useState<string>('');
@@ -55,20 +62,23 @@ const Dashboard: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
-    'Challenging Work',
-    'Work-life balance',
-    'Recognition',
-    'Competitive salary',
-    'Great people',
-    'Career development',
-    'Meaningful work',
-    'Flexible work',
-    'Employee wellbeing',
-    'Transparent decision-making',
-    'Innovative product',
-    'Respectful communication',
-    'diversity',
-    'Progressive leadership',
+    'Flexible hours',
+    'Early finish',
+    'Consistent rota',
+    'No late finishes',
+    'Paid breaks',
+    'Actual breaks',
+    'Living wage',
+    'Tips shared fairly',
+    'Staff meals',
+    'Free parking',
+    'Paid holidays',
+    'Inclusive and diverse team',
+    'LGBTQ+ Friendly',
+    'Female run',
+    'Friendly team',
+    'Team socials',
+    'Sustainable sourcing',
   ];
 
   // Admin analytics state (superadmin only)
@@ -88,13 +98,11 @@ const Dashboard: React.FC = () => {
           const data = snap.data() as any;
           setUserStrengths((data.companyStrengths || []) as any);
           // Load extended personalisation filters
-          setPrefWorkArrangements((data.prefWorkArrangements || []) as any);
           setPrefRoles((data.prefRoles || []) as any);
           setPrefContractTypes((data.prefContractTypes || []) as any);
           setPrefLocation((data.prefLocation || '') as string);
         } else {
           setUserStrengths([] as any);
-          setPrefWorkArrangements([]);
           setPrefRoles([] as any);
           setPrefContractTypes([]);
           setPrefLocation('');
@@ -103,7 +111,7 @@ const Dashboard: React.FC = () => {
         const profSnap = await getDoc(profileRef);
         if (profSnap.exists()) {
           const pdata = profSnap.data() as any;
-          if (pdata?.role === 'employer' || pdata?.role === 'jobseeker') {
+          if (pdata?.role === 'employer' || pdata?.role === 'jobseeker' || pdata?.role === 'admin') {
             setUserRole(pdata.role);
           } else {
             setUserRole('jobseeker');
@@ -212,16 +220,30 @@ const Dashboard: React.FC = () => {
     });
   }, [jobs, searchQuery]);
 
-  // Pagination for Manage Posts section (admins/employers)
-  const [page, setPage] = useState<number>(1);
-  const rowsPerPage = 10;
-  const pagedJobs = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredJobs.slice(start, start + rowsPerPage);
-  }, [filteredJobs, page]);
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
+  // Separate draft and published jobs
+  const draftJobs = useMemo(() => filteredJobs.filter(job => job.draft), [filteredJobs]);
+  const publishedJobs = useMemo(() => filteredJobs.filter(job => !job.draft), [filteredJobs]);
+
+  const formatCreatedAt = (createdAt: any) => {
+    if (!createdAt) return 'Just now';
+    // Firestore Timestamp object
+    if (typeof createdAt?.toDate === 'function') {
+      return createdAt.toDate().toLocaleDateString();
+    }
+    // Seconds property
+    if (typeof createdAt?.seconds === 'number') {
+      return new Date(createdAt.seconds * 1000).toLocaleDateString();
+    }
+    // Fallback if a Date or ISO string
+    try {
+      return new Date(createdAt).toLocaleDateString();
+    } catch {
+      return 'Unknown';
+    }
+  };
+
+  // Pagination for Manage Posts section (admins/employers) - not used with accordion layout
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Compute personalized list:
   // - Filter by optional user prefs: location contains, roles intersect, contract types include, work arrangement include
@@ -232,7 +254,6 @@ const Dashboard: React.FC = () => {
     const hasAnyPref = (userStrengths && userStrengths.length > 0) ||
       (prefRoles && (prefRoles as string[]).length > 0) ||
       (prefContractTypes && prefContractTypes.length > 0) ||
-      (prefWorkArrangements && (prefWorkArrangements as string[]).length > 0) ||
       (prefLocation && prefLocation.trim().length > 0);
     if (!hasAnyPref) return [] as Job[];
     const toMillis = (ts: any): number => {
@@ -244,7 +265,6 @@ const Dashboard: React.FC = () => {
     const locQ = (prefLocation || '').trim().toLowerCase();
     const rolesPref = (prefRoles || []) as string[];
     const contractsPref = prefContractTypes || [];
-    const workArrPref = (prefWorkArrangements || []) as string[];
 
     const filtered = allJobs.filter((j) => {
       // Optional filters
@@ -259,10 +279,6 @@ const Dashboard: React.FC = () => {
       }
       if (contractsPref.length > 0) {
         if (!contractsPref.includes(j.jobType)) return false;
-      }
-      if (workArrPref.length > 0) {
-        const wa = (j.workArrangement || '') as string;
-        if (!workArrPref.includes(wa)) return false;
       }
       return true;
     });
@@ -280,25 +296,31 @@ const Dashboard: React.FC = () => {
       return b.createdAtMs - a.createdAtMs;
     });
     return scored.map((r) => r.job);
-  }, [allJobs, userStrengths, prefLocation, prefRoles, prefContractTypes, prefWorkArrangements]);
+  }, [allJobs, userStrengths, prefLocation, prefRoles, prefContractTypes]);
 
   useEffect(() => {
     const fetchJobs = async () => {
       if (!currentUser) return;
+      // Wait until role is resolved so admins can load all jobs
+      if (userRole === null && !isSuperAdmin) return;
       setLoading(true);
       setError(null);
       try {
         const baseRef = collection(db, 'jobs');
-        // For Manage Posts: current user's jobs unless superadmin
-        const myRef = isSuperAdmin ? baseRef : query(baseRef, where('createdBy', '==', currentUser.uid));
+        // For Manage Posts: all jobs if superadmin or admin; otherwise only current user's jobs
+        const myRef = (isSuperAdmin || userRole === 'admin')
+          ? baseRef
+          : query(baseRef, where('createdBy', '==', currentUser.uid));
         const mySnap = await getDocs(myRef);
         const myData = mySnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         setJobs(myData);
 
-        // For Personalised list: fetch all jobs regardless of owner
+        // For Personalised list: fetch all jobs regardless of owner, but filter out drafts for non-admins
         const allSnap = await getDocs(baseRef);
         const allData = allSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
-        setAllJobs(allData);
+        // Filter out drafts for non-admin users
+        const filteredAllData = allData.filter(job => !job.draft || (isSuperAdmin || userRole === 'admin'));
+        setAllJobs(filteredAllData);
       } catch (err) {
         console.error('Error loading jobs:', err);
         setError('Failed to load jobs.');
@@ -307,13 +329,26 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchJobs();
-  }, [currentUser, isSuperAdmin]);
+  }, [currentUser, isSuperAdmin, userRole]);
+
+  const handleApprove = async (jobId: string) => {
+    try {
+      const ref = doc(db, 'jobs', jobId);
+      await updateDoc(ref, { draft: false });
+      setJobs(prev => prev.map(j => j.id === jobId ? { ...j, draft: false } : j));
+      setAllJobs(prev => prev.map(j => j.id === jobId ? { ...j, draft: false } : j));
+    } catch (e) {
+      console.error(e);
+      setError('Failed to approve job.');
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirmId) return;
     try {
       await deleteDoc(doc(db, 'jobs', confirmId));
       setJobs(prev => prev.filter(j => j.id !== confirmId));
+      setAllJobs(prev => prev.filter(j => j.id !== confirmId));
       setConfirmId(null);
     } catch (e) {
       console.error(e);
@@ -323,9 +358,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
-      <Typography variant="h4" gutterBottom>
-        {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
-      </Typography>
+      <Box display="flex" alignItems="center" gap={1}>
+        <Typography variant="h4" gutterBottom>
+          {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
+        </Typography>
+        {!isSuperAdmin && userRole === 'admin' && (
+          <Chip label="Admin" color="primary" size="small" />
+        )}
+        {!isSuperAdmin && userRole !== 'admin' && userRole === 'employer' && (
+          <Chip label="Employer" color="secondary" size="small" />
+        )}
+      </Box>
       <Typography variant="body1" color="text.secondary" gutterBottom>
         {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
       </Typography>
@@ -356,8 +399,8 @@ const Dashboard: React.FC = () => {
         </Paper>
       )}
 
-      {/* Your list section first (jobseekers only; hide for employers and superadmins) */}
-      {userRole !== 'employer' && !isSuperAdmin && (
+      {/* Your list section first (jobseekers only; hide for employers, admins, and superadmins) */}
+      {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
       <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -378,8 +421,8 @@ const Dashboard: React.FC = () => {
       </Paper>
       )}
 
-      {/* Saved Jobs Section (hidden for superadmins) */}
-      {!isSuperAdmin && (
+      {/* Saved Jobs Section (hidden for superadmins, admins, and employers) */}
+      {!isSuperAdmin && userRole !== 'admin' && userRole !== 'employer' && (
         <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
             <Typography variant="h6">Saved Jobs</Typography>
@@ -395,7 +438,7 @@ const Dashboard: React.FC = () => {
             </Typography>
           ) : (
             <Box display="grid" gap={1.5}>
-              {savedJobs.map((s) => (
+              {savedJobs.map((s: any) => (
                 <Box key={s.jobId} display="flex" alignItems="center" justifyContent="space-between">
                   <Box>
                     <Box display="flex" alignItems="center" gap={1}>
@@ -426,8 +469,13 @@ const Dashboard: React.FC = () => {
         <Typography color="error" mt={2}>{error}</Typography>
       ) : (
         <>
-          {(isSuperAdmin || userRole === 'employer') && (
+          {(isSuperAdmin || userRole === 'employer' || userRole === 'admin') && (
             <>
+              {userRole === 'employer' && (
+                <Typography variant="h6" gutterBottom>
+                  My Jobs
+                </Typography>
+              )}
               <Box sx={{ mb: 2 }}>
                 <TextField
                   fullWidth
@@ -437,7 +485,170 @@ const Dashboard: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </Box>
-              {filteredJobs.length === 0 ? (
+
+              {/* Draft Jobs Section */}
+              {(isSuperAdmin || userRole === 'admin') && draftJobs.length > 0 && (
+                <>
+                  <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                    Draft Jobs ({draftJobs.length})
+                  </Typography>
+                  <Box sx={{ mb: 3 }}>
+                    {draftJobs.map(job => (
+                      <Accordion
+                        key={job.id}
+                        disableGutters
+                        expanded={expandedId === job.id}
+                        onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
+                      >
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <Box sx={{ width: '100%' }}>
+                            <Typography variant="h6">{job.title}</Typography>
+                            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mt={0.5}>
+                              <Chip icon={<BusinessIcon />} label={job.company} variant="outlined" size="small" />
+                              <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" size="small" />
+                              <Chip icon={<AccessTimeIcon />} label={job.jobType} variant="outlined" size="small" />
+                              {job.wage && (
+                                <Chip icon={<AttachMoneyIcon />} label={job.wage} variant="outlined" size="small" />
+                              )}
+                              <Chip label="Draft" color="warning" size="small" />
+                              <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
+                                <Typography variant="caption" color="text.secondary">
+                                  Posted: {formatCreatedAt(job.createdAt)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Box>
+                            {job.ref && (
+                              <Box mb={2} display="flex" alignItems="center" gap={1}>
+                                <Typography variant="subtitle2">Reference</Typography>
+                                <Chip label={`#${job.ref}`} size="small" />
+                              </Box>
+                            )}
+                            {job.roles && job.roles.length > 0 && (
+                              <Box mb={2}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  Role
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={1}>
+                                  {job.roles.map((role, idx) => (
+                                    <Chip key={idx} label={role} color="primary" variant="outlined" size="small" />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+
+                            {(isSuperAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
+                              <Box mb={2}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  Word on the street (Admin only)
+                                </Typography>
+                                <Box sx={{
+                                  typography: 'body2',
+                                  '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                                  '& p': { mb: 1.5 },
+                                  '& ul': { pl: 3, mb: 1.5 },
+                                  '& ol': { pl: 3, mb: 1.5 },
+                                  '& code': {
+                                    bgcolor: 'action.hover',
+                                    px: 0.5,
+                                    py: 0.25,
+                                    borderRadius: 0.5,
+                                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                  },
+                                  '& pre': {
+                                    bgcolor: 'action.hover',
+                                    p: 2,
+                                    borderRadius: 1,
+                                    overflow: 'auto',
+                                    mb: 2,
+                                  },
+                                  '& a': { color: 'primary.main' },
+                                }}>
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {job.wordOnTheStreet}
+                                  </ReactMarkdown>
+                                </Box>
+                              </Box>
+                            )}
+
+                            <Divider sx={{ my: 2 }} />
+
+                            <Box sx={{
+                              typography: 'body2',
+                              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                              '& p': { mb: 1.5 },
+                              '& ul': { pl: 3, mb: 1.5 },
+                              '& ol': { pl: 3, mb: 1.5 },
+                              '& code': {
+                                bgcolor: 'action.hover',
+                                px: 0.5,
+                                py: 0.25,
+                                borderRadius: 0.5,
+                                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                              },
+                              '& pre': {
+                                bgcolor: 'action.hover',
+                                p: 2,
+                                borderRadius: 1,
+                                overflow: 'auto',
+                                mb: 2,
+                              },
+                              '& a': { color: 'primary.main' },
+                            }}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {job.description}
+                              </ReactMarkdown>
+                            </Box>
+
+                            {job.companyStrengths && job.companyStrengths.length > 0 && (
+                              <Box mt={2}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  Company strengths
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={1}>
+                                  {job.companyStrengths.map((s, idx) => (
+                                    <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+
+                            <Box mt={2} display="flex" justifyContent="space-between">
+                              <Box />
+                              <Box display="flex" gap={1}>
+                                <Button variant="outlined" size="small" onClick={() => handleApprove(job.id!)}>
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  href={job.applicationUrl && job.applicationUrl.trim() !== ''
+                                    ? job.applicationUrl
+                                    : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                                  startIcon={<EmailIcon />}
+                                  target={job.applicationUrl ? '_blank' : undefined}
+                                  rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
+                                >
+                                  Apply Now
+                                </Button>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </AccordionDetails>
+                      </Accordion>
+                    ))}
+                  </Box>
+                </>
+              )}
+
+              {/* Published Jobs Section */}
+              <Typography variant="h6" gutterBottom sx={{ mt: draftJobs.length > 0 ? 3 : 0 }}>
+                Published Jobs ({publishedJobs.length})
+              </Typography>
+              {publishedJobs.length === 0 ? (
                 <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
                   <Typography>
                     {searchQuery.trim() ? 'No jobs match your search.' : "You haven't posted any jobs yet."}
@@ -450,7 +661,7 @@ const Dashboard: React.FC = () => {
                 </Paper>
               ) : (
                 <Box display="grid" gap={2}>
-                  {pagedJobs.map(job => (
+                  {publishedJobs.map(job => (
                     <Paper key={job.id} variant="outlined" sx={{ p: 2 }}>
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box>
@@ -472,14 +683,6 @@ const Dashboard: React.FC = () => {
                       </Typography>
                     </Paper>
                   ))}
-                  <Box display="flex" justifyContent="center" mt={2}>
-                    <Pagination
-                      count={Math.max(1, Math.ceil(filteredJobs.length / rowsPerPage))}
-                      page={page}
-                      onChange={(_e, value) => setPage(value)}
-                      color="primary"
-                    />
-                  </Box>
                 </Box>
               )}
             </>

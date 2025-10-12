@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Container, Paper, Typography, Button, Box, Alert } from '@mui/material';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface Props {
   email?: string;
   password?: string;
+  role?: 'jobseeker' | 'employer' | 'admin';
 }
 
 const DEFAULT_EMAIL = 'stu@massive-fusion.co.uk';
 const DEFAULT_PASSWORD = 'password';
 
-const SeedUser: React.FC<Props> = () => {
-  const [email] = useState<string>(DEFAULT_EMAIL);
-  const [password] = useState<string>(DEFAULT_PASSWORD);
+const SeedUser: React.FC<Props> = ({ email: propEmail, password: propPassword, role: propRole }) => {
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get('email') || propEmail || DEFAULT_EMAIL;
+  const password = searchParams.get('password') || propPassword || DEFAULT_PASSWORD;
+  const userRole = (searchParams.get('role') as 'jobseeker' | 'employer' | 'admin') || propRole || 'jobseeker';
   const [seeding, setSeeding] = useState<boolean>(false);
   const [done, setDone] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +29,15 @@ const SeedUser: React.FC<Props> = () => {
     setDone(false);
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      if (cred.user?.uid) {
+        await setDoc(doc(db, 'users', cred.user.uid, 'prefs', 'profile'), {
+          role: userRole,
+          displayName: email.split('@')[0],
+          email: email,
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+      }
       setDone(true);
     } catch (e: any) {
       setError(e?.message || String(e));

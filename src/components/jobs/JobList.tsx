@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Job } from '../../types/job';
 import {
@@ -23,14 +23,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSavedJobs } from '../../contexts/SavedJobsContext';
 
 interface JobListFilters {
   location?: string;
   roles?: NonNullable<Job['roles']>;
   contractTypes?: Job['jobType'][];
-  remoteOptions?: Array<NonNullable<Job['workArrangement']>>;
+  shifts?: NonNullable<Job['shifts']>;
 }
 
 interface JobListProps {
@@ -73,7 +73,6 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
         job.company,
         job.location,
         job.description,
-        job.workArrangement || '',
         job.ref ? `#${job.ref}` : '',
         job.ref || '',
         ...(job.roles || []),
@@ -90,7 +89,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     const loc = (f.location || '').trim().toLowerCase();
     const selectedRoles = f.roles || [];
     const selectedContracts = f.contractTypes || [];
-    const selectedRemote = f.remoteOptions || [];
+    const selectedShifts = f.shifts || [];
 
     return base.filter((job) => {
       // Location contains
@@ -108,10 +107,11 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
       if (selectedContracts.length > 0) {
         if (!selectedContracts.includes(job.jobType)) return false;
       }
-      // Remote options
-      if (selectedRemote.length > 0) {
-        const wa = job.workArrangement || '';
-        if (!selectedRemote.includes(wa as any)) return false;
+      // Shifts intersection
+      if (selectedShifts.length > 0) {
+        const jobShifts = job.shifts || [];
+        const hasAnyShift = jobShifts.some((s) => selectedShifts.includes(s));
+        if (!hasAnyShift) return false;
       }
       return true;
     });
@@ -135,7 +135,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           id: doc.id,
           ...doc.data()
         })) as Job[];
-        if (!cancelled) setJobs(jobsData);
+        // Filter out drafts for non-admin users
+        const filteredJobs = jobsData.filter(job => !job.draft || isAdmin);
+        if (!cancelled) setJobs(filteredJobs);
       } catch (err) {
         console.error('Error fetching jobs:', err);
         if (!cancelled) setError('Failed to load jobs. Please try again later.');
@@ -150,6 +152,23 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
   const { currentUser } = useAuth();
   const { isSaved, toggleSave } = useSavedJobs();
+
+  // Admin detection
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) { setIsAdmin(false); return; }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        setIsAdmin(role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
 
   if (loading) {
     return (
@@ -200,11 +219,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   <Chip icon={<BusinessIcon />} label={job.company} variant="outlined" size="small" />
                   <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" size="small" />
                   <Chip icon={<AccessTimeIcon />} label={job.jobType} variant="outlined" size="small" />
-                  {job.workArrangement && (
-                    <Chip icon={<AccessTimeIcon />} label={job.workArrangement} variant="outlined" size="small" />
-                  )}
-                  {job.salary && (
-                    <Chip icon={<AttachMoneyIcon />} label={job.salary} variant="outlined" size="small" />
+                  {job.wage && (
+                    <Chip icon={<AttachMoneyIcon />} label={job.wage} variant="outlined" size="small" />
                   )}
                   <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
                     <Typography variant="caption" color="text.secondary">
@@ -245,6 +261,40 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                       {job.roles.map((role, idx) => (
                         <Chip key={idx} label={role} color="primary" variant="outlined" size="small" />
                       ))}
+                    </Box>
+                  </Box>
+                )}
+
+                {(isAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
+                  <Box mb={2}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Word on the street (Admin only)
+                    </Typography>
+                    <Box sx={{
+                      typography: 'body2',
+                      '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                      '& p': { mb: 1.5 },
+                      '& ul': { pl: 3, mb: 1.5 },
+                      '& ol': { pl: 3, mb: 1.5 },
+                      '& code': {
+                        bgcolor: 'action.hover',
+                        px: 0.5,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                      },
+                      '& pre': {
+                        bgcolor: 'action.hover',
+                        p: 2,
+                        borderRadius: 1,
+                        overflow: 'auto',
+                        mb: 2,
+                      },
+                      '& a': { color: 'primary.main' },
+                    }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {job.wordOnTheStreet}
+                      </ReactMarkdown>
                     </Box>
                   </Box>
                 )}

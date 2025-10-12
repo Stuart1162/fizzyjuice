@@ -7,36 +7,44 @@ import { useSnackbar } from 'notistack';
 import { Job } from '../types/job';
 
 const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
-  'Challenging Work',
-  'Work-life balance',
-  'Recognition',
-  'Competitive salary',
-  'Great people',
-  'Career development',
-  'Meaningful work',
-  'Flexible work',
-  'Employee wellbeing',
-  'Transparent decision-making',
-  'Innovative product',
-  'Respectful communication',
-  'diversity',
-  'Progressive leadership',
+  'Flexible hours',
+  'Early finish',
+  'Consistent rota',
+  'No late finishes',
+  'Paid breaks',
+  'Actual breaks',
+  'Living wage',
+  'Tips shared fairly',
+  'Staff meals',
+  'Free parking',
+  'Paid holidays',
+  'Inclusive and diverse team',
+  'LGBTQ+ Friendly',
+  'Female run',
+  'Friendly team',
+  'Team socials',
+  'Sustainable sourcing',
 ];
 
 const WORK_ARRANGEMENTS = ['Remote', 'Hybrid', 'Office-based'] as const;
 type WorkArrangementPref = typeof WORK_ARRANGEMENTS[number];
+
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
-  'Engineering',
-  'Design',
-  'Finance',
-  'Management',
-  'Marketing',
-  'Sales',
-  'Product',
-  'Operations',
+  'Baker',
+  'Chef',
+  'Head Chef',
+  'Barista',
+  'Front of House',
+  'Catering',
+  'Kitchen Porter',
+  'Butcher',
+  'Breakfast Chef',
+  'Pizza Chef',
+  'Manager',
   'Other',
 ];
-const CONTRACT_TYPES: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Temporary'];
+
+const CONTRACT_TYPES: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Temporary'];
 
 const Personalise: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
@@ -98,7 +106,6 @@ const Personalise: React.FC = () => {
         prefRef,
         {
           companyStrengths: userStrengths,
-          prefWorkArrangements,
           prefRoles,
           prefContractTypes,
           prefLocation,
@@ -149,29 +156,9 @@ const Personalise: React.FC = () => {
             );
           })}
         </FormGroup>
-        <Divider sx={{ my: 3 }} />
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Remote friendly</Typography>
-        <FormGroup row sx={{ mb: 2 }}>
-          {WORK_ARRANGEMENTS.map((opt) => (
-            <FormControlLabel
-              key={opt}
-              control={
-                <Checkbox
-                  checked={prefWorkArrangements.includes(opt)}
-                  onChange={() =>
-                    setPrefWorkArrangements((prev) =>
-                      prev.includes(opt) ? prev.filter((v) => v !== opt) : [...prev, opt]
-                    )
-                  }
-                />
-              }
-              label={opt}
-            />
-          ))}
-        </FormGroup>
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Preferred roles</Typography>
         <FormGroup row sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
-          {ROLE_OPTIONS.map((opt) => (
+          {ROLE_OPTIONS.map((opt: string) => (
             <FormControlLabel
               key={opt}
               control={

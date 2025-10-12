@@ -29,6 +29,7 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: '',
     displayName: '',
+    businessName: '',
     role: 'jobseeker' as 'jobseeker' | 'employer',
   });
   const [error, setError] = useState('');
@@ -68,6 +69,7 @@ const Register: React.FC = () => {
           role: formData.role,
           displayName: formData.displayName,
           email: formData.email,
+          businessName: formData.businessName || null,
           createdAt: new Date().toISOString(),
         }, { merge: true });
       }
@@ -132,6 +134,19 @@ const Register: React.FC = () => {
             value={formData.displayName}
             onChange={handleChange}
           />
+          
+          {formData.role === 'employer' && (
+            <TextField
+              margin="normal"
+              fullWidth
+              id="businessName"
+              label="Business Name"
+              name="businessName"
+              autoComplete="organization"
+              value={formData.businessName}
+              onChange={handleChange}
+            />
+          )}
           
           <TextField
             margin="normal"
