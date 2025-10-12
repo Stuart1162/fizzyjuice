@@ -9,7 +9,7 @@ app.use(express.json());
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 if (!STRIPE_SECRET_KEY) {
-  console.warn('[Stripe] STRIPE_SECRET_KEY missing in environment. Set it in jobs-board/.env');
+  console.warn('[Stripe] STRIPE_SECRET_KEY missing in environment. Set it in .env');
 }
 const stripe = require('stripe')(STRIPE_SECRET_KEY || '');
 
