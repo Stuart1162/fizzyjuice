@@ -231,9 +231,7 @@ const JobDetail: React.FC = () => {
 
         {job.roles && job.roles.length > 0 && (
           <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
-              Role
-            </Typography>
+            
             <Box display="flex" flexWrap="wrap" gap={1}>
               {job.roles.map((role, index) => (
                 <Chip

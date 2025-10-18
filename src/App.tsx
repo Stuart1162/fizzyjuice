@@ -23,17 +23,22 @@ import SeedJobs from './pages/SeedJobs';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#5672FF',
     },
     secondary: {
       main: '#dc004e',
     },
     background: {
-      default: '#f5f5f5',
+      default: '#FBF9F4',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#3B1906',
     },
   },
   typography: {
     fontFamily: [
+      'Geist',
       '-apple-system',
       'BlinkMacSystemFont',
       '"Segoe UI"',
@@ -46,9 +51,11 @@ const theme = createTheme({
       '"Segoe UI Symbol"',
     ].join(','),
     h1: {
+      fontFamily: ['Anton', 'Geist', 'Arial', 'sans-serif'].join(','),
       fontWeight: 600,
     },
     h2: {
+      fontFamily: ['Anton', 'Geist', 'Arial', 'sans-serif'].join(','),
       fontWeight: 500,
     },
     h3: {
@@ -56,11 +63,23 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiContainer: {
+      defaultProps: {
+        maxWidth: 'xl',
+      },
+    },
     MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',
           borderRadius: 8,
+          boxShadow: 'none',
+          '&:hover': { boxShadow: 'none' },
+          '&:active': { boxShadow: 'none' },
+          '&:focus': { boxShadow: 'none' },
         },
       },
     },
@@ -141,7 +160,7 @@ function App() {
                   <Route path="/seed-jobs" element={<SeedJobs />} />
                 </Routes>
               </main>
-              <footer style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f5f5f5' }}>
+              <footer style={{ textAlign: 'center', padding: '20px', backgroundColor: '#FBF9F4' }}>
                 <Typography variant="body2" color="text.secondary">
                   © {new Date().getFullYear()} Jobs Board. All rights reserved.
                 </Typography>

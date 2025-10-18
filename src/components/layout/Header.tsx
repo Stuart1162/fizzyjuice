@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import '../../styles/navbar.css';
 
 const Header: React.FC = () => {
   const { currentUser, signOut, isSuperAdmin } = useAuth();
@@ -38,38 +39,56 @@ const Header: React.FC = () => {
   }, [currentUser]);
 
   return (
-    <AppBar position="fixed">
-      <Container maxWidth="lg">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <Button color="inherit" component={RouterLink} to="/">
-              Fizzy Juice
-            </Button>
-          </Typography>
-          {(!currentUser || userRole !== 'jobseeker' || isSuperAdmin) && (
-            <Button color="inherit" component={RouterLink} to="/post-job" sx={{ mr: 1 }}>
-              Post a Job
-            </Button>
-          )}
-          {currentUser ? (
-            <Box display="flex" alignItems="center" gap={2}>
-              <Button color="inherit" component={RouterLink} to="/dashboard">
-                Dashboard
-              </Button>
-              <Button color="inherit" component={RouterLink} to="/profile">
-                {currentUser.displayName || currentUser.email}
-              </Button>
+    <AppBar position="fixed" elevation={0} className="navbar">
+      <Container className="navbar__container">
+        <Toolbar disableGutters className="navbar__toolbar">
+          {/** Left: logo */}
+          <Box component={RouterLink} to="/" className="navbar__brand">
+            <Box component="img" src="/smiley.svg" alt="Fizzy Juice" className="navbar__logo" />
+          </Box>
+
+          {/** Center: tagline (only for logged-out) */}
+          {!currentUser && (
+            <Box className="navbar__tagline">
+              <Typography variant="body1" className="navbar__taglineText">
+                A jobs board of companies that care about people as much as food
+              </Typography>
             </Box>
-          ) : (
-            <>
-              <Button color="inherit" component={RouterLink} to="/login" sx={{ mr: 1 }}>
-                Login
-              </Button>
-              <Button color="inherit" component={RouterLink} to="/register">
-                Register
-              </Button>
-            </>
           )}
+
+          {/** Right: actions */}
+          <Box className="navbar__actions">
+            {currentUser ? (
+              <Box display="flex" alignItems="center" gap={2}>
+                <Button color="inherit" component={RouterLink} to="/dashboard">
+                  Dashboard
+                </Button>
+                <Button color="inherit" component={RouterLink} to="/profile">
+                  {currentUser.displayName || currentUser.email}
+                </Button>
+              </Box>
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  component={RouterLink}
+                  to="/login"
+                  className="navbar__signin"
+                >
+                  Sign in
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component={RouterLink}
+                  to="/post-job"
+                >
+                  Post a job
+                </Button>
+              </>
+            )}
+          </Box>
         </Toolbar>
       </Container>
     </AppBar>

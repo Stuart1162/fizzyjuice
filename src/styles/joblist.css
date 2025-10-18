@@ -1,0 +1,95 @@
+/* Job list row styles */
+.jobRow {
+  background: #FBF9F4;
+}
+
+/* Collapsed state: dotted divider under summary */
+.jobCard .MuiAccordionSummary-root.jobRow:not(.Mui-expanded) {
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+}
+
+/* Expanded state: no divider under summary */
+.jobCard .MuiAccordionSummary-root.jobRow.Mui-expanded {
+  border-bottom: 0 !important;
+}
+
+/* Expanded state: dotted divider at the very bottom (under Apply Now area) */
+.jobCard .MuiCollapse-root .jobView__content { border-bottom: 0; }
+.jobCard .MuiCollapse-root .jobView__actions {
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+  padding-bottom: 12px;
+}
+
+.jobCard {
+  box-shadow: none !important;
+  border-radius: 0;
+}
+
+.jobCard:before {
+  display: none;
+}
+
+div.jobList {
+  gap:4px;
+}
+
+.jobCard.MuiPaper-elevation,
+.jobCard .MuiPaper-elevation,
+.jobCard .MuiAccordion-region,
+.jobCard .MuiAccordionSummary-root,
+.jobCard.MuiAccordion-root {
+  box-shadow: none !important;
+}
+
+.jobRow__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
+  gap: 24px;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 900px) {
+  .jobRow__grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "role role"
+      "location contract"
+      "wage meta";
+    row-gap: 12px;
+  }
+  .jobRow__role { grid-area: role; }
+  .jobRow__location { grid-area: location; }
+  .jobRow__contract { grid-area: contract; }
+  .jobRow__wage { grid-area: wage; }
+  .jobRow__meta { grid-area: meta; justify-self: end; }
+}
+
+
+.jobRow__label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.jobRow__title {
+  font-weight: 700;
+}
+
+.jobRow__company {
+  opacity: 0.8;
+}
+
+.jobRow__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.jobRow__save {
+  color: #3B1906;
+}

@@ -1,0 +1,101 @@
+/* Job list root and states */
+.jobList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.jobList__loading,
+.jobList__error,
+.jobList__empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+}
+
+/* Job accordion card */
+.jobCard {
+  background: transparent;
+}
+
+/* Job details view */
+.jobView__content {
+  padding-top: 8px;
+}
+
+.jobView__reference {
+  gap: 8px;
+}
+
+.jobView__divider {
+  margin: 16px 0;
+}
+
+/* Markdown content styling inside job view */
+.jobView__markdown {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.jobView__markdown h1,
+.jobView__markdown h2,
+.jobView__markdown h3,
+.jobView__markdown h4 {
+  margin: 16px 0 8px;
+}
+
+.jobView__markdown p {
+  margin-bottom: 12px;
+}
+
+.jobView__markdown ul,
+.jobView__markdown ol {
+  padding-left: 24px;
+  margin-bottom: 12px;
+}
+
+.jobView__markdown code {
+  background: rgba(0,0,0,0.04);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.jobView__markdown pre {
+  background: rgba(0,0,0,0.04);
+  padding: 16px;
+  border-radius: 6px;
+  overflow: auto;
+  margin-bottom: 16px;
+}
+
+.jobView__actions {
+  margin-top: 16px;
+}
+
+
+.jobView__rolesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jobView__adminNote {
+  padding: 8px 0;
+}
+
+.jobView__adminNoteTitle {
+  opacity: 0.8;
+}
+
+
+.jobView__strengthsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jobView__applyButton {
+  min-width: 140px;
+}

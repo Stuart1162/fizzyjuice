@@ -1,0 +1,54 @@
+/* Navbar container and layout */
+header.navbar {
+  background-color: #FBF9F4;
+  color: inherit;
+}
+
+
+.navbar__toolbar {
+  min-height: 72px;
+}
+
+/* Brand */
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.navbar__logo {
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+}
+
+/* Tagline (only shows when logged out) */
+.navbar__tagline {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.navbar__taglineText {
+  font-weight: 600;
+  color: #3B1906;
+}
+
+/* Actions */
+.navbar__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Buttons */
+.navbar__signin.MuiButton-outlined {
+  background-color: #EFE8DA;
+  border-color: #EFE8DA;
+  color: #1F1F1F;
+}
+
+.navbar__signin.MuiButton-outlined:hover {
+  background-color: #E7DFCF;
+  border-color: #E7DFCF;
+}

@@ -12,9 +12,6 @@ import {
   FormControlLabel,
   FormGroup,
   Divider,
-  Paper,
-  Button,
-  Link,
   IconButton,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -22,12 +19,12 @@ import ClearIcon from '@mui/icons-material/Clear';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import JobList from '../components/jobs/JobList';
 import { Job } from '../types/job';
-import { useAuth } from '../contexts/AuthContext';
-import { Link as RouterLink } from 'react-router-dom';
+import '../styles/home.css';
 
 const Home: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+
   const ROLE_OPTIONS: NonNullable<Job['roles']> = [
     'Baker',
     'Chef',
@@ -62,43 +59,41 @@ const Home: React.FC = () => {
     setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   };
 
-  const filters = useMemo(() => ({
-    location: locationFilter,
-    roles: selectedRoles as NonNullable<Job['roles']>,
-    contractTypes: selectedContracts as Job['jobType'][],
-    shifts: selectedShifts as NonNullable<Job['shifts']>,
-  }), [locationFilter, selectedRoles, selectedContracts, selectedShifts]);
-
-  const { currentUser } = useAuth();
+  const filters = useMemo(
+    () => ({
+      location: locationFilter,
+      roles: selectedRoles as NonNullable<Job['roles']>,
+      contractTypes: selectedContracts as Job['jobType'][],
+      shifts: selectedShifts as NonNullable<Job['shifts']>,
+    }),
+    [locationFilter, selectedRoles, selectedContracts, selectedShifts]
+  );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container className="home">
+      <Box className="home__hero">
+        <Typography component="h1" variant="h1" className="home__title">
+          Good people
+          <br />
+          make great food
+        </Typography>
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: '280px 1fr' },
-          gap: 3,
-        }}
-      >
+        <Typography variant="body1" className="home__subtitle">
+          Let’s face it – the hospitality industry can be a toxic mess. We want to change that by
+          promoting people and businesses who are responsible, talented and kind.
+        </Typography>
+      </Box>
+
+      <Box className="home__layout">
         {/* Filters column */}
-        <Box
-          sx={{
-            position: { xs: 'static', md: 'sticky' },
-            top: { md: 88 },
-            alignSelf: { md: 'start' },
-            maxHeight: { md: 'calc(100vh - 88px)' },
-            overflowY: { md: 'auto' },
-            pr: { md: 1 },
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 1 }}>
+        <Box className="home__filters">
+          <Typography variant="h6" className="home__filtersTitle">
             Filters
           </Typography>
-          <Divider sx={{ mb: 1 }} />
+          <Divider className="home__filtersDivider" />
 
-          {/* Search moved into filters sidebar */}
-          <Box sx={{ mb: 2 }}>
+          {/* Search */}
+          <Box className="home__search">
             <TextField
               fullWidth
               placeholder="Search by title, company, skills..."
@@ -112,12 +107,7 @@ const Home: React.FC = () => {
                 ),
                 endAdornment: filterText && (
                   <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => setFilterText('')}
-                      edge="end"
-                      aria-label="clear search"
-                    >
+                    <IconButton size="small" onClick={() => setFilterText('')} edge="end" aria-label="clear search">
                       <ClearIcon />
                     </IconButton>
                   </InputAdornment>
@@ -126,11 +116,11 @@ const Home: React.FC = () => {
             />
           </Box>
 
-          <Accordion defaultExpanded>
+          <Accordion defaultExpanded className="home__filterSection">
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Location</Typography>
             </AccordionSummary>
-            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <AccordionDetails>
               <TextField
                 fullWidth
                 size="small"
@@ -141,11 +131,11 @@ const Home: React.FC = () => {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion>
+          <Accordion className="home__filterSection">
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Role</Typography>
             </AccordionSummary>
-            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <AccordionDetails>
               <FormGroup>
                 {ROLE_OPTIONS.map((role) => (
                   <FormControlLabel
@@ -163,11 +153,11 @@ const Home: React.FC = () => {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion>
+          <Accordion className="home__filterSection">
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Contract Type</Typography>
             </AccordionSummary>
-            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <AccordionDetails>
               <FormGroup>
                 {CONTRACT_TYPES.map((ct) => (
                   <FormControlLabel
@@ -185,11 +175,11 @@ const Home: React.FC = () => {
             </AccordionDetails>
           </Accordion>
 
-          <Accordion>
+          <Accordion className="home__filterSection">
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography>Shifts</Typography>
             </AccordionSummary>
-            <AccordionDetails sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <AccordionDetails>
               <FormGroup>
                 {SHIFT_OPTIONS.map((shift) => (
                   <FormControlLabel
@@ -206,11 +196,10 @@ const Home: React.FC = () => {
               </FormGroup>
             </AccordionDetails>
           </Accordion>
-
         </Box>
 
-        {/* Main column */}
-        <Box>
+        {/* Main list column */}
+        <Box className="home__list">
           <JobList filterText={filterText} filters={filters} />
         </Box>
       </Box>

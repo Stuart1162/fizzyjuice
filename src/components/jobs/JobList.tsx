@@ -12,6 +12,8 @@ import {
   AccordionDetails,
   Chip,
   Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -25,6 +27,8 @@ import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSavedJobs } from '../../contexts/SavedJobsContext';
+import '../../styles/joblist.css';
+import '../../styles/jobview.css';
 
 interface JobListFilters {
   location?: string;
@@ -172,7 +176,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" my={4}>
+      <Box className="jobList jobList__loading">
         <CircularProgress />
       </Box>
     );
@@ -180,7 +184,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
   if (error) {
     return (
-      <Box my={4}>
+      <Box className="jobList jobList__error">
         <Typography color="error" align="center">
           {error}
         </Typography>
@@ -189,15 +193,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   }
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: '1fr',
-        gap: 3,
-      }}
-    >
+    <Box className="jobList">
       {filteredJobs.length === 0 ? (
-        <Box my={4}>
+        <Box className="jobList__empty">
           <Typography variant="h6" align="center" color="textSecondary">
             {jobs.length === 0
               ? 'No jobs found. Be the first to post a job!'
@@ -211,53 +209,64 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
             disableGutters
             expanded={expandedId === job.id}
             onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
+            className="jobCard"
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box sx={{ width: '100%' }}>
-                <Typography variant="h6">{job.title}</Typography>
-                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mt={0.5}>
-                  <Chip icon={<BusinessIcon />} label={job.company} variant="outlined" size="small" />
-                  <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" size="small" />
-                  <Chip icon={<AccessTimeIcon />} label={job.jobType} variant="outlined" size="small" />
-                  {job.wage && (
-                    <Chip icon={<AttachMoneyIcon />} label={job.wage} variant="outlined" size="small" />
-                  )}
-                  <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      Posted: {formatCreatedAt(job.createdAt)}
-                    </Typography>
-                    {currentUser && (
-                      <Button
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="jobRow">
+              <Box className="jobRow__grid">
+                <Box className="jobRow__col jobRow__role">
+                  <Typography variant="h6" className="jobRow__title">{job.title}</Typography>
+                  <Typography variant="body2" className="jobRow__company">at {job.company}</Typography>
+                </Box>
+                <Box className="jobRow__col jobRow__location">
+                  <Typography variant="caption" className="jobRow__label">LOCATION</Typography>
+                  <Typography variant="body1">{job.location}</Typography>
+                </Box>
+                <Box className="jobRow__col jobRow__contract">
+                  <Typography variant="caption" className="jobRow__label">CONTRACT</Typography>
+                  <Typography variant="body1">{job.jobType}</Typography>
+                </Box>
+                <Box className="jobRow__col jobRow__wage">
+                  <Typography variant="caption" className="jobRow__label">WAGE</Typography>
+                  <Typography variant="body1">{job.wage || '—'}</Typography>
+                </Box>
+                <Box className="jobRow__meta">
+                  <Typography variant="body2" color="text.secondary">
+                    {formatCreatedAt(job.createdAt)}
+                  </Typography>
+                  <Tooltip title={currentUser ? (isSaved(job.id) ? 'Unsave' : 'Save') : 'Sign in to save'}>
+                    <span>
+                      <IconButton
                         size="small"
-                        variant={isSaved(job.id) ? 'contained' : 'outlined'}
-                        color="primary"
-                        startIcon={isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (!currentUser) return;
                           toggleSave(job);
                         }}
+                        disabled={!currentUser}
+                        className="jobRow__save"
+                        aria-label="save job"
                       >
-                        {isSaved(job.id) ? 'Saved' : 'Save'}
-                      </Button>
-                    )}
-                  </Box>
+                        {isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 </Box>
               </Box>
             </AccordionSummary>
-            <AccordionDetails>
-              <Box>
+            <AccordionDetails className="jobView">
+              <Box className="jobView__content">
                 {job.ref && (
-                  <Box mb={2} display="flex" alignItems="center" gap={1}>
+                  <Box mb={2} display="flex" alignItems="center" gap={1} className="jobView__reference">
                     <Typography variant="subtitle2">Reference</Typography>
                     <Chip label={`#${job.ref}`} size="small" />
                   </Box>
                 )}
                 {job.roles && job.roles.length > 0 && (
-                  <Box mb={2}>
+                  <Box mb={2} className="jobView__section jobView__roles">
                     <Typography variant="subtitle2" gutterBottom>
                       Role
                     </Typography>
-                    <Box display="flex" flexWrap="wrap" gap={1}>
+                    <Box display="flex" flexWrap="wrap" gap={1} className="jobView__rolesList">
                       {job.roles.map((role, idx) => (
                         <Chip key={idx} label={role} color="primary" variant="outlined" size="small" />
                       ))}
@@ -266,8 +275,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                 )}
 
                 {(isAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle2" gutterBottom>
+                  <Box mb={2} className="jobView__adminNote">
+                    <Typography variant="subtitle2" gutterBottom className="jobView__adminNoteTitle">
                       Word on the street (Admin only)
                     </Typography>
                     <Box sx={{
@@ -299,41 +308,18 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{
-                  typography: 'body2',
-                  '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
-                  '& p': { mb: 1.5 },
-                  '& ul': { pl: 3, mb: 1.5 },
-                  '& ol': { pl: 3, mb: 1.5 },
-                  '& code': {
-                    bgcolor: 'action.hover',
-                    px: 0.5,
-                    py: 0.25,
-                    borderRadius: 0.5,
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                  },
-                  '& pre': {
-                    bgcolor: 'action.hover',
-                    p: 2,
-                    borderRadius: 1,
-                    overflow: 'auto',
-                    mb: 2,
-                  },
-                  '& a': { color: 'primary.main' },
-                }}>
+                <Box className="jobView__markdown">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {job.description}
                   </ReactMarkdown>
                 </Box>
 
                 {job.companyStrengths && job.companyStrengths.length > 0 && (
-                  <Box mt={2}>
+                  <Box mt={2} className="jobView__section jobView__strengths">
                     <Typography variant="subtitle2" gutterBottom>
                       Company strengths
                     </Typography>
-                    <Box display="flex" flexWrap="wrap" gap={1}>
+                    <Box display="flex" flexWrap="wrap" gap={1} className="jobView__strengthsList">
                       {job.companyStrengths.map((s, idx) => (
                         <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
                       ))}
@@ -341,9 +327,10 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                <Box mt={2} display="flex" justifyContent="space-between">
+                <Box mt={2} display="flex" justifyContent="space-between" className="jobView__actions">
                   <Box />
                   <Button
+                    className="jobView__applyButton"
                     variant="contained"
                     color="primary"
                     href={job.applicationUrl && job.applicationUrl.trim() !== ''
