@@ -90,7 +90,7 @@ const Home: React.FC = () => {
           <Typography variant="h6" className="home__filtersTitle">
             Filters
           </Typography>
-          <Divider className="home__filtersDivider" />
+          
 
           {/* Search */}
           <Box className="home__search">

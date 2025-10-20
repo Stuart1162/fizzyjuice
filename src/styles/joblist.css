@@ -17,12 +17,19 @@
 .jobCard .MuiCollapse-root .jobView__content { border-bottom: 0; }
 .jobCard .MuiCollapse-root .jobView__actions {
   border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
-  padding-bottom: 12px;
+  padding-bottom: 32px;
 }
 
 .jobCard {
   box-shadow: none !important;
   border-radius: 0;
+}
+
+/* Ensure both collapsed (summary) and expanded (details) sections share the same background */
+.jobCard .MuiAccordionSummary-root,
+.jobCard .MuiAccordionDetails-root {
+  background: #FBF9F4;
+  padding-bottom:0;
 }
 
 .jobCard:before {
@@ -69,8 +76,7 @@ div.jobList {
 
 .jobRow__label {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
   opacity: 0.7;
   margin-bottom: 6px;
 }

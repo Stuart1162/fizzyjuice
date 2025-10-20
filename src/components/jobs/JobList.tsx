@@ -210,6 +210,14 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
             expanded={expandedId === job.id}
             onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
             className="jobCard"
+            TransitionProps={{
+              unmountOnExit: true,
+              timeout: { enter: 320, exit: 320 },
+              easing: {
+                enter: 'cubic-bezier(0.22, 1, 0.36, 1)', /* easeOutCubic */
+                exit: 'cubic-bezier(0.22, 1, 0.36, 1)',  /* easeOutCubic for smoother close */
+              },
+            }}
           >
             <AccordionSummary expandIcon={<ExpandMoreIcon />} className="jobRow">
               <Box className="jobRow__grid">
@@ -218,15 +226,15 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   <Typography variant="body2" className="jobRow__company">at {job.company}</Typography>
                 </Box>
                 <Box className="jobRow__col jobRow__location">
-                  <Typography variant="caption" className="jobRow__label">LOCATION</Typography>
+                  <Typography variant="caption" className="jobRow__label">Location</Typography>
                   <Typography variant="body1">{job.location}</Typography>
                 </Box>
                 <Box className="jobRow__col jobRow__contract">
-                  <Typography variant="caption" className="jobRow__label">CONTRACT</Typography>
+                  <Typography variant="caption" className="jobRow__label">Contract</Typography>
                   <Typography variant="body1">{job.jobType}</Typography>
                 </Box>
                 <Box className="jobRow__col jobRow__wage">
-                  <Typography variant="caption" className="jobRow__label">WAGE</Typography>
+                  <Typography variant="caption" className="jobRow__label">Wage</Typography>
                   <Typography variant="body1">{job.wage || '—'}</Typography>
                 </Box>
                 <Box className="jobRow__meta">
@@ -254,6 +262,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
               </Box>
             </AccordionSummary>
             <AccordionDetails className="jobView">
+              {expandedId === job.id && (
               <Box className="jobView__content">
                 {job.ref && (
                   <Box mb={2} display="flex" alignItems="center" gap={1} className="jobView__reference">
@@ -344,6 +353,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Button>
                 </Box>
               </Box>
+              )}
             </AccordionDetails>
           </Accordion>
         ))
