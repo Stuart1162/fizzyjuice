@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { useAuth } from './AuthContext';
 import { Job } from '../types/job';
 import { useSnackbar } from 'notistack';
+import { incrementSave } from '../services/metrics';
 
 export type SavedJobDoc = {
   jobId: string;
@@ -78,6 +79,7 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         applied: false,
       };
       await setDoc(docRef, payload, { merge: true });
+      try { await incrementSave(job.id, 1); } catch {}
       enqueueSnackbar('Job saved', { variant: 'success' });
     } catch (e: any) {
       enqueueSnackbar('Failed to save job', { variant: 'error' });
@@ -90,6 +92,7 @@ export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const docRef = doc(db, 'users', currentUser.uid, 'savedJobs', jobId);
       await deleteDoc(docRef);
+      try { await incrementSave(jobId, -1 as 1 | -1); } catch {}
       enqueueSnackbar('Removed from saved', { variant: 'info' });
     } catch (e: any) {
       enqueueSnackbar('Failed to remove saved job', { variant: 'error' });
