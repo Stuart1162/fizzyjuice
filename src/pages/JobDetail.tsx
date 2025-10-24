@@ -19,7 +19,6 @@ import {
   IconButton,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -28,6 +27,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import FlagIcon from '@mui/icons-material/Flag';
+import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
 
 const JobDetail: React.FC = () => {
@@ -214,6 +215,43 @@ const JobDetail: React.FC = () => {
           </Box>
         </Box>
 
+        {job.wordOnTheStreet && (
+          <Box mb={4}>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
+              <FlagIcon color="success" />
+              <Typography variant="h5" gutterBottom>
+                Green Flags
+              </Typography>
+            </Box>
+            <Box sx={{
+              typography: 'body1',
+              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+              '& p': { mb: 2 },
+              '& ul': { pl: 3, mb: 2 },
+              '& ol': { pl: 3, mb: 2 },
+              '& code': {
+                bgcolor: 'action.hover',
+                px: 0.5,
+                py: 0.25,
+                borderRadius: 0.5,
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              },
+              '& pre': {
+                bgcolor: 'action.hover',
+                p: 2,
+                borderRadius: 1,
+                overflow: 'auto',
+                mb: 2,
+              },
+              '& a': { color: 'primary.main' },
+            }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {job.wordOnTheStreet}
+              </ReactMarkdown>
+            </Box>
+          </Box>
+        )}
+
         {job.requirements && job.requirements.length > 0 && (
           <Box mb={4}>
             <Typography variant="h5" gutterBottom>
@@ -284,39 +322,7 @@ const JobDetail: React.FC = () => {
           </Box>
         )}
 
-        {(isSuperAdmin || isAdmin) && job.wordOnTheStreet && (
-          <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
-              Word on the street (Admin only)
-            </Typography>
-            <Box sx={{
-              typography: 'body1',
-              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
-              '& p': { mb: 2 },
-              '& ul': { pl: 3, mb: 2 },
-              '& ol': { pl: 3, mb: 2 },
-              '& code': {
-                bgcolor: 'action.hover',
-                px: 0.5,
-                py: 0.25,
-                borderRadius: 0.5,
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-              },
-              '& pre': {
-                bgcolor: 'action.hover',
-                p: 2,
-                borderRadius: 1,
-                overflow: 'auto',
-                mb: 2,
-              },
-              '& a': { color: 'primary.main' },
-            }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {job.wordOnTheStreet}
-              </ReactMarkdown>
-            </Box>
-          </Box>
-        )}
+        
 
         <Box mt={4} pt={2} borderTop={1} borderColor="divider">
           <Typography variant="body2" color="text.secondary">
@@ -359,7 +365,6 @@ const JobDetail: React.FC = () => {
             href={job.applicationUrl && job.applicationUrl.trim() !== ''
               ? job.applicationUrl
               : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-            startIcon={<EmailIcon />}
             target={job.applicationUrl ? '_blank' : undefined}
             rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
           >

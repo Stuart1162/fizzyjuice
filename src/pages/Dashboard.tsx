@@ -543,7 +543,7 @@ const Dashboard: React.FC = () => {
                             {(isSuperAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
                               <Box mb={2}>
                                 <Typography variant="subtitle2" gutterBottom>
-                                  Word on the street (Admin only)
+                                  Green Flags
                                 </Typography>
                                 <Box sx={{
                                   typography: 'body2',

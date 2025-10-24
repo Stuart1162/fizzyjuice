@@ -109,7 +109,7 @@ function App() {
             <Router>
               <div className="app">
               <Header />
-              <main style={{ minHeight: 'calc(100vh - 64px - 56px)', padding: '20px 0' }}>
+              <main className="page-main" style={{ minHeight: 'calc(100vh - 64px - 56px)', padding: '20px 0' }}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/jobs/:id" element={<JobDetail />} />

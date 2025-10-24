@@ -38,11 +38,20 @@
   line-height: 1.6;
 }
 
+.jobView__markdown,
+.jobView__adminNote {
+  max-width:700px;
+}
+
 .jobView__markdown h1,
 .jobView__markdown h2,
 .jobView__markdown h3,
 .jobView__markdown h4 {
-  margin: 16px 0 8px;
+  margin: 24px 0 4px;
+}
+
+.jobView__markdown h2 {
+  font-size: 1.25rem;
 }
 
 .jobView__markdown p {
@@ -82,7 +91,25 @@
 }
 
 .jobView__adminNote {
-  padding: 8px 0;
+  padding:30px;
+  background: #d0ffb7;
+  border-radius:20px;
+  margin:2rem 0;
+}
+
+.jobView__adminNote svg {
+  width:1.25em;
+  height:1.25em;
+}
+
+.jobView__adminNote h6 {
+  color:#074701;
+  font-size:1.25rem;
+  margin:0;
+}
+
+.jobView__adminNote p {
+  color:#074701;
 }
 
 .jobView__adminNoteTitle {
@@ -98,4 +125,8 @@
 
 .jobView__applyButton {
   min-width: 140px;
+}
+
+div.jobView__section {
+  display:none;
 }

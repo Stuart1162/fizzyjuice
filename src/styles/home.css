@@ -76,6 +76,7 @@ p.home__subtitle {
 
 h6.home__filtersTitle {
   font-size: 1rem;
+  padding:0 16px;
 }
 
 .home__filtersDivider {
@@ -86,13 +87,23 @@ h6.home__filtersTitle {
   height: 0;
 }
 
-.home__search {
-  margin-bottom: 0.75rem;
-  padding-right:12px;
+.home__filters button.Mui-expanded {
+  min-height:48px;
 }
 
-.home__filterSection {
-  margin-bottom: 0.5rem;
+.home__search {
+  margin-bottom: 0rem;
+  padding:0 16px;
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+  padding-bottom: 1rem;
+}
+
+.home__filters div.home__filterSection {
+  margin:0;
+}
+
+.home__filters div.home__filterSection span {
+  margin:0;
 }
 
 /* Use dotted borders between filter sections to match the global style */
@@ -117,7 +128,80 @@ h6.home__filtersTitle {
   background: transparent;
 }
 
-/* Job list column */
+/* Search input styling */
+.home__searchInput,
+.home__locationInput {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+}
+
+.home__searchInput .MuiOutlinedInput-root,
+.home__locationInput .MuiOutlinedInput-root {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+}
+
+.home__searchInput .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.home__locationInput .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(59, 25, 6, 0.3);
+}
+
+.home__searchInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.home__locationInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5672FF;
+  border-width: 2px;
+}
+
+/* Filter section styling */
+.home__locationFilter,
+.home__roleFilter,
+.home__contractFilter,
+.home__shiftsFilter {
+  margin-bottom: 0.5rem;
+}
+
+div.home__locationDetails,
+div.home__roleDetails,
+div.home__contractDetails,
+div.home__shiftsDetails {
+  padding: 4px 16px 16px;
+}
+
+div.home__locationInput,
+div.home__roleOptions,
+div.home__contractOptions,
+div.home__shiftsOptions {
+}
+
+span.home__roleCheckbox,
+span.home__contractCheckbox,
+span.home__shiftCheckbox {
+  padding:4px 4px 4px 8px;
+}
+
+/* Checkbox styling for consistency */
+div.home__roleCheckbox,
+div.home__contractCheckbox,
+div.home__shiftCheckbox {
+  padding: 0 4px;
+}
+
+.home__roleOption,
+.home__contractOption,
+.home__shiftOption {
+  margin: 2px 0;
+}
+
+/* Checkbox colors in filters: match text color */
+.home__filters .MuiCheckbox-root .MuiSvgIcon-root {
+  color: #3B1906;
+}
+.home__filters .MuiCheckbox-root.Mui-checked .MuiSvgIcon-root {
+  color: #3B1906;
+}
+.home__filters .MuiCheckbox-root.MuiCheckbox-indeterminate .MuiSvgIcon-root {
+  color: #3B1906;
+}
 
 @keyframes home-fade-in-up {
   from {

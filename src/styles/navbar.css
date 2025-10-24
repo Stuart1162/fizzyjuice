@@ -4,9 +4,12 @@ header.navbar {
   color: inherit;
 }
 
+.navbar__container {
+}
 
 .navbar__toolbar {
   min-height: 72px;
+  border-bottom:2px dotted rgba(59, 25, 6, 0.4);
 }
 
 /* Brand */
@@ -39,6 +42,22 @@ header.navbar {
   display: flex;
   align-items: center;
   gap: 12px;
+  animation: slideInFromTop 0.6s ease-out 0.5s both;
+}
+
+.navbar__taglineText {
+  font-weight: 600;
+  color: #3B1906;
+  animation: slideInFromTop 0.6s ease-out 0.4s both;
+}
+
+/* Individual button animations */
+.navbar__actions .MuiButton-root:nth-child(1) {
+  animation: slideInFromTop 0.6s ease-out 0.6s both;
+}
+
+.navbar__actions .MuiButton-root:nth-child(2) {
+  animation: slideInFromTop 0.6s ease-out 0.7s both;
 }
 
 /* Buttons */
@@ -48,7 +67,21 @@ header.navbar {
   color: #1F1F1F;
 }
 
-.navbar__signin.MuiButton-outlined:hover {
-  background-color: #E7DFCF;
-  border-color: #E7DFCF;
+/* Navbar animations */
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Offset page content for fixed navbar on desktop */
+@media (min-width: 900px) {
+  .page-main {
+    padding-top: 64px !important;
+  }
 }
