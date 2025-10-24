@@ -4,9 +4,12 @@ header.navbar {
   color: inherit;
 }
 
+.navbar__container {
+}
 
 .navbar__toolbar {
   min-height: 72px;
+  border-bottom:2px dotted rgba(59, 25, 6, 0.4);
 }
 
 /* Brand */

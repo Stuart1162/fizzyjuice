@@ -19,7 +19,6 @@ import {
   IconButton,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EmailIcon from '@mui/icons-material/Email';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -29,6 +28,7 @@ import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import FlagIcon from '@mui/icons-material/Flag';
+import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
 
 const JobDetail: React.FC = () => {
@@ -365,7 +365,6 @@ const JobDetail: React.FC = () => {
             href={job.applicationUrl && job.applicationUrl.trim() !== ''
               ? job.applicationUrl
               : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-            startIcon={<EmailIcon />}
             target={job.applicationUrl ? '_blank' : undefined}
             rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
           >

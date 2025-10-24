@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Job } from '../../types/job';
@@ -20,7 +20,6 @@ import BusinessIcon from '@mui/icons-material/Business';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import EmailIcon from '@mui/icons-material/Email';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -50,6 +49,20 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Keep refs for each accordion to scroll into view on expand
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!expandedId) return;
+    const el = itemRefs.current[expandedId];
+    if (!el) return;
+    // Scroll to element with an offset to account for fixed navbar
+    const NAV_OFFSET = 80; // ~72px toolbar + small spacing
+    const rect = el.getBoundingClientRect();
+    const y = rect.top + window.pageYOffset - NAV_OFFSET;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }, [expandedId]);
 
   const formatCreatedAt = (createdAt: any) => {
     if (!createdAt) return 'Just now';
@@ -211,6 +224,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
             expanded={expandedId === job.id}
             onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
             className="jobCard"
+            ref={(el) => {
+              if (job.id) itemRefs.current[job.id as string] = el;
+            }}
             TransitionProps={{
               unmountOnExit: true,
               timeout: { enter: 320, exit: 320 },
@@ -358,7 +374,6 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                     href={job.applicationUrl && job.applicationUrl.trim() !== ''
                       ? job.applicationUrl
                       : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                    startIcon={<EmailIcon />}
                     target={job.applicationUrl ? '_blank' : undefined}
                     rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
                   >
