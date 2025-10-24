@@ -29,6 +29,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import '../../styles/joblist.css';
 import '../../styles/jobview.css';
+import { incrementApply, incrementView } from '../../services/metrics';
 
 interface JobListFilters {
   location?: string;
@@ -62,6 +63,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     const rect = el.getBoundingClientRect();
     const y = rect.top + window.pageYOffset - NAV_OFFSET;
     window.scrollTo({ top: y, behavior: 'smooth' });
+    // Track a view for this job
+    try { incrementView(expandedId); } catch {}
   }, [expandedId]);
 
   const formatCreatedAt = (createdAt: any) => {
@@ -367,18 +370,26 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
                 <Box mt={2} display="flex" justifyContent="space-between" className="jobView__actions">
                   <Box />
-                  <Button
-                    className="jobView__applyButton"
-                    variant="contained"
-                    color="primary"
-                    href={job.applicationUrl && job.applicationUrl.trim() !== ''
-                      ? job.applicationUrl
-                      : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                    target={job.applicationUrl ? '_blank' : undefined}
-                    rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
-                  >
-                    Apply Now
-                  </Button>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    {job.ref && (
+                      <Chip label={`#${job.ref}`} size="small" variant="outlined" />
+                    )}
+                    <Button
+                      className="jobView__applyButton"
+                      variant="contained"
+                      color="primary"
+                      href={job.applicationUrl && job.applicationUrl.trim() !== ''
+                        ? job.applicationUrl
+                        : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                      target={job.applicationUrl ? '_blank' : undefined}
+                      rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
+                      onClick={(e) => {
+                        try { if (job.id) incrementApply(job.id); } catch {}
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
               )}

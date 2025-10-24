@@ -10,7 +10,7 @@ import '../../styles/navbar.css';
 const Header: React.FC = () => {
   const { currentUser, signOut, isSuperAdmin } = useAuth();
   const { savedJobs } = useSavedJobs();
-  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | null>(null);
+  const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
 
   useEffect(() => {
     const loadRole = async () => {
@@ -23,7 +23,7 @@ const Header: React.FC = () => {
         const snap = await getDoc(profileRef);
         if (snap.exists()) {
           const data = snap.data() as any;
-          if (data?.role === 'jobseeker' || data?.role === 'employer') {
+          if (data?.role === 'jobseeker' || data?.role === 'employer' || data?.role === 'admin') {
             setUserRole(data.role);
           } else {
             setUserRole(null);
@@ -60,6 +60,11 @@ const Header: React.FC = () => {
           <Box className="navbar__actions">
             {currentUser ? (
               <Box display="flex" alignItems="center" gap={2}>
+                {(isSuperAdmin || userRole === 'admin') && (
+                  <Button color="inherit" component={RouterLink} to="/reports">
+                    Reports
+                  </Button>
+                )}
                 <Button color="inherit" component={RouterLink} to="/dashboard">
                   Dashboard
                 </Button>

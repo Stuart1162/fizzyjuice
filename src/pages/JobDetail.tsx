@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
@@ -30,6 +30,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import FlagIcon from '@mui/icons-material/Flag';
 import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
+import { incrementApply, incrementView } from '../services/metrics';
 
 const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +55,27 @@ const JobDetail: React.FC = () => {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          setJob({ id: docSnap.id, ...docSnap.data() } as Job);
+          const full = { id: docSnap.id, ...docSnap.data() } as Job;
+          // Backfill a 5-digit ref if missing (only admins/superadmins)
+          if (!full.ref && (isSuperAdmin || isAdmin)) {
+            const gen = () => (Math.floor(10000 + Math.random() * 90000)).toString();
+            let refCode = gen();
+            try {
+              // Ensure uniqueness with a short query loop
+              let attempts = 0;
+              while (attempts < 5) {
+                const qRef = query(collection(db, 'jobs'), where('ref', '==', refCode));
+                const snap = await getDocs(qRef);
+                if (snap.empty) break;
+                refCode = gen();
+                attempts += 1;
+              }
+              await updateDoc(doc(db, 'jobs', docSnap.id), { ref: refCode });
+              full.ref = refCode;
+            } catch {}
+          }
+          setJob(full);
+          try { if (full.id) await incrementView(full.id as string); } catch {}
         } else {
           setError('Job not found');
         }
@@ -331,7 +352,7 @@ const JobDetail: React.FC = () => {
         </Box>
       </Paper>
 
-      <Box display="flex" justifyContent="space-between" mt={4}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={4}>
         <Button
           variant="outlined"
           onClick={() => navigate('/')}
@@ -339,7 +360,7 @@ const JobDetail: React.FC = () => {
         >
           Back to Jobs
         </Button>
-        <Box display="flex" gap={1}>
+        <Box display="flex" gap={2} alignItems="center">
           {currentUser && (
             <Button
               variant={isSaved(job.id) ? 'contained' : 'outlined'}
@@ -359,17 +380,23 @@ const JobDetail: React.FC = () => {
               Edit Job
             </Button>
           )}
-          <Button
-            variant="contained"
-            color="primary"
-            href={job.applicationUrl && job.applicationUrl.trim() !== ''
-              ? job.applicationUrl
-              : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-            target={job.applicationUrl ? '_blank' : undefined}
-            rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
-          >
-            Apply Now
-          </Button>
+          <Box display="flex" alignItems="center" gap={1}>
+            {job.ref && (
+              <Chip label={`#${job.ref}`} size="small" variant="outlined" />
+            )}
+            <Button
+              variant="contained"
+              color="primary"
+              href={job.applicationUrl && job.applicationUrl.trim() !== ''
+                ? job.applicationUrl
+                : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+              target={job.applicationUrl ? '_blank' : undefined}
+              rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
+              onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
+            >
+              Apply Now
+            </Button>
+          </Box>
         </Box>
       </Box>
     </Container>
