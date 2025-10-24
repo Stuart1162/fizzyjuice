@@ -25,6 +25,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import '../../styles/joblist.css';
@@ -223,7 +224,14 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
               <Box className="jobRow__grid">
                 <Box className="jobRow__col jobRow__role">
                   <Typography variant="h6" className="jobRow__title">{job.title}</Typography>
-                  <Typography variant="body2" className="jobRow__company">at {job.company}</Typography>
+                  <Box display="flex" alignItems="center" gap={0.5} className="jobRow__companyRow">
+                    <Typography variant="body2" className="jobRow__company">at {job.company}</Typography>
+                    {!!(job.wordOnTheStreet && job.wordOnTheStreet.trim().length) && (
+                      <Tooltip title="Green Flags">
+                        <FlagRoundedIcon sx={{ color: '#38cf6f' }} fontSize="small" />
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
                 <Box className="jobRow__col jobRow__location">
                   <Typography variant="caption" className="jobRow__label">Location</Typography>
@@ -283,11 +291,20 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                {(isAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
+                <Box className="jobView__markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {job.description}
+                  </ReactMarkdown>
+                </Box>
+
+                {job.wordOnTheStreet && (
                   <Box mb={2} className="jobView__adminNote">
-                    <Typography variant="subtitle2" gutterBottom className="jobView__adminNoteTitle">
-                      Word on the street (Admin only)
-                    </Typography>
+                    <Box display="flex" alignItems="center" gap={0.5} mb={0.5} className="jobView__adminNoteTitle">
+                      <FlagRoundedIcon sx={{ color: '#38cf6f' }} fontSize="small" />
+                      <Typography variant="subtitle2" gutterBottom>
+                        Green Flags
+                      </Typography>
+                    </Box>
                     <Box sx={{
                       typography: 'body2',
                       '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
@@ -317,11 +334,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                <Box className="jobView__markdown">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {job.description}
-                  </ReactMarkdown>
-                </Box>
+                
 
                 {job.companyStrengths && job.companyStrengths.length > 0 && (
                   <Box mt={2} className="jobView__section jobView__strengths">

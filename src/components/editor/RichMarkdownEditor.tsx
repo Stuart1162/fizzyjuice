@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import '../../styles/editor.css';
 import { Box, ToggleButton, ToggleButtonGroup, Tooltip, Divider } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
@@ -32,20 +33,29 @@ export interface RichMarkdownEditorProps {
 }
 
 const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange, height = 420 }) => {
+  const isSyncingRef = useRef(false);
+
   const editor = useEditor({
     extensions: [
+      // Put Markdown first so its parser/serializer and commands are registered early
+      Markdown.configure({ html: false }) as any,
       StarterKit.configure({
         codeBlock: false,
+        heading: false,
+        // Some builds may include link in StarterKit; disable defensively
+        // @ts-ignore
+        link: false,
       }),
       CodeBlockLowlight.configure({ lowlight: createLowlight(common) }),
       Heading.configure({ levels: [1, 2, 3, 4] }),
       Link.configure({ openOnClick: true, autolink: true }),
       Placeholder.configure({ placeholder: 'Write the job description…' }),
-      Markdown.configure({ html: false }) as any,
     ],
     content: '',
     autofocus: false,
     onUpdate({ editor }: { editor: any }) {
+      // Skip emitting while we're programmatically syncing value -> editor
+      if (isSyncingRef.current) return;
       try {
         // @ts-ignore markdown storage helper
         const md = editor.storage.markdown?.getMarkdown?.() ?? '';
@@ -71,10 +81,42 @@ const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange
       const current = editor.storage.markdown?.getMarkdown?.();
       if (current === value) return;
       // @ts-ignore markdown helper
-      editor.commands.setMarkdown?.(value || '');
+      isSyncingRef.current = true;
+      console.info('[RME] syncing value -> editor. len=', (value || '').length);
+      try {
+        // @ts-ignore markdown command
+        editor.commands.setMarkdown(value || '');
+      } catch (e) {
+        // Fallback: set plain text content so at least it appears
+        const doc = (value && value.length)
+          ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }]}] }
+          : { type: 'doc', content: [] as any };
+        editor.commands.setContent(doc as any);
+      }
     } catch {
-      editor.commands.setContent(value || '');
+      isSyncingRef.current = true;
+      // Last-resort fallback to plain text paragraph
+      const doc = (value && value.length)
+        ? { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }]}] }
+        : { type: 'doc', content: [] as any };
+      editor.commands.setContent(doc as any);
     }
+    // Allow tiptap to apply the change before re-enabling updates
+    const t = setTimeout(() => {
+      try {
+        const txt = editor.getText() || '';
+        const vlen = (value || '').length;
+        console.info('[RME] after sync editor text len=', txt.length, 'value len=', vlen);
+        if (txt.length === 0 && vlen > 0) {
+          // As a last resort, inject plain paragraph so content is visible
+          const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: value }]}] } as any;
+          isSyncingRef.current = true;
+          editor.commands.setContent(doc);
+        }
+      } catch {}
+      isSyncingRef.current = false;
+    }, 0);
+    return () => clearTimeout(t);
   }, [editor, value]);
 
   if (!editor) return null;
@@ -92,7 +134,7 @@ const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange
   const isActive = (name: string, attrs?: any) => editor.isActive(name as any, attrs);
 
   return (
-    <Box sx={{
+    <Box className="rme" sx={{
       border: 1,
       borderColor: 'divider',
       borderRadius: 2,

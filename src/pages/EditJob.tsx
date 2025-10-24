@@ -59,6 +59,7 @@ const EditJob: React.FC = () => {
           return;
         }
         const data = snap.data() as Job;
+        console.log('[EditJob] Loaded from Firestore. description length=', (data.description || '').length);
         setJob({
           title: data.title,
           company: data.company,
@@ -83,6 +84,10 @@ const EditJob: React.FC = () => {
     };
     load();
   }, [id]);
+
+  useEffect(() => {
+    console.log('[EditJob] job.description updated. length=', (job.description || '').length, 'preview="' + (job.description || '').slice(0, 80) + '"');
+  }, [job.description]);
 
   // Check permissions after job data and admin state are loaded
   useEffect(() => {
@@ -252,6 +257,14 @@ const EditJob: React.FC = () => {
             value={job.description || ''}
             onChange={(val) => setJob(prev => ({ ...prev, description: val }))}
           />
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Debug: description length { (job.description || '').length }
+            </Typography>
+            <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#f6f6f6', padding: 8, borderRadius: 4, maxHeight: 120, overflow: 'auto', margin: 0 }}>
+              { (job.description || '').slice(0, 200) }
+            </pre>
+          </Box>
         </Box>
 
         <Box sx={{
@@ -319,7 +332,7 @@ const EditJob: React.FC = () => {
 
         {(isSuperAdmin || isAdmin) && (
           <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>Word on the street (Admin only)</Typography>
+            <Typography variant="subtitle1" gutterBottom>Green Flags (Admin only)</Typography>
             <TextField
               fullWidth
               multiline

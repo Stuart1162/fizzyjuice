@@ -96,9 +96,12 @@ const Home: React.FC = () => {
           <Box className="home__search">
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               placeholder="Search by title, company, skills..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
+              className="home__searchInput"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -116,27 +119,29 @@ const Home: React.FC = () => {
             />
           </Box>
 
-          <Accordion defaultExpanded className="home__filterSection">
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion defaultExpanded className="home__filterSection home__locationFilter">
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="home__locationSummary">
               <Typography>Location</Typography>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails className="home__locationDetails">
               <TextField
                 fullWidth
                 size="small"
+                variant="outlined"
                 placeholder="e.g., London, Remote"
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
+                className="home__locationInput"
               />
             </AccordionDetails>
           </Accordion>
 
-          <Accordion className="home__filterSection">
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion className="home__filterSection home__roleFilter">
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="home__roleSummary">
               <Typography>Role</Typography>
             </AccordionSummary>
-            <AccordionDetails>
-              <FormGroup>
+            <AccordionDetails className="home__roleDetails">
+              <FormGroup className="home__roleOptions">
                 {ROLE_OPTIONS.map((role) => (
                   <FormControlLabel
                     key={role}
@@ -144,21 +149,23 @@ const Home: React.FC = () => {
                       <Checkbox
                         checked={selectedRoles.includes(role)}
                         onChange={() => handleToggle(setSelectedRoles, role)}
+                        className="home__roleCheckbox"
                       />
                     }
                     label={role}
+                    className="home__roleOption"
                   />
                 ))}
               </FormGroup>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion className="home__filterSection">
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion className="home__filterSection home__contractFilter">
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="home__contractSummary">
               <Typography>Contract Type</Typography>
             </AccordionSummary>
-            <AccordionDetails>
-              <FormGroup>
+            <AccordionDetails className="home__contractDetails">
+              <FormGroup className="home__contractOptions">
                 {CONTRACT_TYPES.map((ct) => (
                   <FormControlLabel
                     key={ct}
@@ -166,21 +173,23 @@ const Home: React.FC = () => {
                       <Checkbox
                         checked={selectedContracts.includes(ct)}
                         onChange={() => handleToggle(setSelectedContracts, ct)}
+                        className="home__contractCheckbox"
                       />
                     }
                     label={ct}
+                    className="home__contractOption"
                   />
                 ))}
               </FormGroup>
             </AccordionDetails>
           </Accordion>
 
-          <Accordion className="home__filterSection">
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion className="home__filterSection home__shiftsFilter">
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="home__shiftsSummary">
               <Typography>Shifts</Typography>
             </AccordionSummary>
-            <AccordionDetails>
-              <FormGroup>
+            <AccordionDetails className="home__shiftsDetails">
+              <FormGroup className="home__shiftsOptions">
                 {SHIFT_OPTIONS.map((shift) => (
                   <FormControlLabel
                     key={shift}
@@ -188,9 +197,11 @@ const Home: React.FC = () => {
                       <Checkbox
                         checked={selectedShifts.includes(shift)}
                         onChange={() => handleToggle(setSelectedShifts, shift)}
+                        className="home__shiftCheckbox"
                       />
                     }
                     label={shift.charAt(0).toUpperCase() + shift.slice(1)}
+                    className="home__shiftOption"
                   />
                 ))}
               </FormGroup>

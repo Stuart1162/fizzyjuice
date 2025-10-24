@@ -1,0 +1,49 @@
+/* Scoped styles for the in-app markdown editor */
+.rme .ProseMirror {
+  line-height: 1.55;
+}
+
+.rme .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 20px 0 10px;
+}
+
+.rme .ProseMirror h2 {
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin: 18px 0 8px;
+}
+
+.rme .ProseMirror h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.rme .ProseMirror p {
+  margin: 0 0 10px;
+}
+
+.rme .ProseMirror ul,
+.rme .ProseMirror ol {
+  padding-left: 24px;
+  margin: 0 0 12px;
+}
+
+.rme .ProseMirror blockquote {
+  border-left: 3px solid rgba(0,0,0,0.2);
+  margin: 8px 0 12px;
+  padding: 4px 12px;
+  color: rgba(0,0,0,0.7);
+}
+
+.rme .ProseMirror pre code {
+  display: block;
+  background: rgba(0,0,0,0.04);
+  padding: 10px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}

@@ -513,7 +513,7 @@ const PostJob: React.FC = () => {
           </Box>
           {(isSuperAdmin || isAdmin) && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom>Word on the street (Admin only)</Typography>
+              <Typography variant="subtitle1" gutterBottom>Green Flags (Admin only)</Typography>
               <TextField
                 fullWidth
                 multiline
