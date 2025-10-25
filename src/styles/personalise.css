@@ -1,0 +1,81 @@
+/* Personalise page styles */
+
+.personalise {
+  /* page wrapper */
+}
+
+.personalise__card {
+  border-radius: 12px;
+}
+
+.personalise__header {
+  gap: 8px;
+}
+
+.personalise__title {
+  font-weight: 600;
+}
+
+.personalise__counter {
+  color: #6B7280;
+}
+
+.personalise__sectionTitle {
+  font-weight: 600;
+}
+
+.personalise__sectionHelp {
+  color: #6B7280;
+}
+
+.personalise__strengths .MuiFormControlLabel-root,
+.personalise__roles .MuiFormControlLabel-root,
+.personalise__contracts .MuiFormControlLabel-root {
+  margin-left: 0;
+}
+
+.personalise__location .MuiOutlinedInput-root {
+  background: #ffffff;
+}
+
+.personalise__actions {
+  justify-content: flex-end;
+}
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add personalise tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add personalise mobile-specific overrides here */
+  div.personalise__card {
+    padding:24px 0;
+    margin-top: 4rem;
+    border:none;
+    background-color: transparent;
+  }
+
+  h5.personalise__title {
+    font-size: 2.8em;
+    font-family: Anton;
+    font-weight: 600;
+    letter-spacing: -0.06rem;
+    line-height: 1.1;
+  }
+
+  h6.personalise__sectionTitle {
+    margin-top: 1rem;
+    font-weight: 500;
+    font-size: 1.25rem;
+    border-top:2px dotted #3B1906;
+    padding-top: 1rem;
+
+  }
+
+  p.personalise__counter {
+    display: none;
+  }
+  
+}

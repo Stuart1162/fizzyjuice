@@ -22,6 +22,7 @@
 /* Job details view */
 .jobView__content {
   padding-top: 8px;
+  
 }
 
 .jobView__reference {
@@ -34,7 +35,7 @@
 
 /* Markdown content styling inside job view */
 .jobView__markdown {
-  font-size: 0.95rem;
+  font-size: 1.125rem;
   line-height: 1.6;
 }
 
@@ -129,4 +130,14 @@
 
 div.jobView__section {
   display:none;
+}
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add job view tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add job view mobile-specific overrides here */
 }

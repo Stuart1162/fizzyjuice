@@ -30,9 +30,10 @@ export interface RichMarkdownEditorProps {
   value: string;
   onChange: (markdown: string) => void;
   height?: number;
+  getValueRef?: (getter: () => string) => void;
 }
 
-const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange, height = 420 }) => {
+const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange, height = 420, getValueRef }) => {
   const isSyncingRef = useRef(false);
 
   const editor = useEditor({
@@ -71,6 +72,22 @@ const RichMarkdownEditor: React.FC<RichMarkdownEditorProps> = ({ value, onChange
       },
     },
   });
+
+  // Expose a getter so parents can synchronously read current markdown on demand
+  useEffect(() => {
+    if (!editor || !getValueRef) return;
+    const getter = () => {
+      try {
+        // @ts-ignore markdown storage helper
+        return editor.storage.markdown?.getMarkdown?.() ?? '';
+      } catch {
+        return editor.getText() || '';
+      }
+    };
+    // Intentionally only run when the editor instance changes to avoid parent setState loops
+    getValueRef(getter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   // Set initial markdown value
   useEffect(() => {

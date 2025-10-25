@@ -1,0 +1,113 @@
+.dashboard {
+  display: block;
+}
+
+.dashboard__header {
+  margin-bottom: 8px;
+  border-bottom:2px dotted rgba(0, 0, 0, 0.26);
+}
+
+h4.dashboard__title {
+  line-height: 1.2;
+  font-weight: 600;
+  font-size:3em;
+  font-family: Anton;
+  margin-bottom: 4px;
+}
+
+div.dashboard__yourList {
+  margin-top: 2rem;
+}
+
+.dashboard__subtitle {
+  margin-bottom: 16px;
+}
+
+.dashboard__analytics {
+  border-radius: 12px;
+}
+
+div.dashboard__yourList,
+div.dashboard__saved {
+  border-radius: 12px;
+  padding:0;
+  background-color: transparent;
+  border:none;
+}
+
+div.dashboard {
+  padding: 0 16px;
+}
+
+h6.dashboard__yourListTitle,
+h6.dashboard__savedTitle {
+  font-size: 24px;
+  letter-spacing: -0.03rem;
+  font-weight: 600;
+}
+
+a.dashboard__personaliseBtn {
+  color:
+}
+
+.dashboard__yourList .jobList,
+.dashboard .dashboard__saved .jobList {
+  margin-bottom: 4rem;
+  border-top:2px dotted rgba(59, 25, 6, 0.4);
+}
+
+.dashboard__saved {
+  border-radius: 12px;
+}
+
+.dashboard__loading {
+  min-height: 120px;
+}
+
+.dashboard__error {
+  margin-top: 8px;
+}
+
+.dashboard__manageFilters {
+  max-width: 720px;
+}
+
+.dashboard__drafts {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard__jobAccordion {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.dashboard__jobDetails {
+  padding-top: 8px;
+}
+
+div.dashboard__jobCard {
+  border-radius: 10px;
+  background-color: transparent;
+}
+
+.dashboard__confirmDialog {
+  backdrop-filter: blur(1px);
+}
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add dashboard tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add dashboard mobile-specific overrides here */
+  div.dashboard {
+    margin-top: 5rem;
+  }
+
+  .dashboard h4.dashboard__title {
+    letter-spacing: -0.05rem;
+  }
+}

@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -14,12 +15,22 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Link as MuiLink,
+  useMediaQuery,
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import BusinessIcon from '@mui/icons-material/Business';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
@@ -50,6 +61,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [savePromptOpen, setSavePromptOpen] = useState<boolean>(false);
 
   // Keep refs for each accordion to scroll into view on expand
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -85,10 +99,45 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     }
   };
 
+  // Helper: determine if a job is older than 14 days
+  const isArchived = (j: Job): boolean => {
+    const toMillis = (ts: any): number => {
+      if (!ts) return 0;
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      try { return new Date(ts).getTime() || 0; } catch { return 0; }
+    };
+    const created = toMillis((j as any).createdAt || (j as any).updatedAt);
+    if (!created) return false;
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    return (Date.now() - created) > TWO_WEEKS_MS;
+  };
+
+  // Auth and admin detection (must be before filters that depend on it)
+  const { currentUser } = useAuth();
+  const { isSaved, toggleSave } = useSavedJobs();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!currentUser) { setIsAdmin(false); return; }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        setIsAdmin(role === 'admin');
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    loadRole();
+  }, [currentUser]);
+
   // Compute filtered jobs BEFORE any early returns to keep hook order consistent
   const filteredJobs = useMemo(() => {
     const q = filterText.trim().toLowerCase();
     const base = jobs.filter((job) => {
+      // Hide archived jobs from non-admin users
+      if (!isAdmin && isArchived(job)) return false;
       const haystack = [
         job.title,
         job.company,
@@ -156,8 +205,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           id: doc.id,
           ...doc.data()
         })) as Job[];
-        // Filter out drafts for non-admin users
-        const filteredJobs = jobsData.filter(job => !job.draft || isAdmin);
+        // Filter out drafts and archived for non-admin users
+        const filteredJobs = jobsData.filter(job => (!job.draft || isAdmin) && (!isArchived(job) || isAdmin));
         if (!cancelled) setJobs(filteredJobs);
       } catch (err) {
         console.error('Error fetching jobs:', err);
@@ -169,30 +218,12 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
     fetchJobs();
     return () => { cancelled = true; };
-  }, [jobsOverride]);
+  }, [jobsOverride, isAdmin]);
 
-  const { currentUser } = useAuth();
-  const { isSaved, toggleSave } = useSavedJobs();
-
-  // Admin detection
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  useEffect(() => {
-    const loadRole = async () => {
-      if (!currentUser) { setIsAdmin(false); return; }
-      try {
-        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
-        const snap = await getDoc(prefRef);
-        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
-        setIsAdmin(role === 'admin');
-      } catch {
-        setIsAdmin(false);
-      }
-    };
-    loadRole();
-  }, [currentUser]);
+  
 
   if (loading) {
-    return (
+  return (
       <Box className="jobList jobList__loading">
         <CircularProgress />
       </Box>
@@ -210,8 +241,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   }
 
   return (
+    <>
     <Box className="jobList">
-      {filteredJobs.length === 0 ? (
+      {filteredJobs.length === 0 && (
         <Box className="jobList__empty">
           <Typography variant="h6" align="center" color="textSecondary">
             {jobs.length === 0
@@ -219,8 +251,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
               : 'No jobs match your search.'}
           </Typography>
         </Box>
-      ) : (
-        filteredJobs.map((job) => (
+      )}
+      {filteredJobs.length > 0 && filteredJobs.map((job) => (
           <Accordion
             key={job.id}
             disableGutters
@@ -239,7 +271,19 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
               },
             }}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} className="jobRow">
+            <AccordionSummary
+              component="div"
+              expandIcon={
+                <span className="jobRow__expand">
+                  {expandedId === job.id ? (
+                    <RemoveCircleOutlineIcon className="jobRow__expandIcon" />
+                  ) : (
+                    <AddCircleOutlineIcon className="jobRow__expandIcon" />
+                  )}
+                </span>
+              }
+              className="jobRow"
+            >
               <Box className="jobRow__grid">
                 <Box className="jobRow__col jobRow__role">
                   <Typography variant="h6" className="jobRow__title">{job.title}</Typography>
@@ -264,39 +308,38 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   <Typography variant="caption" className="jobRow__label">Wage</Typography>
                   <Typography variant="body1">{job.wage || '—'}</Typography>
                 </Box>
-                <Box className="jobRow__meta">
-                  <Typography variant="body2" color="text.secondary">
-                    {formatCreatedAt(job.createdAt)}
-                  </Typography>
-                  <Tooltip title={currentUser ? (isSaved(job.id) ? 'Unsave' : 'Save') : 'Sign in to save'}>
-                    <span>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!currentUser) return;
-                          toggleSave(job);
-                        }}
-                        disabled={!currentUser}
-                        className="jobRow__save"
-                        aria-label="save job"
-                      >
-                        {isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
+              <Box className="jobRow__meta">
+                <Typography variant="body2" color="text.secondary">
+                  {formatCreatedAt(job.createdAt)}
+                </Typography>
+                <Tooltip title={currentUser ? (isSaved(job.id) ? 'Unsave' : 'Save') : 'Sign in to save'}>
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!currentUser) { setSavePromptOpen(true); return; }
+                        toggleSave(job);
+                      }}
+                      onMouseDown={(e) => { e.stopPropagation(); }}
+                      onTouchStart={(e) => { e.stopPropagation(); }}
+                      disabled={false}
+                      className="jobRow__save"
+                      sx={{ color: 'var(--color-primary)' }}
+                      aria-label="save job"
+                    >
+                      {isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Box>
-            </AccordionSummary>
-            <AccordionDetails className="jobView">
-              {expandedId === job.id && (
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails className="jobView">
+            {expandedId === job.id && (
               <Box className="jobView__content">
-                {job.ref && (
-                  <Box mb={2} display="flex" alignItems="center" gap={1} className="jobView__reference">
-                    <Typography variant="subtitle2">Reference</Typography>
-                    <Chip label={`#${job.ref}`} size="small" />
-                  </Box>
-                )}
+                
                 {job.roles && job.roles.length > 0 && (
                   <Box mb={2} className="jobView__section jobView__roles">
                     <Typography variant="subtitle2" gutterBottom>
@@ -368,37 +411,88 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                <Box mt={2} display="flex" justifyContent="space-between" className="jobView__actions">
-                  <Box />
-                  <Box display="flex" alignItems="center" gap={1}>
-                    {job.ref && (
-                      <Chip label={`#${job.ref}`} size="small" variant="outlined" />
-                    )}
-                    <Button
-                      className="jobView__applyButton"
-                      variant="contained"
-                      color="primary"
-                      href={job.applicationUrl && job.applicationUrl.trim() !== ''
-                        ? job.applicationUrl
-                        : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                      target={job.applicationUrl ? '_blank' : undefined}
-                      rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
-                      onClick={(e) => {
-                        try { if (job.id) incrementApply(job.id); } catch {}
-                      }}
-                    >
-                      Apply Now
-                    </Button>
-                  </Box>
+                <Box mt={2} display="flex" alignItems="center" justifyContent="space-between" className="jobView__actions">
+                  {/* Left side: Apply button or email instructions */}
+                  {job.applicationUrl && job.applicationUrl.trim() !== '' ? (
+                    <Box display="flex" alignItems="center" gap={1} className="jobView__applyWrap">
+                      <Button
+                        className="jobView__applyButton"
+                        variant="contained"
+                        color="primary"
+                        href={job.applicationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
+                      >
+                        Apply Now
+                      </Button>
+                      {job.ref && (
+                        <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
+                      )}
+                    </Box>
+                  ) : (
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 500, fontSize: 18 }}>
+                        To apply send your CV to{' '}
+                        <MuiLink color="primary" href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}>
+                          {job.contactEmail}
+                        </MuiLink>
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Right side: Open Job link (new tab) */}
+                  {job.id && (
+                    isMobile ? (
+                      <IconButton
+                        component="a"
+                        href={`/jobs/${job.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Open job in new tab"
+                        className="jobView__openIconBtn"
+                      >
+                        <OpenInNewIcon fontSize="small" />
+                      </IconButton>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        href={`/jobs/${job.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        endIcon={<OpenInNewIcon fontSize="small" />}
+                        className="jobView__openBtn"
+                      >
+                        Open in new tab
+                      </Button>
+                    )
+                  )}
                 </Box>
               </Box>
-              )}
-            </AccordionDetails>
-          </Accordion>
-        ))
-      )}
+            )}
+          </AccordionDetails>
+        </Accordion>
+      ))}
     </Box>
+    {/* Save Prompt Dialog for signed-out users */}
+    <Dialog
+      open={savePromptOpen}
+      onClose={() => setSavePromptOpen(false)}
+      className="savePrompt"
+    >
+      <DialogTitle className="savePrompt__title">Create an account to save jobs</DialogTitle>
+      <DialogContent className="savePrompt__content">
+        <Typography variant="body2">Sign in or create a free account to bookmark jobs and view them later.</Typography>
+      </DialogContent>
+      <DialogActions className="savePrompt__actions">
+        <Button onClick={() => setSavePromptOpen(false)} className="savePrompt__closeBtn">Close</Button>
+        <Button component={RouterLink} to="/login" color="inherit" className="savePrompt__signinBtn">Sign in</Button>
+        <Button component={RouterLink} to="/register" variant="contained" className="savePrompt__signupBtn">Create account</Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
-};
+}
 
 export default JobList;

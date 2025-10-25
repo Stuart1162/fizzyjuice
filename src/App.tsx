@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './styles/vars.css';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, Typography } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
@@ -108,73 +109,7 @@ function App() {
         <AuthProvider>
           <SavedJobsProvider>
             <Router>
-              <div className="app">
-              <Header />
-              <main className="page-main" style={{ minHeight: 'calc(100vh - 64px - 56px)', padding: '20px 0' }}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/jobs/:id" element={<JobDetail />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route
-                    path="/post-job"
-                    element={
-                      <PrivateRoute>
-                        <PostJob />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <PrivateRoute>
-                        <Dashboard />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/edit/:id"
-                    element={
-                      <PrivateRoute>
-                        <EditJob />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/personalise"
-                    element={
-                      <PrivateRoute>
-                        <Personalise />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports"
-                    element={
-                      <PrivateRoute>
-                        <Reports />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <PrivateRoute>
-                        <Profile />
-                      </PrivateRoute>
-                    }
-                  />
-                  <Route path="/seed-user" element={<SeedUser />} />
-                  <Route path="/seed-jobs" element={<SeedJobs />} />
-                </Routes>
-              </main>
-              <footer style={{ textAlign: 'center', padding: '20px', backgroundColor: '#FBF9F4' }}>
-                <Typography variant="body2" color="text.secondary">
-                  © {new Date().getFullYear()} Jobs Board. All rights reserved.
-                </Typography>
-              </footer>
-              </div>
+              <InnerAppShell />
             </Router>
           </SavedJobsProvider>
         </AuthProvider>
@@ -184,3 +119,90 @@ function App() {
 }
 
 export default App;
+
+const InnerAppShell: React.FC = () => {
+  const location = useLocation();
+  const isPostJob = location.pathname.startsWith('/post-job');
+  return (
+    <div className="app">
+      <Header />
+      <main
+        className="page-main"
+        style={{
+          minHeight: 'calc(100vh - 64px - 56px)',
+          padding: '20px 0',
+          backgroundColor: isPostJob ? '#FFFFFF' : undefined,
+        }}
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route
+            path="/post-job"
+            element={
+              <PrivateRoute>
+                <PostJob />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/edit/:id"
+            element={
+              <PrivateRoute>
+                <EditJob />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/personalise"
+            element={
+              <PrivateRoute>
+                <Personalise />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <PrivateRoute>
+                <Reports />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/seed-user" element={<SeedUser />} />
+          <Route path="/seed-jobs" element={<SeedJobs />} />
+        </Routes>
+      </main>
+      <footer
+        style={{
+          textAlign: 'center',
+          padding: '20px',
+          backgroundColor: isPostJob ? '#FFFFFF' : '#FBF9F4',
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          © {new Date().getFullYear()} Fizzy Juice. All rights reserved. info@fizzyjuice.co.uk
+        </Typography>
+      </footer>
+    </div>
+  );
+};

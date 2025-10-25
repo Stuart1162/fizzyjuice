@@ -14,6 +14,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
+import { useSnackbar } from 'notistack';
 
 const jobTypes: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Temporary'];
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
@@ -36,10 +37,12 @@ const EditJob: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentUser, isSuperAdmin } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [job, setJob] = useState<Partial<Job>>({});
   const [rolesDisplay, setRolesDisplay] = useState<string[]>([]);
+  const [getDesc, setGetDesc] = useState<(() => string) | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [adminCheckComplete, setAdminCheckComplete] = useState<boolean>(false);
 
@@ -73,6 +76,7 @@ const EditJob: React.FC = () => {
           shifts: data.shifts || [],
           applicationUrl: data.applicationUrl || '',
           wordOnTheStreet: data.wordOnTheStreet || '',
+          createdBy: data.createdBy,
         });
         setRolesDisplay(data.roles || []);
       } catch (e) {
@@ -93,14 +97,16 @@ const EditJob: React.FC = () => {
   useEffect(() => {
     if (!adminCheckComplete || !job.title) return;
 
-    if (isSuperAdmin || isAdmin || (currentUser && job.createdBy === currentUser.uid)) {
-      // User has permission - clear any previous error
+    const isOwner = !!(currentUser && job.createdBy && job.createdBy === currentUser.uid);
+    if (isSuperAdmin || isAdmin || isOwner) {
       if (error === 'You do not have permission to edit this job') {
         setError(null);
       }
       return;
-    } else if (currentUser && job.createdBy !== currentUser.uid) {
-      // User doesn't have permission
+    }
+
+    // Only deny if createdBy is known and mismatched. If missing (legacy job), allow for now.
+    if (currentUser && job.createdBy && job.createdBy !== currentUser.uid) {
       setError('You do not have permission to edit this job');
     }
   }, [job, isSuperAdmin, isAdmin, currentUser, adminCheckComplete, error]);
@@ -158,12 +164,19 @@ const EditJob: React.FC = () => {
     try {
       setError(null);
       const ref = doc(db, 'jobs', id);
+      const fromGetter = getDesc ? getDesc() : null;
+      const latestDescription = (fromGetter && fromGetter.length > 0)
+        ? fromGetter
+        : (job.description ?? '');
+      if (fromGetter && fromGetter !== job.description) {
+        setJob(prev => ({ ...prev, description: fromGetter }));
+      }
       const payload = {
         title: job.title,
         company: job.company,
         location: job.location,
         postcode: job.postcode || '',
-        description: job.description,
+        description: latestDescription,
         jobType: job.jobType,
         wage: job.wage || '',
         contactEmail: job.contactEmail,
@@ -173,8 +186,18 @@ const EditJob: React.FC = () => {
         wordOnTheStreet: job.wordOnTheStreet || '',
         updatedAt: serverTimestamp(),
       };
+      console.info('[EditJob] Saving payload', {
+        source: fromGetter ? 'editor-getter' : 'state',
+        len: (payload.description || '').length,
+        preview: (payload.description || '').slice(0, 60)
+      });
       await updateDoc(ref, payload as any);
-      navigate('/dashboard');
+      // Re-fetch to confirm write before navigating (prevents stale UI)
+      const verify = await getDoc(ref);
+      const saved = verify.exists() ? (verify.data() as any) : null;
+      console.info('[EditJob] After save, stored description length=', (saved?.description || '').length);
+      enqueueSnackbar('Job saved', { variant: 'success' });
+      navigate(`/jobs/${id}`);
     } catch (e) {
       console.error(e);
       setError('Failed to save changes');
@@ -256,6 +279,7 @@ const EditJob: React.FC = () => {
             height={420}
             value={job.description || ''}
             onChange={(val) => setJob(prev => ({ ...prev, description: val }))}
+            getValueRef={(getter) => setGetDesc(() => getter)}
           />
           <Box sx={{ mt: 1 }}>
             <Typography variant="caption" color="text.secondary">
@@ -281,13 +305,6 @@ const EditJob: React.FC = () => {
             placeholder="e.g., £10-15/hour"
           />
           <TextField
-            label="Postcode (optional)"
-            name="postcode"
-            value={job.postcode || ''}
-            onChange={handleInputChange}
-            placeholder="e.g., SW1A 1AA"
-          />
-          <TextField
             select
             label="Role (select one or more)"
             name="roles"
@@ -308,18 +325,6 @@ const EditJob: React.FC = () => {
             onChange={handleInputChange}
             helperText="This is where applications will be sent"
           />
-          <TextField
-            select
-            label="Role (select one or more)"
-            name="roles"
-            value={rolesDisplay}
-            onChange={handleRolesChange}
-            SelectProps={{ multiple: true, renderValue: (selected) => (selected as string[]).join(', ') }}
-          >
-            {ROLE_OPTIONS.map((role) => (
-              <MenuItem key={role} value={role}>{role}</MenuItem>
-            ))}
-          </TextField>
           <TextField
             label="Application URL (optional)"
             name="applicationUrl"

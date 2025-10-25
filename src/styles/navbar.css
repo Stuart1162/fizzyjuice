@@ -85,3 +85,75 @@ header.navbar {
     padding-top: 64px !important;
   }
 }
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  .navbar__toolbar {
+    min-height: 64px;
+  }
+  .navbar__logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+  .navbar__actions--mobile {
+    margin-left: auto;
+  }
+  button.navbar__menuBtn {
+    font-weight: 500;
+    letter-spacing: 0em;
+    padding: 8px 0px 8px 12px;
+    font-size: 18px;
+    font-family: Anton, Geist, Arial, sans-serif;
+  }
+
+  div.navbar__drawer {
+    width:80%;
+    background-color: #FF7100;
+  }
+
+  h6.navbar__drawerTitle {
+    font-weight: 700;
+    letter-spacing: 0.02rem;
+    font-size: 46px;
+    color: #000;
+    text-transform: uppercase;
+    font-family: Anton, Geist, Arial, sans-serif;
+  }
+
+
+  /* Drawer styling */
+  .navbar__drawer .MuiPaper-root {
+    background: #FBF9F4;
+    border-left: 2px dotted rgba(59, 25, 6, 0.4);
+    border-radius: 12px 0 0 12px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  div.navbar__drawerContent {
+    padding: 12px 0px;
+    font-family: Anton, Geist, Arial, sans-serif;
+    width:100%;
+  }
+  .navbar__drawerList {
+    padding-top: 4px;
+    width: 100%;
+  }
+
+  ul.navbar__drawerList li {
+    width:100%;
+    border-bottom:1px solid #3b1906;
+   }
+
+  .navbar__drawerItem .MuiListItemText-root span {
+    font-weight: 600;
+    letter-spacing: -0.02rem;
+    font-family: Anton, Geist, Arial, sans-serif;
+    font-size: 32px;
+  }
+}

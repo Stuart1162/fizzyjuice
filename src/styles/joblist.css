@@ -17,7 +17,7 @@
 .jobCard .MuiCollapse-root .jobView__content { border-bottom: 0; }
 .jobCard .MuiCollapse-root .jobView__actions {
   border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
-  padding-bottom: 32px;
+  padding-bottom: 72px;
 }
 
 .jobCard {
@@ -40,6 +40,17 @@ div.jobList {
   gap:4px;
 }
 
+div.jobRefChip {
+  background:#efeae1;
+  border:none;
+}
+
+div.jobRefChip span {
+  font-weight:500;
+  color:#a58e67;
+}
+
+
 .jobCard.MuiPaper-elevation,
 .jobCard .MuiPaper-elevation,
 .jobCard .MuiAccordion-region,
@@ -59,18 +70,50 @@ div.jobList {
 
 @media (max-width: 900px) {
   .jobRow__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto;
     grid-template-areas:
-      "role role"
-      "location contract"
-      "wage meta";
-    row-gap: 12px;
+      "role meta"
+      "location contract";
+    row-gap: 10px;
+    column-gap: 12px;
+    align-items: start; /* Align items to top */
+  }
+  .jobRow.MuiAccordionSummary-root {
+    align-items: flex-start; /* Override MUI default centering */
   }
   .jobRow__role { grid-area: role; }
   .jobRow__location { grid-area: location; }
   .jobRow__contract { grid-area: contract; }
-  .jobRow__wage { grid-area: wage; }
-  .jobRow__meta { grid-area: meta; justify-self: end; }
+  .jobRow__wage { display: none; } /* Hide Wage column on mobile */
+  .jobRow__meta { 
+    grid-area: meta; 
+    justify-self: end; 
+    align-self: start;
+    display: flex;
+    align-items: flex-start; /* Align icons to top */
+    gap: 8px;
+    position: relative;
+    z-index: 2; /* keep above expand icon */
+  }
+  /* Ensure expand icon doesn't overlay save button */
+  .jobRow .MuiAccordionSummary-expandIconWrapper {
+    position: relative;
+    z-index: 1;
+  }
+  /* Ensure the save button is always clickable */
+  .jobRow__save {
+    position: relative;
+    z-index: 3;
+    pointer-events: auto;
+  }
+
+  /* Hide posted date text on mobile; keep bookmark icon visible */
+  .jobRow__meta .MuiTypography-root { display: none; }
+
+  /* Labels styling and spacing to match compact mobile design */
+  .jobRow__label { font-size: 12px; opacity: 0.6; margin-bottom: 6px; }
+  .jobRow__title { line-height: 1.1; }
+  .jobRow__companyRow { margin-top: 2px; }
 }
 
 
@@ -98,4 +141,25 @@ div.jobList {
 
 .jobRow__save {
   color: #3B1906;
+}
+
+/* Prevent expand icon wrapper from capturing clicks so the Save button can work.
+   The row still expands because the Summary area remains clickable. */
+.jobRow .MuiAccordionSummary-expandIconWrapper {
+  pointer-events: none;
+}
+
+/* Ensure the save button is always interactive */
+.jobRow__save {
+  pointer-events: auto;
+}
+
+/* Do not rotate or animate the expand icon when expanded */
+.jobRow .MuiAccordionSummary-expandIconWrapper {
+  transform: none !important;
+  transition: none !important;
+  top: auto;
+}
+.jobRow .MuiAccordionSummary-expandIconWrapper.Mui-expanded {
+  transform: none !important;
 }

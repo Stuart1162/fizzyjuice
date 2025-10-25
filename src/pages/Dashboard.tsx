@@ -39,9 +39,13 @@ import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { useSnackbar } from 'notistack';
 import JobList from '../components/jobs/JobList';
 
+import '../styles/dashboard.css';
+
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
   const { savedJobs, loading: savedLoading, unsaveJob, toggleApplied } = useSavedJobs();
+  const [savedJobDocs, setSavedJobDocs] = useState<Job[]>([]);
+  const [savedDocsLoading, setSavedDocsLoading] = useState<boolean>(false);
   // jobs: the user's own posted jobs (or all if superadmin) for the Manage Posts table
   const [jobs, setJobs] = useState<Job[]>([]);
   // allJobs: all jobs in the marketplace used to compute the personalised "Your list"
@@ -220,9 +224,48 @@ const Dashboard: React.FC = () => {
     });
   }, [jobs, searchQuery]);
 
+  // Load full job documents for saved jobs so we can reuse JobList styling
+  useEffect(() => {
+    const run = async () => {
+      if (!currentUser) { setSavedJobDocs([]); return; }
+      if (savedLoading) return;
+      const ids: string[] = (savedJobs || []).map((s: any) => s.jobId).filter(Boolean);
+      if (ids.length === 0) { setSavedJobDocs([]); return; }
+      setSavedDocsLoading(true);
+      try {
+        const docs = await Promise.all(ids.map(async (id) => {
+          try {
+            const snap = await getDoc(doc(db, 'jobs', id));
+            return snap.exists() ? ({ id: snap.id, ...snap.data() } as Job) : null;
+          } catch { return null; }
+        }));
+        setSavedJobDocs(docs.filter(Boolean) as Job[]);
+      } finally {
+        setSavedDocsLoading(false);
+      }
+    };
+    run();
+  }, [currentUser, savedJobs, savedLoading]);
+
   // Separate draft and published jobs
   const draftJobs = useMemo(() => filteredJobs.filter(job => job.draft), [filteredJobs]);
   const publishedJobs = useMemo(() => filteredJobs.filter(job => !job.draft), [filteredJobs]);
+
+  // Helper to identify archived jobs (older than 14 days)
+  const isArchived = (j: Job): boolean => {
+    const toMillis = (ts: any): number => {
+      if (!ts) return 0;
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      try { return new Date(ts).getTime() || 0; } catch { return 0; }
+    };
+    const createdMs = toMillis((j as any).createdAt || (j as any).updatedAt);
+    if (!createdMs) return false;
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    return (Date.now() - createdMs) > TWO_WEEKS_MS;
+  };
+
+  const archivedJobs = useMemo(() => filteredJobs.filter(job => !job.draft && isArchived(job)), [filteredJobs]);
 
   const formatCreatedAt = (createdAt: any) => {
     if (!createdAt) return 'Just now';
@@ -249,12 +292,15 @@ const Dashboard: React.FC = () => {
   // - Filter by optional user prefs: location contains, roles intersect, contract types include, work arrangement include
   // - Do NOT require a companyStrengths match; instead, compute matchCount for ranking so role-only matches still show
   // - Sort by number of strength matches desc, then recency desc
+  const hasAnyPref = useMemo(() => (
+    (userStrengths && userStrengths.length > 0) ||
+    (prefRoles && (prefRoles as string[]).length > 0) ||
+    (prefContractTypes && prefContractTypes.length > 0) ||
+    (prefLocation && prefLocation.trim().length > 0)
+  ), [userStrengths, prefRoles, prefContractTypes, prefLocation]);
+
   const yourList = useMemo(() => {
     // If no prefs at all, show nothing to avoid overwhelming list (must opt in)
-    const hasAnyPref = (userStrengths && userStrengths.length > 0) ||
-      (prefRoles && (prefRoles as string[]).length > 0) ||
-      (prefContractTypes && prefContractTypes.length > 0) ||
-      (prefLocation && prefLocation.trim().length > 0);
     if (!hasAnyPref) return [] as Job[];
     const toMillis = (ts: any): number => {
       if (!ts) return 0;
@@ -296,7 +342,7 @@ const Dashboard: React.FC = () => {
       return b.createdAtMs - a.createdAtMs;
     });
     return scored.map((r) => r.job);
-  }, [allJobs, userStrengths, prefLocation, prefRoles, prefContractTypes]);
+  }, [allJobs, hasAnyPref, userStrengths, prefLocation, prefRoles, prefContractTypes]);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -356,10 +402,23 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleRestore = async (jobId: string) => {
+    try {
+      const ref = doc(db, 'jobs', jobId);
+      await updateDoc(ref, { updatedAt: serverTimestamp() });
+      // Optimistically update local state
+      setJobs(prev => prev.map(j => j.id === jobId ? { ...j, updatedAt: new Date() as any } : j));
+      setAllJobs(prev => prev.map(j => j.id === jobId ? { ...j, updatedAt: new Date() as any } : j));
+    } catch (e) {
+      console.error(e);
+      setError('Failed to restore job.');
+    }
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }} className="dashboard">
+      <Box display="flex" alignItems="center" gap={1} className="dashboard__header">
+        <Typography variant="h4" gutterBottom className="dashboard__title">
           {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
         </Typography>
         {!isSuperAdmin && userRole === 'admin' && (
@@ -369,15 +428,17 @@ const Dashboard: React.FC = () => {
           <Chip label="Employer" color="secondary" size="small" />
         )}
       </Box>
-      <Typography variant="body1" color="text.secondary" gutterBottom>
-        {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
-      </Typography>
+      {(isSuperAdmin || userRole === 'admin' || userRole === 'employer') && (
+        <Typography variant="body1" color="text.secondary" gutterBottom className="dashboard__subtitle">
+          {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
+        </Typography>
+      )}
 
       {/* Preferences moved to dedicated page at /dashboard/personalise */}
 
       {/* Admin Analytics (superadmins only) */}
       {isSuperAdmin && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__analytics">
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
             <Typography variant="h6">Jobseeker Preferences Analytics</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -401,17 +462,17 @@ const Dashboard: React.FC = () => {
 
       {/* Your list section first (jobseekers only; hide for employers, admins, and superadmins) */}
       {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
-      <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+      <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__yourList">
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h6">Your list</Typography>
-            <Button size="small" component={RouterLink} to="/dashboard/personalise">Personalise</Button>
+            <Typography variant="h6" className="dashboard__yourListTitle">Your list</Typography>
+            <Button size="small" component={RouterLink} to="/dashboard/personalise" className="dashboard__personaliseBtn">Personalise</Button>
           </Box>
           <Typography variant="body2" color="text.secondary">
-            {userStrengths.length > 0 ? `${yourList.length} matches` : 'Select preferences above'}
+            {hasAnyPref ? `${yourList.length} matches` : 'Select preferences above'}
           </Typography>
         </Box>
-        {userStrengths.length === 0 ? (
+        {!hasAnyPref ? (
           <Typography variant="body2" color="text.secondary">Choose your top 3 strengths on the Personalise page to see matching jobs.</Typography>
         ) : yourList.length === 0 ? (
           <Typography variant="body2" color="text.secondary">No matching jobs yet. Check back soon.</Typography>
@@ -423,50 +484,29 @@ const Dashboard: React.FC = () => {
 
       {/* Saved Jobs Section (hidden for superadmins, admins, and employers) */}
       {!isSuperAdmin && userRole !== 'admin' && userRole !== 'employer' && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__saved">
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6">Saved Jobs</Typography>
+            <Typography variant="h6" className="dashboard__savedTitle">Saved Jobs</Typography>
             <Typography variant="body2" color="text.secondary">
               {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
             </Typography>
           </Box>
-          {savedLoading ? (
+          {savedLoading || savedDocsLoading ? (
             <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
-          ) : savedJobs.length === 0 ? (
+          ) : savedJobDocs.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
             </Typography>
           ) : (
-            <Box display="grid" gap={1.5}>
-              {savedJobs.map((s: any) => (
-                <Box key={s.jobId} display="flex" alignItems="center" justifyContent="space-between">
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Typography variant="subtitle1">{s.title}</Typography>
-                      {s.applied && (
-                        <Chip label="Applied" color="success" size="small" variant="outlined" />
-                      )}
-                    </Box>
-                    <Typography variant="body2" color="text.secondary">{s.company} • {s.location}</Typography>
-                  </Box>
-                  <Box display="flex" gap={1}>
-                    <Button component={RouterLink} to={`/jobs/${s.jobId}`} variant="outlined" size="small">View</Button>
-                    <Button variant="outlined" color={s.applied ? 'warning' : 'primary'} size="small" onClick={() => toggleApplied(s.jobId)}>
-                      {s.applied ? 'Mark not applied' : 'Mark as applied'}
-                    </Button>
-                    <Button color="error" variant="text" size="small" onClick={() => unsaveJob(s.jobId)}>Unsave</Button>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+            <JobList jobsOverride={savedJobDocs} />
           )}
         </Paper>
       )}
 
       {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
+        <Box display="flex" justifyContent="center" mt={4} className="dashboard__loading"><CircularProgress /></Box>
       ) : error ? (
-        <Typography color="error" mt={2}>{error}</Typography>
+        <Typography color="error" mt={2} className="dashboard__error">{error}</Typography>
       ) : (
         <>
           {(isSuperAdmin || userRole === 'employer' || userRole === 'admin') && (
@@ -476,7 +516,7 @@ const Dashboard: React.FC = () => {
                   My Jobs
                 </Typography>
               )}
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: 2 }} className="dashboard__manageFilters">
                 <TextField
                   fullWidth
                   size="small"
@@ -492,13 +532,14 @@ const Dashboard: React.FC = () => {
                   <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                     Draft Jobs ({draftJobs.length})
                   </Typography>
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 3 }} className="dashboard__drafts">
                     {draftJobs.map(job => (
                       <Accordion
                         key={job.id}
                         disableGutters
                         expanded={expandedId === job.id}
                         onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
+                        className="dashboard__jobAccordion"
                       >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                           <Box sx={{ width: '100%' }}>
@@ -520,7 +561,7 @@ const Dashboard: React.FC = () => {
                           </Box>
                         </AccordionSummary>
                         <AccordionDetails>
-                          <Box>
+                          <Box className="dashboard__jobDetails">
                             {job.ref && (
                               <Box mb={2} display="flex" alignItems="center" gap={1}>
                                 <Typography variant="subtitle2">Reference</Typography>
@@ -662,7 +703,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 <Box display="grid" gap={2}>
                   {publishedJobs.map(job => (
-                    <Paper key={job.id} variant="outlined" sx={{ p: 2 }}>
+                    <Paper key={job.id} variant="outlined" sx={{ p: 2 }} className="dashboard__jobCard">
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box>
                           <Typography variant="h6">{job.title}</Typography>
@@ -685,12 +726,48 @@ const Dashboard: React.FC = () => {
                   ))}
                 </Box>
               )}
+
+              {/* Archived Jobs Section (admins/superadmins only) */}
+              {(isSuperAdmin || userRole === 'admin') && (
+                <>
+                  <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                    Archived Jobs ({archivedJobs.length})
+                  </Typography>
+                  {archivedJobs.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
+                      <Typography>No archived jobs in the last 14+ days.</Typography>
+                    </Paper>
+                  ) : (
+                    <Box display="grid" gap={2}>
+                      {archivedJobs.map(job => (
+                        <Paper key={job.id} variant="outlined" sx={{ p: 2 }} className="dashboard__jobCard">
+                          <Box display="flex" alignItems="center" justifyContent="space-between">
+                            <Box>
+                              <Typography variant="h6">{job.title}</Typography>
+                              <Typography variant="body2" color="text.secondary">{job.company} • {job.location}</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Button variant="outlined" size="small" onClick={() => handleRestore(job.id!)}>
+                                Restore
+                              </Button>
+                            </Box>
+                          </Box>
+                          <Divider sx={{ my: 1.5 }} />
+                          <Typography variant="body2" color="text.secondary">
+                            {job.description.length > 160 ? job.description.slice(0, 160) + '…' : job.description}
+                          </Typography>
+                        </Paper>
+                      ))}
+                    </Box>
+                  )}
+                </>
+              )}
             </>
           )}
         </>
       )}
 
-      <Dialog open={!!confirmId} onClose={() => setConfirmId(null)}>
+      <Dialog open={!!confirmId} onClose={() => setConfirmId(null)} className="dashboard__confirmDialog">
         <DialogTitle>Delete this job?</DialogTitle>
         <DialogContent>
           <Typography>This action cannot be undone.</Typography>

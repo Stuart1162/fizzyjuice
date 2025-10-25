@@ -30,19 +30,32 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import FlagIcon from '@mui/icons-material/Flag';
 import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
+import { Link as MuiLink } from '@mui/material';
 import { incrementApply, incrementView } from '../services/metrics';
 
 const JobDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: routeId } = useParams();
+  const id = routeId as string | undefined;
   const navigate = useNavigate();
   const { currentUser, isSuperAdmin } = useAuth();
   const { isSaved, toggleSave } = useSavedJobs();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const upsertMeta = (attr: 'property' | 'name', key: string, content: string) => {
+    let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', content);
+  };
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
+    let isCancelled = false;
     const fetchJob = async () => {
       if (!id) {
         setError('No job ID provided');
@@ -74,6 +87,7 @@ const JobDetail: React.FC = () => {
               full.ref = refCode;
             } catch {}
           }
+          if (isCancelled) return;
           setJob(full);
           try { if (full.id) await incrementView(full.id as string); } catch {}
         } else {
@@ -83,14 +97,32 @@ const JobDetail: React.FC = () => {
         console.error('Error fetching job:', err);
         setError('Failed to load job details');
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
-
     fetchJob();
-  }, [id]);
+    return () => { isCancelled = true; };
+  }, [id, isAdmin, isSuperAdmin]);
 
-  // Determine if current user is an admin (from profile prefs)
+  useEffect(() => {
+    if (!job) return;
+    const title = `${job.title} at ${job.company} — Fizzy Juice`;
+    const desc = job.description ? `${job.description.replace(/\s+/g, ' ').slice(0, 140)}…` : `${job.title} at ${job.company}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/jobs/${job.id}`;
+    const img = (job as any).imageUrl || `${origin}/logo192.png`;
+    document.title = title;
+    upsertMeta('property', 'og:type', 'article');
+    upsertMeta('property', 'og:title', title);
+    upsertMeta('property', 'og:description', desc);
+    upsertMeta('property', 'og:image', img);
+    upsertMeta('property', 'og:url', url);
+    upsertMeta('name', 'twitter:card', 'summary_large_image');
+    upsertMeta('name', 'twitter:title', title);
+    upsertMeta('name', 'twitter:description', desc);
+    upsertMeta('name', 'twitter:image', img);
+  }, [job]);
+
   useEffect(() => {
     const loadRole = async () => {
       if (!currentUser) { setIsAdmin(false); return; }
@@ -193,6 +225,21 @@ const JobDetail: React.FC = () => {
               />
             )}
           </Box>
+
+        {/* Application instructions */}
+        {!job.applicationUrl || job.applicationUrl.trim() === '' ? (
+          <Box mb={4}>
+            <Typography variant="h5" gutterBottom>
+              How to apply
+            </Typography>
+            <Typography variant="body1">
+              To apply send your CV to{' '}
+              <MuiLink color="primary" href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}>
+                {job.contactEmail}
+              </MuiLink>
+            </Typography>
+          </Box>
+        ) : null}
 
           <Box display="flex" alignItems="center" mt={2}>
             <EmailIcon color="action" sx={{ mr: 1 }} />
@@ -382,24 +429,26 @@ const JobDetail: React.FC = () => {
           )}
           <Box display="flex" alignItems="center" gap={1}>
             {job.ref && (
-              <Chip label={`#${job.ref}`} size="small" variant="outlined" />
+              <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
             )}
-            <Button
-              variant="contained"
-              color="primary"
-              href={job.applicationUrl && job.applicationUrl.trim() !== ''
-                ? job.applicationUrl
-                : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-              target={job.applicationUrl ? '_blank' : undefined}
-              rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
-              onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
-            >
-              Apply Now
-            </Button>
+            {job.applicationUrl && job.applicationUrl.trim() !== '' && (
+              <Button
+                variant="contained"
+                color="primary"
+                href={job.applicationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
+              >
+                Apply Now
+              </Button>
+            )}
           </Box>
         </Box>
       </Box>
     </Container>
+
+    
   );
 };
 
