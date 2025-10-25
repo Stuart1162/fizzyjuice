@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Paper, Typography, Box, TextField, Button } from '@mui/material';
+import '../styles/profile.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';
 import { auth, db } from '../firebase';
@@ -64,16 +65,17 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4, mb: 6 }}>
-      <Paper variant="outlined" sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>Profile</Typography>
-        <Box display="grid" gap={2}>
+    <Container maxWidth="sm" sx={{ mt: 4, mb: 6 }} className="profile">
+      <Paper variant="outlined" sx={{ p: 3 }} className="profile__card">
+        <Typography variant="h5" gutterBottom className="profile__title">Profile</Typography>
+        <Box className="profile__form">
           <TextField
             label="Full name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             disabled={loading}
             fullWidth
+            className="profile__nameInput"
           />
           <TextField
             label="Email"
@@ -81,12 +83,13 @@ const Profile: React.FC = () => {
             disabled
             helperText="Email changes not supported in this view"
             fullWidth
+            className="profile__emailInput"
           />
-          <Box display="flex" justifyContent="space-between" mt={1}>
-            <Button variant="outlined" color="inherit" onClick={signOut}>
+          <Box className="profile__actions">
+            <Button variant="outlined" color="inherit" onClick={signOut} className="profile__logoutBtn">
               Logout
             </Button>
-            <Button variant="contained" onClick={handleSave} disabled={saving || loading}>
+            <Button variant="contained" onClick={handleSave} disabled={saving || loading} className="profile__saveBtn">
               {saving ? 'Saving…' : 'Save changes'}
             </Button>
           </Box>

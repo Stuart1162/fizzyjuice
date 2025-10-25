@@ -1,15 +1,23 @@
 .postajob {
   display: block;
+  background-color: #ffffff;
 }
 
 div.postajob__card {
   border-radius: 12px;
   background-color: transparent;
   box-shadow: none;
+  max-width: 1000px;
+  display: block;
+  margin:0 auto;
 }
 
-.postajob__title {
+h1.postajob__title {
   line-height: 1.2;
+  font-size: 6.5em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-family: Anton, sans-serif;
 }
 
 .postajob__error {
@@ -62,3 +70,108 @@ h6.postajob__sectionTitle {
   gap: 12px;
 }
 
+/* Two-column form layout (label/help on left, field on right) */
+.postajob__formGrid {
+  display: grid;
+  grid-auto-rows: minmax(56px, auto);
+  gap: 16px;
+}
+
+.postajob__row2 {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.postajob__meta {
+  flex: 0 0 220px;
+  max-width: 220px;
+  padding-top: 12px;
+}
+
+.postajob__meta p {
+  font-weight: 500;
+  color: #3B1906;
+}
+
+.postajob__metaLabel {
+  font-weight: 600;
+  color: #111827; /* gray-900 */
+}
+
+.postajob__help {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6B7280; /* gray-500 */
+}
+
+.postajob__field {
+  flex: 1;
+}
+
+/* Input chrome similar to screenshot */
+.postajob__field .MuiOutlinedInput-root {
+  background: #ffffff;
+  border-radius: 10px;
+}
+.postajob__field .MuiOutlinedInput-notchedOutline {
+  border-color: #a5a5a5;
+}
+.postajob__field .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #a5a5a5;
+}
+.postajob__field .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color:#a5a5a5;
+  box-shadow: 0 0 0 2px rgba(59, 25, 6, 0.08);
+}
+.postajob__field .MuiInputBase-input::placeholder {
+  color: #9CA3AF; /* gray-400 */
+  opacity: 1;
+}
+
+/* Editor (RichMarkdownEditor) look */
+.postajob__field .rme {
+  border: 1px solid #a5a5a5 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+.postajob__field .rme > .MuiBox-root {
+  border-bottom: 1px solid #3B1906 !important;
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
+}
+.postajob__field .ProseMirror {
+  min-height: 280px;
+}
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add post-a-job tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add post-a-job mobile-specific overrides here */
+
+  div.postajob {
+    background-color: #FBF9F4;
+  }
+  
+  div.postajob__card {
+    padding:24px 0;
+  }
+
+  h1.postajob__title {
+    font-size: 2.6rem;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
+    font-family: Anton, sans-serif;
+    margin-bottom: 2rem;
+  }
+
+  div.postajob__row2 {
+    display: block;
+  }
+}

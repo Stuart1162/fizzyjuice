@@ -425,7 +425,7 @@ const PostJob: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="postajob">
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }} className="postajob">
       <Paper elevation={3} sx={{ p: 4 }} className="postajob__card">
         <Typography variant="h4" component="h1" gutterBottom className="postajob__title">
           Post a New Job
@@ -436,41 +436,93 @@ const PostJob: React.FC = () => {
           </Typography>
         )}
         <Box component="form" onSubmit={handleSubmit} className="postajob__form">
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }} className="postajob__grid">
-            <TextField required fullWidth id="title" name="title" label="Job Title" value={job.title} onChange={handleInputChange} margin="normal" />
-            <TextField required fullWidth id="company" name="company" label="Company Name" value={job.company} onChange={handleInputChange} margin="normal" />
-            <TextField required fullWidth id="location" name="location" label="Location" value={job.location} onChange={handleInputChange} margin="normal" />
-            <TextField fullWidth id="postcode" name="postcode" label="Postcode (optional)" value={job.postcode} onChange={handleInputChange} margin="normal" placeholder="e.g., SW1A 1AA" />
-            <TextField select fullWidth id="jobType" name="jobType" label="Job Type" value={job.jobType} onChange={handleInputChange} margin="normal">
-              {jobTypes.map((type) => (
-                <MenuItem key={type} value={type}>{type}</MenuItem>
-              ))}
-            </TextField>
+          <Box className="postajob__formGrid">
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Job title</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="title" name="title" placeholder="e.g. Head Chef" value={job.title} onChange={handleInputChange} />
+              </Box>
+            </Box>
+
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Company</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="company" name="company" placeholder="e.g. Fizzy Juice Bakery" value={job.company} onChange={handleInputChange} />
+              </Box>
+            </Box>
+
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Location</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="location" name="location" placeholder="e.g., Glasgow, Edinburgh" value={job.location} onChange={handleInputChange} />
+              </Box>
+            </Box>
+
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Postcode</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="postcode" name="postcode" placeholder="e.g., SW1A 1AA" value={job.postcode} onChange={handleInputChange} />
+              </Box>
+            </Box>
+
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Job type</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField select fullWidth id="jobType" name="jobType" value={job.jobType} onChange={handleInputChange}>
+                  {jobTypes.map((type) => (
+                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+            </Box>
           </Box>
           <Box sx={{ mt: 2 }} className="postajob__description">
-            <Typography variant="subtitle1" gutterBottom className="postajob__sectionTitle">Job Description</Typography>
-            <RichMarkdownEditor
-              height={420}
-              value={job.description}
-              onChange={(val) => setJob(prev => ({ ...prev, description: val || '' }))}
-            />
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Job description</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <RichMarkdownEditor
+                  height={420}
+                  value={job.description}
+                  onChange={(val) => setJob(prev => ({ ...prev, description: val || '' }))}
+                />
+              </Box>
+            </Box>
           </Box>
           <Box sx={{ mt: 2 }} className="postajob__roles">
-            <Autocomplete
-              multiple
-              id="roles"
-              options={ROLE_OPTIONS}
-              value={job.roles as string[]}
-              onChange={(_e, newValue) => setJob(prev => ({ ...prev, roles: newValue as NonNullable<Job['roles']> }))}
-              renderTags={(value: readonly string[], getTagProps) =>
-                value.map((option: string, index: number) => (
-                  <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
-                ))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Role (select one or more)" placeholder="Select roles" />
-              )}
-            />
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Roles</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <Autocomplete
+                  multiple
+                  id="roles"
+                  options={ROLE_OPTIONS}
+                  value={job.roles as string[]}
+                  onChange={(_e, newValue) => setJob(prev => ({ ...prev, roles: newValue as NonNullable<Job['roles']> }))}
+                  renderTags={(value: readonly string[], getTagProps) =>
+                    value.map((option: string, index: number) => (
+                      <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
+                    ))
+                  }
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Select roles" />
+                  )}
+                />
+              </Box>
+            </Box>
           </Box>
           <Box sx={{ mt: 2 }} className="postajob__shifts">
             <Typography variant="subtitle1" gutterBottom className="postajob__sectionTitle">Shifts</Typography>
@@ -528,10 +580,31 @@ const PostJob: React.FC = () => {
               />
             </Box>
           )}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mt: 2 }} className="postajob__application">
-            <TextField fullWidth id="wage" name="wage" label="Wage (optional)" value={job.wage} onChange={handleInputChange} margin="normal" placeholder="e.g., £10-15/hour" />
-            <TextField required fullWidth id="contactEmail" name="contactEmail" label="Application Email" type="email" value={job.contactEmail} onChange={handleInputChange} margin="normal" helperText="This is where applications will be sent" />
-            <TextField fullWidth id="applicationUrl" name="applicationUrl" label="Application URL (optional)" type="url" value={job.applicationUrl} onChange={handleInputChange} margin="normal" />
+          <Box className="postajob__formGrid postajob__application" style={{ marginTop: 16 }}>
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Wage</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="wage" name="wage" placeholder="e.g., £10-15/hour" value={job.wage} onChange={handleInputChange} />
+              </Box>
+            </Box>
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Application email</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth required id="contactEmail" name="contactEmail" type="email" placeholder="e.g. you@company.com" value={job.contactEmail} onChange={handleInputChange} />
+              </Box>
+            </Box>
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Application URL</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="applicationUrl" name="applicationUrl" type="url" placeholder="https://company.com/apply/your-role" value={job.applicationUrl} onChange={handleInputChange} />
+              </Box>
+            </Box>
           </Box>
           <Box mt={4} display="flex" justifyContent="space-between" alignItems="center" className="postajob__actions">
             <Button variant="outlined" color="primary" onClick={() => navigate('/')} disabled={isSubmitting} className="postajob__cancel">Cancel</Button>

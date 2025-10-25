@@ -228,3 +228,127 @@ div.home__shiftCheckbox {
     transform: none;
   }
 }
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add home tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add home mobile-specific overrides here */
+
+  div.savePrompt .MuiModal-backdrop{
+    height: 100vh;
+    width:100%;
+  }
+
+  div.savePrompt__actions {
+    padding-bottom: 16px;
+  }
+
+
+  button.jobRow__save {
+    position: relative;
+    z-index: 100;
+  }
+
+  h1.home__title {
+    font-size:4.4em;
+    letter-spacing: -0.15rem;
+  }
+
+  button.home__filtersSummary {
+    padding:0;
+  }
+
+  div.home__list {
+    margin-top: 2rem !important;
+  }
+
+
+  h6.home__filtersTitle,
+  div.home__filtersDetails {
+    padding:0;
+  }
+
+  .home__search,
+  div.home__locationDetails {
+    padding:0 0 16px;
+  }
+
+  button.home__locationSummary,
+  button.home__roleSummary,
+  button.home__contractSummary,
+  button.home__shiftsSummary {
+    padding:0;
+  }
+
+  div.home__roleDetails,
+  div.home__contractDetails,
+  div.home__shiftsDetails {
+    padding:0 0 16px;
+  }
+
+  /* Make text inputs at least 48px tall on mobile */
+  .home__searchInput .MuiOutlinedInput-root,
+  .home__locationInput .MuiOutlinedInput-root {
+    min-height: 48px;
+  }
+  .home__searchInput .MuiOutlinedInput-input,
+  .home__locationInput .MuiOutlinedInput-input {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  div.home__filters {
+    border-top:2px dotted #3B1906;
+    border-bottom:2px dotted #3B1906;
+  }
+
+  div.home__filters span.Mui-expanded {
+    margin:0;
+  }
+
+  div.jobRow {
+    padding: 0;
+  }
+
+  h6.jobRow__title {
+    font-size: 1.5em;
+  }
+
+  div.jobRow__meta {
+    margin-right:12px;
+    top:0px;
+  }
+
+  .jobList span.MuiAccordionSummary-expandIconWrapper {
+    position: relative;
+    top:17px;
+  }
+
+  div.jobView {
+    padding:0 0 16px 0;
+  }
+
+  div.jobView__adminNote {
+    padding:16px 16px 12px;
+  }
+
+  .jobView__applyWrap,
+  .jobView__applyButton {
+    width: 90%;
+    margin-top:12px;
+  }
+
+  .jobView__openIconBtn svg {
+    width:1.25em;
+    height:1.25em;
+    margin-top:8px;
+  }
+
+  a.jobView__applyButton {
+    font-size: 1.125rem;
+  }
+}

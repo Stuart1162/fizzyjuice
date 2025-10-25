@@ -78,6 +78,22 @@ export default function Reports() {
     );
   }
 
+  const toMillis = (ts: any): number => {
+    if (!ts) return 0;
+    if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+    if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+    try { return new Date(ts).getTime() || 0; } catch { return 0; }
+  };
+  const isArchived = (j: Job): boolean => {
+    const createdAtMs = toMillis((j as any).createdAt || (j as any).updatedAt);
+    if (!createdAtMs) return false;
+    const ageMs = Date.now() - createdAtMs;
+    return ageMs > 14 * 24 * 60 * 60 * 1000;
+  };
+  const activeJobs = jobs
+    .filter((j) => !j.draft && !isArchived(j))
+    .sort((a, b) => toMillis((b as any).createdAt || (b as any).updatedAt) - toMillis((a as any).createdAt || (a as any).updatedAt));
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
       <Typography variant="h4" gutterBottom>Reports</Typography>
@@ -85,6 +101,7 @@ export default function Reports() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Ref</TableCell>
               <TableCell>Job</TableCell>
               <TableCell>Company</TableCell>
               <TableCell>Views</TableCell>
@@ -93,10 +110,11 @@ export default function Reports() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {jobs.map((j) => {
+            {activeJobs.map((j) => {
               const m = metrics[j.id as string] || {};
               return (
                 <TableRow key={j.id}>
+                  <TableCell>{j.ref ? `#${j.ref}` : '-'}</TableCell>
                   <TableCell>{j.title}</TableCell>
                   <TableCell>{j.company}</TableCell>
                   <TableCell>{m.views || 0}</TableCell>

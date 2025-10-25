@@ -1,0 +1,11 @@
+:root {
+  /* Primary brand color */
+  --color-primary: #5672FF;
+  --fj-primary: var(--color-primary);
+}
+
+/* Convenience mappings for common elements */
+:root {
+  --link-color: var(--color-primary);
+  --accent-color: var(--color-primary);
+}

@@ -1,0 +1,63 @@
+/* Profile page styles */
+
+/* Page container */
+.profile {
+  display: block;
+}
+
+/* Card */
+div.profile__card {
+  border-radius: 12px;
+}
+
+/* Title */
+h5.profile__title {
+  font-weight: 600;
+}
+
+/* Form grid */
+.profile__form {
+  display: grid;
+  gap: 16px;
+}
+
+/* Inputs */
+.profile__nameInput .MuiOutlinedInput-root,
+.profile__emailInput .MuiOutlinedInput-root {
+  background: #ffffff;
+}
+
+/* Actions */
+.profile__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.profile__logoutBtn {}
+.profile__saveBtn {}
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add profile tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add profile mobile-specific overrides here */
+  .profile { padding: 0 16px; }
+  div.profile__card { padding: 24px 0; border: none; background-color: transparent; }
+  
+  h5.profile__title { 
+    font-size: 2.6rem;
+    margin: 0rem 0 2rem;
+    letter-spacing: -0.05rem; 
+    font-family: Anton; 
+    font-weight: 600;
+    line-height: 1.1;
+}
+  
+  .profile__actions { gap: 8px; }
+  .profile__saveBtn { flex: 1; }
+}

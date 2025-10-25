@@ -79,3 +79,19 @@ div.login__card {
   border: 0;
   border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
 }
+
+/* Tablet styles */
+@media (min-width: 600px) and (max-width: 899.95px) {
+  /* Add login tablet-specific overrides here */
+}
+
+/* Mobile styles */
+@media (max-width: 599.95px) {
+  /* Add login mobile-specific overrides here */
+
+  h1.login__title {
+    font-size: 2.4em;
+    font-family:Anton;
+  }
+
+}

@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useSnackbar } from 'notistack';
 import { Job } from '../types/job';
+import '../styles/personalise.css';
 
 const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
   'Flexible hours',
@@ -131,19 +132,19 @@ const Personalise: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
-      <Paper variant="outlined" sx={{ p: 3 }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Typography variant="h5">Personalise your job list</Typography>
-          <Typography variant="body2" color="text.secondary">
+    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="personalise">
+      <Paper variant="outlined" sx={{ p: 3 }} className="personalise__card">
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2} className="personalise__header">
+          <Typography variant="h5" className="personalise__title">Personalise your job list</Typography>
+          <Typography variant="body2" color="text.secondary" className="personalise__counter">
             {loading ? 'Loading…' : `${userStrengths.length}/3 strengths selected`}
           </Typography>
         </Box>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Top 3 company strengths</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1 }} className="personalise__sectionTitle">Top 3 company strengths</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }} className="personalise__sectionHelp">
           Choose up to 3 strengths you value most. We'll highlight jobs that match.
         </Typography>
-        <FormGroup sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 0 }}>
+        <FormGroup sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 0 }} className="personalise__strengths">
           {COMPANY_STRENGTH_OPTIONS.map((opt) => {
             const selected = (userStrengths || []).includes(opt);
             const disableUnchecked = !selected && (userStrengths || []).length >= 3;
@@ -152,12 +153,13 @@ const Personalise: React.FC = () => {
                 key={opt}
                 control={<Checkbox checked={selected} onChange={() => toggleStrength(opt)} disabled={disableUnchecked} />}
                 label={opt}
+                className="personalise__strength"
               />
             );
           })}
         </FormGroup>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Preferred roles</Typography>
-        <FormGroup row sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1 }} className="personalise__sectionTitle">Preferred roles</Typography>
+        <FormGroup row sx={{ flexWrap: 'wrap', gap: 1, mb: 2 }} className="personalise__roles">
           {ROLE_OPTIONS.map((opt: string) => (
             <FormControlLabel
               key={opt}
@@ -170,11 +172,12 @@ const Personalise: React.FC = () => {
                 />
               }
               label={opt}
+              className="personalise__role"
             />
           ))}
         </FormGroup>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Contract types</Typography>
-        <FormGroup row sx={{ mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1 }} className="personalise__sectionTitle">Contract types</Typography>
+        <FormGroup row sx={{ mb: 2 }} className="personalise__contracts">
           {CONTRACT_TYPES.map((opt) => (
             <FormControlLabel
               key={opt}
@@ -189,18 +192,20 @@ const Personalise: React.FC = () => {
                 />
               }
               label={opt}
+              className="personalise__contract"
             />
           ))}
         </FormGroup>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>Location</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 1 }} className="personalise__sectionTitle">Location</Typography>
         <TextField
           fullWidth
           placeholder="e.g., London, Remote"
           value={prefLocation}
           onChange={(e) => setPrefLocation(e.target.value)}
+          className="personalise__location"
         />
-        <Box mt={2} display="flex" gap={1}>
-          <Button variant="contained" onClick={savePreferences} disabled={saving || loading}>
+        <Box mt={2} display="flex" gap={1} className="personalise__actions">
+          <Button variant="contained" onClick={savePreferences} disabled={saving || loading} className="personalise__save">
             {saving ? 'Saving…' : 'Save preferences'}
           </Button>
         </Box>
