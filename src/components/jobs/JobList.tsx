@@ -294,7 +294,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                 {job.ref && (
                   <Box mb={2} display="flex" alignItems="center" gap={1} className="jobView__reference">
                     <Typography variant="subtitle2">Reference</Typography>
-                    <Chip label={`#${job.ref}`} size="small" />
+                    <Chip className="jobRefChip" label={`#${job.ref}`} size="small" />
                   </Box>
                 )}
                 {job.roles && job.roles.length > 0 && (
@@ -372,8 +372,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   <Box />
                   <Box display="flex" alignItems="center" gap={1}>
                     {job.ref && (
-                      <Chip label={`#${job.ref}`} size="small" variant="outlined" />
-                    )}
+                    <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
+                  )}
                     <Button
                       className="jobView__applyButton"
                       variant="contained"

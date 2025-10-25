@@ -65,6 +65,11 @@ const Header: React.FC = () => {
                     Reports
                   </Button>
                 )}
+                {userRole === 'employer' && (
+                  <Button color="inherit" component={RouterLink} to="/post-job">
+                    Post a job
+                  </Button>
+                )}
                 <Button color="inherit" component={RouterLink} to="/dashboard">
                   Dashboard
                 </Button>

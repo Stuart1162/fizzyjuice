@@ -1,0 +1,62 @@
+.dashboard {
+  display: block;
+}
+
+.dashboard__header {
+  margin-bottom: 8px;
+}
+
+.dashboard__title {
+  line-height: 1.2;
+}
+
+.dashboard__subtitle {
+  margin-bottom: 16px;
+}
+
+.dashboard__analytics {
+  border-radius: 12px;
+}
+
+.dashboard__yourList {
+  border-radius: 12px;
+}
+
+.dashboard__saved {
+  border-radius: 12px;
+}
+
+.dashboard__loading {
+  min-height: 120px;
+}
+
+.dashboard__error {
+  margin-top: 8px;
+}
+
+.dashboard__manageFilters {
+  max-width: 720px;
+}
+
+.dashboard__drafts {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard__jobAccordion {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.dashboard__jobDetails {
+  padding-top: 8px;
+}
+
+div.dashboard__jobCard {
+  border-radius: 10px;
+  background-color: transparent;
+}
+
+.dashboard__confirmDialog {
+  backdrop-filter: blur(1px);
+}

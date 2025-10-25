@@ -1,0 +1,81 @@
+/* Login page styles */
+
+/* Page container */
+.login {
+  margin-top: 6rem;
+  margin-bottom: 6rem;
+}
+
+/* Card */
+div.login__card {
+  padding: 32px;
+  background-color: transparent;
+  border: none;
+  box-shadow: none !important;
+}
+
+/* Title and subtitle */
+.login__title {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.login__subtitle {
+  margin-top: 0;
+  color: rgba(59, 25, 6, 0.75);
+}
+
+/* Form */
+.login__form {
+  margin-top: 8px;
+}
+
+.login__emailInput .MuiOutlinedInput-root,
+.login__passwordInput .MuiOutlinedInput-root {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+}
+
+/* Match input hover/focus to site */
+.login__emailInput .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.login__passwordInput .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(59, 25, 6, 0.3);
+}
+
+.login__emailInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
+.login__passwordInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5672FF;
+  border-width: 2px;
+}
+
+/* Error */
+.login__error {
+  margin-bottom: 16px;
+}
+
+/* Submit button */
+.login__submitButton {
+  font-weight: 600;
+}
+
+/* Links */
+.login__forgot,
+.login__register {
+  text-align: center;
+}
+
+.login__forgotLink,
+.login__registerLink {
+  color: #3B1906;
+}
+
+.login__forgotLink:hover,
+.login__registerLink:hover {
+  text-decoration: underline;
+}
+
+.login__divider {
+  color: rgba(59, 25, 6, 0.6);
+  border: 0;
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+}

@@ -40,6 +40,17 @@ div.jobList {
   gap:4px;
 }
 
+div.jobRefChip {
+  background:#efeae1;
+  border:none;
+}
+
+div.jobRefChip span {
+  font-weight:500;
+  color:#a58e67;
+}
+
+
 .jobCard.MuiPaper-elevation,
 .jobCard .MuiPaper-elevation,
 .jobCard .MuiAccordion-region,

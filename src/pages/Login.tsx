@@ -13,6 +13,7 @@ import {
   Divider,
   Alert,
 } from '@mui/material';
+import '../styles/login.css';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -52,23 +53,23 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8, mb: 8 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
+    <Container maxWidth="sm" sx={{ mt: 8, mb: 8 }} className="login">
+      <Paper elevation={3} sx={{ p: 4 }} className="login__card">
+        <Typography variant="h4" component="h1" align="center" gutterBottom className="login__title">
           Sign In
         </Typography>
-        
-        <Typography variant="body1" color="textSecondary" align="center" paragraph>
+
+        <Typography variant="body1" color="textSecondary" align="center" paragraph className="login__subtitle">
           Sign in to post jobs and manage your listings
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" sx={{ mb: 3 }} className="login__error">
             {error}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }} className="login__form">
           <TextField
             margin="normal"
             required
@@ -80,8 +81,9 @@ const Login: React.FC = () => {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="login__emailInput"
           />
-          
+
           <TextField
             margin="normal"
             required
@@ -93,6 +95,7 @@ const Login: React.FC = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="login__passwordInput"
           />
 
           <Button
@@ -103,24 +106,26 @@ const Login: React.FC = () => {
             size="large"
             disabled={loading}
             sx={{ mt: 3, mb: 2, py: 1.5 }}
+            className="login__submitButton"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
 
-          <Box sx={{ textAlign: 'center', mt: 2, mb: 2 }}>
+          <Box sx={{ textAlign: 'center', mt: 2, mb: 2 }} className="login__forgot">
             <Link
               component={RouterLink}
               to="/forgot-password"
               variant="body2"
               underline="hover"
+              className="login__forgotLink"
             >
               Forgot password?
             </Link>
           </Box>
 
-          <Divider sx={{ my: 3 }}>OR</Divider>
+          <Divider sx={{ my: 3 }} className="login__divider">OR</Divider>
 
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
+          <Box sx={{ textAlign: 'center', mt: 3 }} className="login__register">
             <Typography variant="body2" color="text.secondary">
               Don't have an account?{' '}
               <Link
@@ -128,6 +133,7 @@ const Login: React.FC = () => {
                 to="/register"
                 variant="body2"
                 underline="hover"
+                className="login__registerLink"
               >
                 Sign up
               </Link>

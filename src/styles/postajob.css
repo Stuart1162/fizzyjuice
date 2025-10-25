@@ -1,0 +1,64 @@
+.postajob {
+  display: block;
+}
+
+div.postajob__card {
+  border-radius: 12px;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.postajob__title {
+  line-height: 1.2;
+}
+
+.postajob__error {
+  margin-bottom: 8px;
+}
+
+div.postajob__grid {
+  margin-top: 0px;
+  gap:12px;
+}
+
+h6.postajob__sectionTitle {
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.postajob__description {
+  margin-top: 12px;
+}
+
+.postajob__roles {
+  margin-top: 12px;
+}
+
+.postajob__shifts {
+  margin-top: 12px;
+}
+
+.postajob__shiftsGroup {
+  gap: 8px;
+}
+
+.postajob__strengths {
+  margin-top: 16px;
+}
+
+.postajob__strengthsGroup {
+  gap: 2px;
+}
+
+.postajob__adminNotes {
+  margin-top: 16px;
+}
+
+.postajob__application {
+  margin-top: 12px;
+}
+
+.postajob__actions {
+  gap: 12px;
+}
+

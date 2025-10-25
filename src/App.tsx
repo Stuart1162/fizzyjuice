@@ -171,7 +171,7 @@ function App() {
               </main>
               <footer style={{ textAlign: 'center', padding: '20px', backgroundColor: '#FBF9F4' }}>
                 <Typography variant="body2" color="text.secondary">
-                  © {new Date().getFullYear()} Jobs Board. All rights reserved.
+                  © {new Date().getFullYear()} Fizzy Juice. All rights reserved. info@fizzyjuice.co.uk
                 </Typography>
               </footer>
               </div>

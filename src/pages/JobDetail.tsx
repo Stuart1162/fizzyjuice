@@ -382,7 +382,7 @@ const JobDetail: React.FC = () => {
           )}
           <Box display="flex" alignItems="center" gap={1}>
             {job.ref && (
-              <Chip label={`#${job.ref}`} size="small" variant="outlined" />
+              <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
             )}
             <Button
               variant="contained"

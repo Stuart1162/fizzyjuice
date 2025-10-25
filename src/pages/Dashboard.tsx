@@ -39,6 +39,8 @@ import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { useSnackbar } from 'notistack';
 import JobList from '../components/jobs/JobList';
 
+import '../styles/dashboard.css';
+
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
   const { savedJobs, loading: savedLoading, unsaveJob, toggleApplied } = useSavedJobs();
@@ -357,9 +359,9 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }} className="dashboard">
+      <Box display="flex" alignItems="center" gap={1} className="dashboard__header">
+        <Typography variant="h4" gutterBottom className="dashboard__title">
           {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
         </Typography>
         {!isSuperAdmin && userRole === 'admin' && (
@@ -369,7 +371,7 @@ const Dashboard: React.FC = () => {
           <Chip label="Employer" color="secondary" size="small" />
         )}
       </Box>
-      <Typography variant="body1" color="text.secondary" gutterBottom>
+      <Typography variant="body1" color="text.secondary" gutterBottom className="dashboard__subtitle">
         {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
       </Typography>
 
@@ -377,7 +379,7 @@ const Dashboard: React.FC = () => {
 
       {/* Admin Analytics (superadmins only) */}
       {isSuperAdmin && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__analytics">
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
             <Typography variant="h6">Jobseeker Preferences Analytics</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -401,7 +403,7 @@ const Dashboard: React.FC = () => {
 
       {/* Your list section first (jobseekers only; hide for employers, admins, and superadmins) */}
       {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
-      <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+      <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__yourList">
         <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="h6">Your list</Typography>
@@ -423,7 +425,7 @@ const Dashboard: React.FC = () => {
 
       {/* Saved Jobs Section (hidden for superadmins, admins, and employers) */}
       {!isSuperAdmin && userRole !== 'admin' && userRole !== 'employer' && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__saved">
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
             <Typography variant="h6">Saved Jobs</Typography>
             <Typography variant="body2" color="text.secondary">
@@ -464,9 +466,9 @@ const Dashboard: React.FC = () => {
       )}
 
       {loading ? (
-        <Box display="flex" justifyContent="center" mt={4}><CircularProgress /></Box>
+        <Box display="flex" justifyContent="center" mt={4} className="dashboard__loading"><CircularProgress /></Box>
       ) : error ? (
-        <Typography color="error" mt={2}>{error}</Typography>
+        <Typography color="error" mt={2} className="dashboard__error">{error}</Typography>
       ) : (
         <>
           {(isSuperAdmin || userRole === 'employer' || userRole === 'admin') && (
@@ -476,7 +478,7 @@ const Dashboard: React.FC = () => {
                   My Jobs
                 </Typography>
               )}
-              <Box sx={{ mb: 2 }}>
+              <Box sx={{ mb: 2 }} className="dashboard__manageFilters">
                 <TextField
                   fullWidth
                   size="small"
@@ -492,13 +494,14 @@ const Dashboard: React.FC = () => {
                   <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                     Draft Jobs ({draftJobs.length})
                   </Typography>
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 3 }} className="dashboard__drafts">
                     {draftJobs.map(job => (
                       <Accordion
                         key={job.id}
                         disableGutters
                         expanded={expandedId === job.id}
                         onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
+                        className="dashboard__jobAccordion"
                       >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                           <Box sx={{ width: '100%' }}>
@@ -520,7 +523,7 @@ const Dashboard: React.FC = () => {
                           </Box>
                         </AccordionSummary>
                         <AccordionDetails>
-                          <Box>
+                          <Box className="dashboard__jobDetails">
                             {job.ref && (
                               <Box mb={2} display="flex" alignItems="center" gap={1}>
                                 <Typography variant="subtitle2">Reference</Typography>
@@ -662,7 +665,7 @@ const Dashboard: React.FC = () => {
               ) : (
                 <Box display="grid" gap={2}>
                   {publishedJobs.map(job => (
-                    <Paper key={job.id} variant="outlined" sx={{ p: 2 }}>
+                    <Paper key={job.id} variant="outlined" sx={{ p: 2 }} className="dashboard__jobCard">
                       <Box display="flex" alignItems="center" justifyContent="space-between">
                         <Box>
                           <Typography variant="h6">{job.title}</Typography>
@@ -690,7 +693,7 @@ const Dashboard: React.FC = () => {
         </>
       )}
 
-      <Dialog open={!!confirmId} onClose={() => setConfirmId(null)}>
+      <Dialog open={!!confirmId} onClose={() => setConfirmId(null)} className="dashboard__confirmDialog">
         <DialogTitle>Delete this job?</DialogTitle>
         <DialogContent>
           <Typography>This action cannot be undone.</Typography>

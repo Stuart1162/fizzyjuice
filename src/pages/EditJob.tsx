@@ -73,6 +73,7 @@ const EditJob: React.FC = () => {
           shifts: data.shifts || [],
           applicationUrl: data.applicationUrl || '',
           wordOnTheStreet: data.wordOnTheStreet || '',
+          createdBy: data.createdBy,
         });
         setRolesDisplay(data.roles || []);
       } catch (e) {
@@ -93,14 +94,16 @@ const EditJob: React.FC = () => {
   useEffect(() => {
     if (!adminCheckComplete || !job.title) return;
 
-    if (isSuperAdmin || isAdmin || (currentUser && job.createdBy === currentUser.uid)) {
-      // User has permission - clear any previous error
+    const isOwner = !!(currentUser && job.createdBy && job.createdBy === currentUser.uid);
+    if (isSuperAdmin || isAdmin || isOwner) {
       if (error === 'You do not have permission to edit this job') {
         setError(null);
       }
       return;
-    } else if (currentUser && job.createdBy !== currentUser.uid) {
-      // User doesn't have permission
+    }
+
+    // Only deny if createdBy is known and mismatched. If missing (legacy job), allow for now.
+    if (currentUser && job.createdBy && job.createdBy !== currentUser.uid) {
       setError('You do not have permission to edit this job');
     }
   }, [job, isSuperAdmin, isAdmin, currentUser, adminCheckComplete, error]);
