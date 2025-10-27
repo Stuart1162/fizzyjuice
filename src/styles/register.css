@@ -1,0 +1,100 @@
+/* Register page styles */
+
+/* Page container */
+.register {
+  margin: 3rem 0;
+}
+
+/* Card */
+.register__card {
+  padding: 32px;
+  border-radius: 8px;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* Title and subtitle */
+.register__title {
+  margin-bottom: 8px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.register__subtitle {
+  margin: 0 0 24px 0;
+  color: rgba(59, 25, 6, 0.75);
+  text-align: left;
+}
+
+/* Form */
+.register__form {
+  margin-top: 16px;
+}
+
+/* Form fields */
+.register__formField {
+  margin-bottom: 16px;
+}
+
+/* Role selection */
+.register__roleGroup {
+  margin-bottom: 16px;
+}
+
+.register__roleLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Buttons */
+.register__submitButton {
+  margin: 24px 0 16px;
+  padding: 12px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+/* Divider */
+.register__divider {
+  margin: 24px 0;
+  color: rgba(59, 25, 6, 0.6);
+  border: 0;
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+}
+
+/* Links */
+.register__loginLink {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.register__loginLink a {
+  color: #3B1906;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register__loginLink a:hover {
+  text-decoration: underline;
+}
+
+/* Error message */
+.register__error {
+  margin-bottom: 16px;
+}
+
+/* Responsive styles */
+@media (max-width: 599.95px) {
+  .register__card {
+    padding: 24px 16px;
+  }
+  
+  .register__title {
+    font-size: 1.75rem;
+  }
+  
+  .register__subtitle {
+    font-size: 0.95rem;
+  }
+}

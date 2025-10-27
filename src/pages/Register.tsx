@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';
+import '../styles/register.css';
 import {
   Container,
   Paper,
@@ -92,118 +93,125 @@ const Register: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8, mb: 8 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Create an Account
-        </Typography>
-        
-        <Typography variant="body1" color="textSecondary" align="center" paragraph>
-          Join us to start posting and applying for jobs
-        </Typography>
+    <div className="register">
+      <Container maxWidth="sm">
+        <Paper className="register__card">
+          <Typography variant="h4" component="h1" className="register__title" gutterBottom>
+            Create an Account
+          </Typography>
+          
+          <Typography variant="body1" className="register__subtitle" paragraph>
+            Join us to start posting and applying for jobs
+          </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" className="register__error">
             {error}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-          <Box sx={{ mb: 1 }}>
-            <FormLabel id="role-label">I want to</FormLabel>
+        <Box component="form" onSubmit={handleSubmit} className="register__form">
+          <div className="register__roleGroup">
+            <FormLabel id="role-label" className="register__roleLabel">I want to</FormLabel>
             <RadioGroup
               aria-labelledby="role-label"
               row
               name="role"
               value={formData.role}
               onChange={handleChange as any}
+              className="register__radioGroup"
             >
-              <FormControlLabel value="jobseeker" control={<Radio />} label="get hired (jobseeker)" />
-              <FormControlLabel value="employer" control={<Radio />} label="post a job (employer)" />
+              <FormControlLabel value="jobseeker" control={<Radio />} label="get hired" />
+              <FormControlLabel value="employer" control={<Radio />} label="post a job" />
             </RadioGroup>
-          </Box>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="displayName"
-            label="Full Name"
-            name="displayName"
-            autoComplete="name"
-            autoFocus
-            value={formData.displayName}
-            onChange={handleChange}
-          />
+          </div>
+          <div className="register__formField">
+            <TextField
+              fullWidth
+              id="displayName"
+              label="Full Name"
+              name="displayName"
+              autoComplete="name"
+              autoFocus
+              value={formData.displayName}
+              onChange={handleChange}
+              required
+            />
+          </div>
           
           {formData.role === 'employer' && (
-            <TextField
-              margin="normal"
-              fullWidth
-              id="businessName"
-              label="Business Name"
-              name="businessName"
-              autoComplete="organization"
-              value={formData.businessName}
-              onChange={handleChange}
-            />
+            <div className="register__formField">
+              <TextField
+                fullWidth
+                id="businessName"
+                label="Business Name"
+                name="businessName"
+                autoComplete="organization"
+                value={formData.businessName}
+                onChange={handleChange}
+              />
+            </div>
           )}
           
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
+          <div className="register__formField">
+            <TextField
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
           
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            id="password"
-            autoComplete="new-password"
-            value={formData.password}
-            onChange={handleChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          <div className="register__formField">
+            <TextField
+              fullWidth
+              name="password"
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </div>
           
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="confirmPassword"
-            label="Confirm Password"
-            type={showPassword ? 'text' : 'password'}
-            id="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            error={formData.password !== formData.confirmPassword && formData.confirmPassword !== ''}
-            helperText={
-              formData.password !== formData.confirmPassword && formData.confirmPassword !== ''
-                ? 'Passwords do not match'
-                : ''
-            }
-          />
+          <div className="register__formField">
+            <TextField
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              type={showPassword ? 'text' : 'password'}
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              error={formData.password !== formData.confirmPassword && formData.confirmPassword !== ''}
+              helperText={
+                formData.password !== formData.confirmPassword && formData.confirmPassword !== ''
+                  ? 'Passwords do not match'
+                  : ''
+              }
+            />
+          </div>
 
           <Button
             type="submit"
@@ -212,29 +220,29 @@ const Register: React.FC = () => {
             color="primary"
             size="large"
             disabled={loading}
-            sx={{ mt: 3, mb: 2, py: 1.5 }}
+            className="register__submitButton"
           >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </Button>
 
-          <Divider sx={{ my: 3 }}>OR</Divider>
+          <Divider className="register__divider">OR</Divider>
 
-          <Box sx={{ textAlign: 'center', mt: 3 }}>
-            <Typography variant="body2" color="text.secondary">
+          <div className="register__loginLink">
+            <Typography variant="body2" component="span">
               Already have an account?{' '}
               <Link
                 component={RouterLink}
                 to="/login"
-                variant="body2"
-                underline="hover"
+                className="register__loginLink"
               >
                 Sign in
               </Link>
             </Typography>
-          </Box>
+          </div>
         </Box>
       </Paper>
     </Container>
+  </div>
   );
 };
 
