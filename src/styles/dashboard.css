@@ -43,7 +43,7 @@ h6.dashboard__yourListTitle,
 h6.dashboard__savedTitle {
   font-size: 24px;
   letter-spacing: -0.03rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 a.dashboard__personaliseBtn {

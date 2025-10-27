@@ -114,7 +114,7 @@ header.navbar {
 
   h6.navbar__drawerTitle {
     font-weight: 700;
-    letter-spacing: 0.02rem;
+    letter-spacing: -0.06rem;
     font-size: 46px;
     color: #000;
     text-transform: uppercase;
