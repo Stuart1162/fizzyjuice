@@ -200,7 +200,7 @@ const InnerAppShell: React.FC = () => {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          © {new Date().getFullYear()} Fizzy Juice. All rights reserved. info@fizzyjuice.co.uk
+          © {new Date().getFullYear()} Fizzy Juice. All rights reserved. info@fizzyjuice.uk
         </Typography>
       </footer>
     </div>
