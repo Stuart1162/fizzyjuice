@@ -68,7 +68,7 @@ const Header: React.FC = () => {
                 {(isSuperAdmin || userRole === 'admin') && (
                   <Button color="inherit" component={RouterLink} to="/reports">Reports</Button>
                 )}
-                {userRole === 'employer' && (
+                {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <Button color="inherit" component={RouterLink} to="/post-job">Post a job</Button>
                 )}
                 <Button color="inherit" component={RouterLink} to="/dashboard">Dashboard</Button>
@@ -104,7 +104,7 @@ const Header: React.FC = () => {
                     </ListItemButton>
                   </ListItem>
                 )}
-                {userRole === 'employer' && (
+                {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <ListItem disablePadding>
                     <ListItemButton component={RouterLink} to="/post-job" className="navbar__drawerItem">
                       <ListItemText primary="Post a job" />

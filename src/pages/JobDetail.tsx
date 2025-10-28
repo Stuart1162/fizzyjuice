@@ -227,26 +227,73 @@ const JobDetail: React.FC = () => {
           </Box>
 
         {/* Application instructions */}
-        {!job.applicationUrl || job.applicationUrl.trim() === '' ? (
-          <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
-              How to apply
-            </Typography>
-            <Typography variant="body1">
-              To apply send your CV to{' '}
-              <MuiLink color="primary" href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}>
-                {job.contactEmail}
-              </MuiLink>
-            </Typography>
-          </Box>
-        ) : null}
+        <Box mb={4}>
+          <Typography variant="h5" gutterBottom>
+            How to apply
+          </Typography>
+          {(() => {
+            const display = job.applicationDisplay || 'email';
+            if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
+              return (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  href={job.applicationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  sx={{ mt: 1 }}
+                >
+                  Apply Now
+                </Button>
+              );
+            }
+            if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
+              return (
+                <Typography variant="body1">
+                  <MuiLink
+                    color="primary"
+                    href={job.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    Apply via Instagram
+                  </MuiLink>
+                </Typography>
+              );
+            }
+            // default to email if selected or if others missing
+            if (job.contactEmail && job.contactEmail.trim() !== '') {
+              return (
+                <Typography variant="body1">
+                  To apply send your CV to{' '}
+                  <MuiLink
+                    color="primary"
+                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    {job.contactEmail}
+                  </MuiLink>
+                </Typography>
+              );
+            }
+            return (
+              <Typography variant="body1" color="text.secondary">
+                Application details not provided.
+              </Typography>
+            );
+          })()}
+        </Box>
 
-          <Box display="flex" alignItems="center" mt={2}>
-            <EmailIcon color="action" sx={{ mr: 1 }} />
-            <Typography variant="body1" color="text.secondary">
-              {job.contactEmail}
-            </Typography>
-          </Box>
+          {job.contactEmail && job.contactEmail.trim() !== '' && (
+            <Box display="flex" alignItems="center" mt={2}>
+              <EmailIcon color="action" sx={{ mr: 1 }} />
+              <Typography variant="body1" color="text.secondary">
+                {job.contactEmail}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Divider sx={{ my: 3 }} />
@@ -431,18 +478,50 @@ const JobDetail: React.FC = () => {
             {job.ref && (
               <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
             )}
-            {job.applicationUrl && job.applicationUrl.trim() !== '' && (
-              <Button
-                variant="contained"
-                color="primary"
-                href={job.applicationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
-              >
-                Apply Now
-              </Button>
-            )}
+            {(() => {
+              const display = job.applicationDisplay || 'email';
+              if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
+                return (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    href={job.applicationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    Apply Now
+                  </Button>
+                );
+              }
+              if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
+                return (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    href={job.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    Apply via Instagram
+                  </Button>
+                );
+              }
+              if (job.contactEmail && job.contactEmail.trim() !== '') {
+                return (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    Apply via Email
+                  </Button>
+                );
+              }
+              return null;
+            })()}
           </Box>
         </Box>
       </Box>

@@ -412,34 +412,68 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                 )}
 
                 <Box mt={2} display="flex" alignItems="center" justifyContent="space-between" className="jobView__actions">
-                  {/* Left side: Apply button or email instructions */}
-                  {job.applicationUrl && job.applicationUrl.trim() !== '' ? (
-                    <Box display="flex" alignItems="center" gap={1} className="jobView__applyWrap">
-                      <Button
-                        className="jobView__applyButton"
-                        variant="contained"
-                        color="primary"
-                        href={job.applicationUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => { try { if (job.id) incrementApply(job.id); } catch {} }}
-                      >
-                        Apply Now
-                      </Button>
-                      {job.ref && (
-                        <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
-                      )}
-                    </Box>
-                  ) : (
-                    <Box>
-                      <Typography variant="body1" sx={{ fontWeight: 500, fontSize: 18 }}>
-                        To apply send your CV to{' '}
-                        <MuiLink color="primary" href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}>
-                          {job.contactEmail}
-                        </MuiLink>
+                  {/* Left side: Apply button or instructions based on applicationDisplay */}
+                  {(() => {
+                    const display = job.applicationDisplay || 'email';
+                    if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
+                      return (
+                        <Box display="flex" alignItems="center" gap={1} className="jobView__applyWrap">
+                          <Button
+                            className="jobView__applyButton"
+                            variant="contained"
+                            color="primary"
+                            href={job.applicationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                          >
+                            Apply Now
+                          </Button>
+                          {job.ref && (
+                            <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
+                          )}
+                        </Box>
+                      );
+                    }
+                    if (display === 'instagram' && (job as any).instagramUrl && ((job as any).instagramUrl as string).trim() !== '') {
+                      return (
+                        <Box>
+                          <Typography variant="body1" sx={{ fontWeight: 500, fontSize: 18 }}>
+                            <MuiLink
+                              color="primary"
+                              href={(job as any).instagramUrl as string}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                            >
+                              Apply via Instagram
+                            </MuiLink>
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    if (job.contactEmail && job.contactEmail.trim() !== '') {
+                      return (
+                        <Box>
+                          <Typography variant="body1" sx={{ fontWeight: 500, fontSize: 18 }}>
+                            To apply send your CV to{' '}
+                            <MuiLink
+                              color="primary"
+                              href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                              onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                            >
+                              {job.contactEmail}
+                            </MuiLink>
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    return (
+                      <Typography variant="body2" color="text.secondary">
+                        Application details not provided.
                       </Typography>
-                    </Box>
-                  )}
+                    );
+                  })()}
 
                   {/* Right side: Open Job link (new tab) */}
                   {job.id && (

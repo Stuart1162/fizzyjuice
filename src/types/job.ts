@@ -9,7 +9,7 @@ export interface Job {
   skills: string[];
   jobType: 'Full-time' | 'Part-time' | 'Contract' | 'Temporary';
   wage?: string;
-  contactEmail: string;
+  contactEmail?: string;
   createdAt: any; // Firestore timestamp
   createdBy?: string; // User ID
   // Draft status - true for pending admin approval, false for approved
@@ -31,6 +31,8 @@ export interface Job {
   >;
   shifts?: Array<'morning' | 'afternoon' | 'evening'>;
   applicationUrl?: string;
+  instagramUrl?: string;
+  applicationDisplay?: 'email' | 'url' | 'instagram';
   // New optional field: top 3 company strengths selected at posting time
   companyStrengths?: Array<
     | 'Flexible hours'

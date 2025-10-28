@@ -66,6 +66,8 @@ const PostJob: React.FC = () => {
     roles: [] as NonNullable<Job['roles']>,
     shifts: [] as NonNullable<Job['shifts']>,
     applicationUrl: '',
+    instagramUrl: '',
+    applicationDisplay: 'email' as Job['applicationDisplay'],
     companyStrengths: [] as NonNullable<Job['companyStrengths']>,
     wordOnTheStreet: '',
   });
@@ -231,9 +233,23 @@ const PostJob: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Basic validation
-    if (!job.title || !job.company || !job.location || !job.description || !job.contactEmail) {
+    // Basic validation for core fields
+    if (!job.title || !job.company || !job.location || !job.description) {
       setError('Please fill in all required fields');
+      return;
+    }
+    // Validate selected application display option has its value
+    const display = job.applicationDisplay || 'email';
+    if (display === 'email' && !job.contactEmail) {
+      setError('Please provide an application email or choose a different application method');
+      return;
+    }
+    if (display === 'url' && !job.applicationUrl) {
+      setError('Please provide an application URL or choose a different application method');
+      return;
+    }
+    if (display === 'instagram' && !job.instagramUrl) {
+      setError('Please provide an Instagram profile link or choose a different application method');
       return;
     }
 
@@ -594,7 +610,7 @@ const PostJob: React.FC = () => {
                 <Typography className="postajob__metaLabel">Application email</Typography>
               </Box>
               <Box className="postajob__field">
-                <TextField fullWidth required id="contactEmail" name="contactEmail" type="email" placeholder="e.g. you@company.com" value={job.contactEmail} onChange={handleInputChange} />
+                <TextField fullWidth id="contactEmail" name="contactEmail" type="email" placeholder="e.g. you@company.com" value={job.contactEmail} onChange={handleInputChange} />
               </Box>
             </Box>
             <Box className="postajob__row2">
@@ -603,6 +619,26 @@ const PostJob: React.FC = () => {
               </Box>
               <Box className="postajob__field">
                 <TextField fullWidth id="applicationUrl" name="applicationUrl" type="url" placeholder="https://company.com/apply/your-role" value={job.applicationUrl} onChange={handleInputChange} />
+              </Box>
+            </Box>
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Instagram profile link</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField fullWidth id="instagramUrl" name="instagramUrl" type="url" placeholder="https://instagram.com/yourcompany" value={job.instagramUrl} onChange={handleInputChange} />
+              </Box>
+            </Box>
+            <Box className="postajob__row2">
+              <Box className="postajob__meta">
+                <Typography className="postajob__metaLabel">Preferred application method</Typography>
+              </Box>
+              <Box className="postajob__field">
+                <TextField select fullWidth id="applicationDisplay" name="applicationDisplay" value={job.applicationDisplay || 'email'} onChange={handleInputChange}>
+                  <MenuItem value="email">Email</MenuItem>
+                  <MenuItem value="url">Application URL</MenuItem>
+                  <MenuItem value="instagram">Instagram</MenuItem>
+                </TextField>
               </Box>
             </Box>
           </Box>
