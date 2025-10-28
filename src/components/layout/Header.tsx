@@ -66,7 +66,10 @@ const Header: React.FC = () => {
             {currentUser ? (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
                 {(isSuperAdmin || userRole === 'admin') && (
-                  <Button color="inherit" component={RouterLink} to="/reports">Reports</Button>
+                  <>
+                    <Button color="inherit" component={RouterLink} to="/reports">Reports</Button>
+                    <Button color="inherit" component={RouterLink} to="/admin/users">Users</Button>
+                  </>
                 )}
                 {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <Button color="inherit" component={RouterLink} to="/post-job">Post a job</Button>
@@ -98,11 +101,18 @@ const Header: React.FC = () => {
             {currentUser ? (
               <>
                 {(isSuperAdmin || userRole === 'admin') && (
-                  <ListItem disablePadding>
-                    <ListItemButton component={RouterLink} to="/reports" className="navbar__drawerItem">
-                      <ListItemText primary="Reports" />
-                    </ListItemButton>
-                  </ListItem>
+                  <>
+                    <ListItem disablePadding>
+                      <ListItemButton component={RouterLink} to="/reports" className="navbar__drawerItem">
+                        <ListItemText primary="Reports" />
+                      </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding>
+                      <ListItemButton component={RouterLink} to="/admin/users" className="navbar__drawerItem">
+                        <ListItemText primary="Users" />
+                      </ListItemButton>
+                    </ListItem>
+                  </>
                 )}
                 {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <ListItem disablePadding>

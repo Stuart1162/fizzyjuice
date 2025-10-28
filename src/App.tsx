@@ -18,6 +18,7 @@ import { SavedJobsProvider } from './contexts/SavedJobsContext';
 import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
+import AdminUsers from './pages/AdminUsers';
 
 // Create a theme instance
 const theme = createTheme({
@@ -183,6 +184,14 @@ const InnerAppShell: React.FC = () => {
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <PrivateRoute>
+                <AdminUsers />
               </PrivateRoute>
             }
           />
