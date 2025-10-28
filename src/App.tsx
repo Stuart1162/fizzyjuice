@@ -17,8 +17,6 @@ import EditJob from './pages/EditJob';
 import { SavedJobsProvider } from './contexts/SavedJobsContext';
 import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
-import SeedUser from './pages/SeedUser';
-import SeedJobs from './pages/SeedJobs';
 import Reports from './pages/Reports';
 
 // Create a theme instance
@@ -188,8 +186,7 @@ const InnerAppShell: React.FC = () => {
               </PrivateRoute>
             }
           />
-          <Route path="/seed-user" element={<SeedUser />} />
-          <Route path="/seed-jobs" element={<SeedJobs />} />
+          {/** Seed routes removed */}
         </Routes>
       </main>
       <footer

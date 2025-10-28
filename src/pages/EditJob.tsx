@@ -75,6 +75,8 @@ const EditJob: React.FC = () => {
           roles: data.roles || [],
           shifts: data.shifts || [],
           applicationUrl: data.applicationUrl || '',
+          instagramUrl: (data as any).instagramUrl || '',
+          applicationDisplay: (data as any).applicationDisplay || 'email',
           wordOnTheStreet: data.wordOnTheStreet || '',
           createdBy: data.createdBy,
         });
@@ -146,13 +148,12 @@ const EditJob: React.FC = () => {
   };
 
   const isValid = useMemo(() => {
-    return (
-      !!job.title &&
-      !!job.company &&
-      !!job.location &&
-      !!job.description &&
-      !!job.contactEmail
-    );
+    if (!job.title || !job.company || !job.location || !job.description) return false;
+    const display = job.applicationDisplay || 'email';
+    if (display === 'email') return !!(job.contactEmail && job.contactEmail.trim() !== '');
+    if (display === 'url') return !!(job.applicationUrl && job.applicationUrl.trim() !== '');
+    if (display === 'instagram') return !!((job as any).instagramUrl && ((job as any).instagramUrl as string).trim() !== '');
+    return true;
   }, [job]);
 
   const handleSave = async () => {
@@ -183,6 +184,8 @@ const EditJob: React.FC = () => {
         roles: job.roles || [],
         shifts: job.shifts || [],
         applicationUrl: job.applicationUrl || '',
+        instagramUrl: (job as any).instagramUrl || '',
+        applicationDisplay: job.applicationDisplay || 'email',
         wordOnTheStreet: job.wordOnTheStreet || '',
         updatedAt: serverTimestamp(),
       };
@@ -317,13 +320,12 @@ const EditJob: React.FC = () => {
             ))}
           </TextField>
           <TextField
-            required
             label="Application Email"
             name="contactEmail"
             type="email"
             value={job.contactEmail || ''}
             onChange={handleInputChange}
-            helperText="This is where applications will be sent"
+            helperText="If selected as method, applicants will email this address"
           />
           <TextField
             label="Application URL (optional)"
@@ -333,6 +335,25 @@ const EditJob: React.FC = () => {
             onChange={handleInputChange}
             placeholder="https://company.com/apply/your-role"
           />
+          <TextField
+            label="Instagram profile link (optional)"
+            name="instagramUrl"
+            type="url"
+            value={(job as any).instagramUrl || ''}
+            onChange={handleInputChange}
+            placeholder="https://instagram.com/yourcompany"
+          />
+          <TextField
+            select
+            label="Preferred application method"
+            name="applicationDisplay"
+            value={job.applicationDisplay || 'email'}
+            onChange={handleInputChange}
+          >
+            <MenuItem value="email">Email</MenuItem>
+            <MenuItem value="url">Application URL</MenuItem>
+            <MenuItem value="instagram">Instagram</MenuItem>
+          </TextField>
         </Box>
 
         {(isSuperAdmin || isAdmin) && (
