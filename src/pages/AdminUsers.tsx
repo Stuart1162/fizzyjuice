@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert } from '@mui/material';
+import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, collectionGroup, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -25,6 +25,7 @@ const AdminUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdminRole, setIsAdminRole] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'all' | 'jobseeker' | 'employer' | 'admin'>('all');
 
   // Determine admin role via profile
   useEffect(() => {
@@ -33,20 +34,22 @@ const AdminUsers: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        // Fetch all user profiles via collection group query
-        const profilesSnap = await getDocs(collectionGroup(db, 'profile'));
-        const list: UserProfileDoc[] = profilesSnap.docs.map(d => {
-          const data = d.data() as any;
-          // d.ref.path looks like users/{uid}/prefs/profile
-          const parts = d.ref.path.split('/');
-          const uid = parts.length >= 2 ? parts[1] : '';
-          return {
-            uid,
-            email: data?.email || undefined,
-            displayName: data?.displayName || undefined,
-            role: data?.role || undefined,
-          };
-        });
+        // Fetch all user profiles via collection group query on 'prefs' and take only the 'profile' docs
+        const prefsSnap = await getDocs(collectionGroup(db, 'prefs'));
+        const list: UserProfileDoc[] = prefsSnap.docs
+          .filter((d) => d.id === 'profile')
+          .map((d) => {
+            const data = d.data() as any;
+            // d.ref.path looks like users/{uid}/prefs/profile
+            const parts = d.ref.path.split('/');
+            const uid = parts.length >= 2 ? parts[1] : '';
+            return {
+              uid,
+              email: data?.email || undefined,
+              displayName: data?.displayName || undefined,
+              role: data?.role || undefined,
+            };
+          });
         if (cancelled) return;
         setProfiles(list);
         // Fetch all jobs once and keep only id, createdBy, ref
@@ -94,6 +97,22 @@ const AdminUsers: React.FC = () => {
     return map;
   }, [jobs]);
 
+  const roleCounts = useMemo(() => {
+    return profiles.reduce(
+      (acc, p) => {
+        const r = p.role as 'jobseeker' | 'employer' | 'admin' | undefined;
+        if (r) acc[r] += 1;
+        return acc;
+      },
+      { jobseeker: 0, employer: 0, admin: 0 }
+    );
+  }, [profiles]);
+
+  const filteredProfiles = useMemo(() => {
+    if (selectedRole === 'all') return profiles;
+    return profiles.filter((p) => p.role === selectedRole);
+  }, [profiles, selectedRole]);
+
   if (!currentUser) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -130,6 +149,28 @@ const AdminUsers: React.FC = () => {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom>Users</Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="role-filter-label">Filter by role</InputLabel>
+            <Select
+              labelId="role-filter-label"
+              label="Filter by role"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value as any)}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="jobseeker">Jobseeker</MenuItem>
+              <MenuItem value="employer">Employer</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </Select>
+          </FormControl>
+          <Box display="flex" gap={1} flexWrap="wrap">
+            <Chip label={`Jobseekers: ${roleCounts.jobseeker}`} size="small" />
+            <Chip label={`Employers: ${roleCounts.employer}`} size="small" />
+            <Chip label={`Admins: ${roleCounts.admin}`} size="small" />
+            <Chip label={`Total: ${profiles.length}`} size="small" variant="outlined" />
+          </Box>
+        </Stack>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -140,7 +181,7 @@ const AdminUsers: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {profiles.map((p) => (
+            {filteredProfiles.map((p) => (
               <TableRow key={p.uid}>
                 <TableCell>{p.displayName || '—'}</TableCell>
                 <TableCell>{p.email || '—'}</TableCell>
