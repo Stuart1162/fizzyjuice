@@ -93,14 +93,16 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     }
   };
 
+  // Shared helper to normalise Firestore Timestamp / Date / seconds objects to milliseconds
+  const toMillis = (ts: any): number => {
+    if (!ts) return 0;
+    if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+    if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+    try { return new Date(ts).getTime() || 0; } catch { return 0; }
+  };
+
   // Helper: determine if a job is older than 14 days
   const isArchived = (j: Job): boolean => {
-    const toMillis = (ts: any): number => {
-      if (!ts) return 0;
-      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
-      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
-      try { return new Date(ts).getTime() || 0; } catch { return 0; }
-    };
     const created = toMillis((j as any).createdAt || (j as any).updatedAt);
     if (!created) return false;
     const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
@@ -204,8 +206,19 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           id: doc.id,
           ...doc.data()
         })) as Job[];
+
+        // Always sort by createdAt (falling back to updatedAt) newest-first to ensure
+        // consistent ordering on the homepage and any other JobList-backed views
+        const sortedJobs = jobsData
+          .slice()
+          .sort((a, b) => {
+            const aMs = toMillis((a as any).createdAt || (a as any).updatedAt);
+            const bMs = toMillis((b as any).createdAt || (b as any).updatedAt);
+            return bMs - aMs;
+          });
+
         // Filter out archived for non-admin users (drafts are not returned by the query for non-admins)
-        const filteredJobs = jobsData.filter(job => (!isArchived(job) || isAdmin));
+        const filteredJobs = sortedJobs.filter(job => (!isArchived(job) || isAdmin));
         if (!cancelled) setJobs(filteredJobs);
       } catch (err) {
         console.error('Error fetching jobs:', err);
