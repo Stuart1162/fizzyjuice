@@ -33,6 +33,8 @@ export default function Reports() {
     let cancelled = false;
     const run = async () => {
       try {
+        // Only admins should fetch all jobs; non-admins would hit security rules
+        if (!(isSuperAdmin || isAdminRole)) return;
         setLoading(true);
         const jobsSnap = await getDocs(collection(db, 'jobs'));
         const rows = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Job));
@@ -52,7 +54,7 @@ export default function Reports() {
     };
     run();
     return () => { cancelled = true; };
-  }, []);
+  }, [isSuperAdmin, isAdminRole]);
 
   if (!currentUser) {
     return (
