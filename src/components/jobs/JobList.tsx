@@ -204,7 +204,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
         const base = collection(db, 'jobs');
         const q = isAdmin
           ? query(base, orderBy('createdAt', 'desc'))
-          : query(base, where('draft', '==', false));
+          : query(base, where('draft', '==', false), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const jobsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
