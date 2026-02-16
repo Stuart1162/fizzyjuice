@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Paper, Typography, Box, FormGroup, FormControlLabel, Checkbox, Button, TextField, Divider } from '@mui/material';
+import { Container, Paper, Typography, Box, FormGroup, FormControlLabel, Checkbox, Button, TextField } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -27,9 +27,6 @@ const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
   'Sustainable sourcing',
 ];
 
-const WORK_ARRANGEMENTS = ['Remote', 'Hybrid', 'Office-based'] as const;
-type WorkArrangementPref = typeof WORK_ARRANGEMENTS[number];
-
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
   'Baker',
   'Chef',
@@ -53,7 +50,6 @@ const Personalise: React.FC = () => {
   const [userStrengths, setUserStrengths] = useState<NonNullable<Job['companyStrengths']>>([] as any);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
-  const [prefWorkArrangements, setPrefWorkArrangements] = useState<WorkArrangementPref[]>([]);
   const [prefRoles, setPrefRoles] = useState<NonNullable<Job['roles']>>([] as any);
   const [prefContractTypes, setPrefContractTypes] = useState<Job['jobType'][]>([]);
   const [prefLocation, setPrefLocation] = useState<string>('');
@@ -68,13 +64,11 @@ const Personalise: React.FC = () => {
         if (snap.exists()) {
           const data = snap.data() as any;
           setUserStrengths((data.companyStrengths || []) as any);
-          setPrefWorkArrangements((data.prefWorkArrangements || []) as any);
           setPrefRoles((data.prefRoles || []) as any);
           setPrefContractTypes((data.prefContractTypes || []) as any);
           setPrefLocation((data.prefLocation || '') as string);
         } else {
           setUserStrengths([] as any);
-          setPrefWorkArrangements([]);
           setPrefRoles([] as any);
           setPrefContractTypes([]);
           setPrefLocation('');

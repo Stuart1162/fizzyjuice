@@ -190,30 +190,6 @@ const Dashboard: React.FC = () => {
     run();
   }, [isSuperAdmin]);
 
-  const toggleStrength = (value: NonNullable<Job['companyStrengths']>[number]) => {
-    setUserStrengths(prev => {
-      const has = prev.includes(value);
-      if (has) return prev.filter(v => v !== value) as any;
-      if (prev.length >= 3) return prev; // limit 3
-      return ([...prev, value] as any);
-    });
-  };
-
-  const savePreferences = async () => {
-    if (!currentUser) return;
-    try {
-      setSavingPrefs(true);
-      const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'jobseeker');
-      await setDoc(prefRef, { companyStrengths: userStrengths }, { merge: true });
-      enqueueSnackbar('Preferences saved', { variant: 'success' });
-    } catch (e) {
-      console.error(e);
-      enqueueSnackbar('Failed to save preferences', { variant: 'error' });
-    } finally {
-      setSavingPrefs(false);
-    }
-  };
-
   const filteredJobs = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return jobs;

@@ -11,7 +11,6 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
-  Divider,
   IconButton,
   useMediaQuery,
   useTheme,

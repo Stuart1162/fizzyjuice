@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Container, Box, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Container, Box, Drawer, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import '../../styles/navbar.css';
-import MenuIcon from '@mui/icons-material/Menu';
+ 
 
 const Header: React.FC = () => {
-  const { currentUser, signOut, isSuperAdmin } = useAuth();
-  const { savedJobs } = useSavedJobs();
+  const { currentUser, isSuperAdmin } = useAuth();
   const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
   const location = useLocation();
   const isPostJob = location.pathname.startsWith('/post-job');

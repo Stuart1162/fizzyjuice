@@ -8,7 +8,7 @@ import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const Profile: React.FC = () => {
-  const { currentUser, isSuperAdmin, signOut } = useAuth();
+  const { currentUser, signOut } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');

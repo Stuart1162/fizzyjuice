@@ -12,7 +12,6 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
-  Divider,
   IconButton,
   Tooltip,
   Link as MuiLink,
@@ -23,13 +22,8 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import BusinessIcon from '@mui/icons-material/Business';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -185,7 +179,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
       }
       return true;
     });
-  }, [jobs, filterText, filters]);
+  }, [jobs, filterText, filters, isAdmin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +198,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
         const base = collection(db, 'jobs');
         const q = isAdmin
           ? query(base, orderBy('createdAt', 'desc'))
-          : query(base, where('draft', '==', false));
+          : query(base, where('draft', '==', false), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const jobsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
