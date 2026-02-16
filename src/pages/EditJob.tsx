@@ -31,7 +31,6 @@ const ROLE_OPTIONS: NonNullable<Job['roles']> = [
   'Manager',
   'Other',
 ];
-const SHIFT_OPTIONS: NonNullable<Job['shifts']> = ['morning', 'afternoon', 'evening'];
 
 const EditJob: React.FC = () => {
   const { id } = useParams<{ id: string }>();
