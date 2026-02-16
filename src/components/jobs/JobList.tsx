@@ -1,6 +1,6 @@
 import { Link as RouterLink } from 'react-router-dom';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Job } from '../../types/job';
 import {
@@ -200,13 +200,18 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           }
           return;
         }
-        const querySnapshot = await getDocs(collection(db, 'jobs'));
+        // Non-admin/public lists must only request approved/published to satisfy rules
+        const base = collection(db, 'jobs');
+        const q = isAdmin
+          ? query(base, orderBy('createdAt', 'desc'))
+          : query(base, where('draft', '==', false));
+        const querySnapshot = await getDocs(q);
         const jobsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Job[];
-        // Filter out drafts and archived for non-admin users
-        const filteredJobs = jobsData.filter(job => (!job.draft || isAdmin) && (!isArchived(job) || isAdmin));
+        // Filter out archived for non-admin users (drafts are not returned by the query for non-admins)
+        const filteredJobs = jobsData.filter(job => (!isArchived(job) || isAdmin));
         if (!cancelled) setJobs(filteredJobs);
       } catch (err) {
         console.error('Error fetching jobs:', err);

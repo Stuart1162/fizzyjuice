@@ -660,6 +660,14 @@ const Dashboard: React.FC = () => {
                             <Box mt={2} display="flex" justifyContent="space-between">
                               <Box />
                               <Box display="flex" gap={1}>
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="error"
+                                  onClick={() => setConfirmId(job.id!)}
+                                >
+                                  Delete
+                                </Button>
                                 <Button variant="outlined" size="small" onClick={() => handleApprove(job.id!)}>
                                   Approve
                                 </Button>

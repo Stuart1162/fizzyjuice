@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack } from '@mui/material';
+import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, collectionGroup, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Shape for a user profile document located at users/{uid}/prefs/profile
@@ -26,49 +26,11 @@ const AdminUsers: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAdminRole, setIsAdminRole] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'all' | 'jobseeker' | 'employer' | 'admin'>('all');
+  const [deleteTarget, setDeleteTarget] = useState<UserProfileDoc | null>(null);
+  const [deletingUid, setDeletingUid] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
-  // Determine admin role via profile
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Fetch all user profiles via collection group query on 'prefs' and take only the 'profile' docs
-        const prefsSnap = await getDocs(collectionGroup(db, 'prefs'));
-        const list: UserProfileDoc[] = prefsSnap.docs
-          .filter((d) => d.id === 'profile')
-          .map((d) => {
-            const data = d.data() as any;
-            // d.ref.path looks like users/{uid}/prefs/profile
-            const parts = d.ref.path.split('/');
-            const uid = parts.length >= 2 ? parts[1] : '';
-            return {
-              uid,
-              email: data?.email || undefined,
-              displayName: data?.displayName || undefined,
-              role: data?.role || undefined,
-            };
-          });
-        if (cancelled) return;
-        setProfiles(list);
-        // Fetch all jobs once and keep only id, createdBy, ref
-        const jobsSnap = await getDocs(collection(db, 'jobs'));
-        const jobList: JobLite[] = jobsSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }))
-          .map((j: any) => ({ id: j.id, createdBy: j.createdBy, ref: j.ref }));
-        if (cancelled) return;
-        setJobs(jobList);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Failed to load users');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Compute admin status (role-based) after we have currentUser; superadmin allowed too
+  // Fetch admin role for current user
   useEffect(() => {
     let isCancelled = false;
     const fetchRole = async () => {
@@ -85,6 +47,61 @@ const AdminUsers: React.FC = () => {
     fetchRole();
     return () => { isCancelled = true; };
   }, [currentUser]);
+
+  // Fetch all user profiles (admins only)
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        if (!(isSuperAdmin || isAdminRole)) return;
+        setLoading(true);
+        setError(null);
+        const prefsSnap = await getDocs(collectionGroup(db, 'prefs'));
+        const list: UserProfileDoc[] = prefsSnap.docs
+          .filter((d) => d.id === 'profile')
+          .map((d) => {
+            const data = d.data() as any;
+            const parts = d.ref.path.split('/');
+            const uid = parts.length >= 2 ? parts[1] : '';
+            return {
+              uid,
+              email: data?.email || undefined,
+              displayName: data?.displayName || undefined,
+              role: data?.role || undefined,
+            };
+          });
+        if (cancelled) return;
+        setProfiles(list);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Failed to load users');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [isSuperAdmin, isAdminRole]);
+
+  // Fetch jobs only for admins to satisfy security rules
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        if (!(isSuperAdmin || isAdminRole)) return;
+        const jobsSnap = await getDocs(collection(db, 'jobs'));
+        const jobList: JobLite[] = jobsSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }))
+          .map((j: any) => ({ id: j.id, createdBy: j.createdBy, ref: j.ref }));
+        if (cancelled) return;
+        setJobs(jobList);
+      } catch (e) {
+        // swallow; UI already gated by admin
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [isSuperAdmin, isAdminRole]);
+
+  // (moved above)
 
   const jobRefsByUser = useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -112,6 +129,41 @@ const AdminUsers: React.FC = () => {
     if (selectedRole === 'all') return profiles;
     return profiles.filter((p) => p.role === selectedRole);
   }, [profiles, selectedRole]);
+
+  const handleRequestDelete = (profile: UserProfileDoc) => {
+    if (currentUser && profile.uid === currentUser.uid) {
+      setSnackbar({ message: 'You cannot delete your own user from this page.', severity: 'error' });
+      return;
+    }
+    if (profile.role === 'admin' && !isSuperAdmin) {
+      setSnackbar({ message: 'Only superadmins can delete admin users.', severity: 'error' });
+      return;
+    }
+    setDeleteTarget(profile);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || !deleteTarget.uid) {
+      setDeleteTarget(null);
+      return;
+    }
+    setDeletingUid(deleteTarget.uid);
+    try {
+      const prefRef = doc(db, 'users', deleteTarget.uid, 'prefs', 'profile');
+      await deleteDoc(prefRef);
+      setProfiles((prev) => prev.filter((p) => p.uid !== deleteTarget.uid));
+      setSnackbar({ message: 'User deleted.', severity: 'success' });
+    } catch (e: any) {
+      setSnackbar({ message: e?.message || 'Failed to delete user.', severity: 'error' });
+    } finally {
+      setDeletingUid(null);
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(null);
+  };
 
   if (!currentUser) {
     return (
@@ -178,6 +230,7 @@ const AdminUsers: React.FC = () => {
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
               <TableCell>Jobs (refs)</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -197,10 +250,49 @@ const AdminUsers: React.FC = () => {
                     )}
                   </Box>
                 </TableCell>
+                <TableCell align="right">
+                  <Button
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => handleRequestDelete(p)}
+                    disabled={deletingUid === p.uid}
+                  >
+                    {deletingUid === p.uid ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <Dialog open={!!deleteTarget} onClose={() => (deletingUid ? null : setDeleteTarget(null))}>
+          <DialogTitle>Delete user</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete {deleteTarget?.displayName || deleteTarget?.email || 'this user'}? This will remove their profile from the system.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteTarget(null)} disabled={!!deletingUid}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} color="error" disabled={!!deletingUid}>
+              {deletingUid ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        {snackbar && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+        )}
       </Paper>
     </Container>
   );
