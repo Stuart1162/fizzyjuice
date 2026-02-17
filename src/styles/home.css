@@ -29,9 +29,10 @@
 h1.home__title {
   font-size: clamp(48px, 13vw, 200px);
   line-height: 1;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 2rem;
   opacity: 0;
+  letter-spacing: -6px;
   transform: translateY(16px);
   animation: home-fade-in-up 700ms ease-out 80ms forwards;
 }
