@@ -208,6 +208,17 @@ const InnerAppShell: React.FC = () => {
         <Typography variant="body2" color="text.secondary">
           © {new Date().getFullYear()} Fizzy Juice. All rights reserved. info@fizzyjuice.uk
         </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Platform by{' '}
+          <a
+            href="https://heretic-studio.co.uk/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'inherit', textDecoration: 'underline' }}
+          >
+            Heretic Studio
+          </a>
+        </Typography>
       </footer>
     </div>
   );
