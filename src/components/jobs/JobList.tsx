@@ -50,6 +50,22 @@ interface JobListProps {
   jobsOverride?: Job[];
 }
 
+// Shared helper to normalise Firestore Timestamp / Date / seconds objects to milliseconds
+const toMillis = (ts: any): number => {
+  if (!ts) return 0;
+  if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+  if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+  try { return new Date(ts).getTime() || 0; } catch { return 0; }
+};
+
+// Helper: determine if a job is older than 14 days
+const isArchived = (j: Job): boolean => {
+  const created = toMillis((j as any).createdAt || (j as any).updatedAt);
+  if (!created) return false;
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+  return (Date.now() - created) > TWO_WEEKS_MS;
+};
+
 const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverride }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -91,22 +107,6 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     } catch {
       return 'Unknown';
     }
-  };
-
-  // Shared helper to normalise Firestore Timestamp / Date / seconds objects to milliseconds
-  const toMillis = (ts: any): number => {
-    if (!ts) return 0;
-    if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
-    if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
-    try { return new Date(ts).getTime() || 0; } catch { return 0; }
-  };
-
-  // Helper: determine if a job is older than 14 days
-  const isArchived = (j: Job): boolean => {
-    const created = toMillis((j as any).createdAt || (j as any).updatedAt);
-    if (!created) return false;
-    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
-    return (Date.now() - created) > TWO_WEEKS_MS;
   };
 
   // Auth and admin detection (must be before filters that depend on it)

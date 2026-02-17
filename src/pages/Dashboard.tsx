@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { collection, collectionGroup, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
@@ -21,7 +21,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Pagination,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
@@ -32,18 +31,16 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import EmailIcon from '@mui/icons-material/Email';
 import { Link as RouterLink } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
-import { useSnackbar } from 'notistack';
 import JobList from '../components/jobs/JobList';
 
 import '../styles/dashboard.css';
 
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
-  const { savedJobs, loading: savedLoading, unsaveJob, toggleApplied } = useSavedJobs();
+  const { savedJobs, loading: savedLoading } = useSavedJobs();
   const [savedJobDocs, setSavedJobDocs] = useState<Job[]>([]);
   const [savedDocsLoading, setSavedDocsLoading] = useState<boolean>(false);
   // jobs: the user's own posted jobs (or all if superadmin) for the Manage Posts table
@@ -56,14 +53,10 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [userStrengths, setUserStrengths] = useState<NonNullable<Job['companyStrengths']>>([] as any);
   const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
-  const [prefsLoading, setPrefsLoading] = useState<boolean>(false);
-  const [savingPrefs, setSavingPrefs] = useState<boolean>(false);
   // Extended personalisation preferences (loaded from / saved to prefs doc, edited on Personalise page)
   const [prefRoles, setPrefRoles] = useState<NonNullable<Job['roles']>>([] as any);
   const [prefContractTypes, setPrefContractTypes] = useState<Job['jobType'][]>([]);
   const [prefLocation, setPrefLocation] = useState<string>('');
-  const location = useLocation();
-  const { enqueueSnackbar } = useSnackbar();
 
   const COMPANY_STRENGTH_OPTIONS: NonNullable<Job['companyStrengths']> = [
     'Flexible hours',
@@ -94,7 +87,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const loadPrefs = async () => {
       if (!currentUser) return;
-      setPrefsLoading(true);
       try {
         const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'jobseeker');
         const snap = await getDoc(prefRef);
@@ -125,8 +117,6 @@ const Dashboard: React.FC = () => {
         }
       } catch (e) {
         console.error('Failed to load preferences', e);
-      } finally {
-        setPrefsLoading(false);
       }
     };
     loadPrefs();
