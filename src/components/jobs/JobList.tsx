@@ -1,6 +1,6 @@
 import { Link as RouterLink } from 'react-router-dom';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, getDocs, doc, getDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { Job } from '../../types/job';
 import {
