@@ -312,7 +312,10 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                 </Box>
                 <Box className="jobRow__col jobRow__location">
                   <Typography variant="caption" className="jobRow__label">Location</Typography>
-                  <Typography variant="body1">{job.location}</Typography>
+                  <Typography variant="body1">
+                    {job.location}
+                    {job.postcode ? `, ${job.postcode}` : ''}
+                  </Typography>
                 </Box>
                 <Box className="jobRow__col jobRow__contract">
                   <Typography variant="caption" className="jobRow__label">Contract</Typography>
