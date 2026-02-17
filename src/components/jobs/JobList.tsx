@@ -196,11 +196,13 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           }
           return;
         }
-        // Non-admin/public lists must only request approved/published to satisfy rules
+        // Non-admin/public lists must only request approved/published to satisfy rules.
+        // We fetch the minimal set here and apply ordering in-memory below to avoid
+        // requiring a composite Firestore index for (draft == false, createdAt desc).
         const base = collection(db, 'jobs');
         const q = isAdmin
-          ? query(base, orderBy('createdAt', 'desc'))
-          : query(base, where('draft', '==', false), orderBy('createdAt', 'desc'));
+          ? base
+          : query(base, where('draft', '==', false));
         const querySnapshot = await getDocs(q);
         const jobsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
