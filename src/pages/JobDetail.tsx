@@ -11,7 +11,6 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   List,
   ListItem,
   ListItemText,
@@ -19,16 +18,11 @@ import {
   IconButton,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import BusinessIcon from '@mui/icons-material/Business';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import FlagIcon from '@mui/icons-material/Flag';
-import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { Link as MuiLink } from '@mui/material';
 import { incrementApply, incrementView } from '../services/metrics';
