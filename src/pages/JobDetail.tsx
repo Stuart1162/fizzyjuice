@@ -32,6 +32,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { Link as MuiLink } from '@mui/material';
 import { incrementApply, incrementView } from '../services/metrics';
+import '../styles/jobview.css';
 
 const JobDetail: React.FC = () => {
   const { id: routeId } = useParams();
@@ -181,128 +182,65 @@ const JobDetail: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
-      <Box mb={3}>
-        <IconButton onClick={() => navigate(-1)} color="primary" sx={{ mb: 2 }}>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="jobViewPage">
+      <Box mb={3} className="jobViewPage__backRow">
+        <IconButton onClick={() => navigate('/')} color="primary" sx={{ mb: 2 }} className="jobViewPage__backBtn">
           <ArrowBackIcon />
-          <Typography variant="body1" ml={1}>
+          <Typography variant="body1" ml={1} className="jobViewPage__backLabel">
             Back to Jobs
           </Typography>
         </IconButton>
       </Box>
 
-      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-        <Box mb={4}>
-          <Typography variant="h3" component="h1" gutterBottom>
+      <Paper elevation={3} sx={{ p: 4, mb: 4 }} className="jobViewPage__card">
+        <Box mb={4} className="jobViewPage__header">
+          <Typography variant="h3" component="h1" gutterBottom className="jobViewPage__title">
             {job.title}
           </Typography>
+          <Typography variant="h6" component="p" className="jobViewPage__company">
+            At {job.company}
+          </Typography>
           
-          <Box display="flex" alignItems="center" flexWrap="wrap" gap={2} mb={2}>
-            <Chip
-              icon={<BusinessIcon />}
-              label={job.company}
-              variant="outlined"
-              size="medium"
-            />
-            <Chip
-              icon={<LocationOnIcon />}
-              label={job.location}
-              variant="outlined"
-              size="medium"
-            />
-            <Chip
-              icon={<AccessTimeIcon />}
-              label={job.jobType}
-              variant="outlined"
-              size="medium"
-            />
-            {job.wage && (
-              <Chip
-                icon={<AttachMoneyIcon />}
-                label={job.wage}
-                variant="outlined"
-                size="medium"
-              />
+          <Box
+            display="flex"
+            alignItems="flex-start"
+            flexWrap="wrap"
+            gap={4}
+            mb={2}
+            className="jobViewPage__metaRow"
+          >
+            <Box className="jobRow__col jobRow__location jobViewPage__metaCol">
+              <Typography variant="caption" className="jobRow__label">Location</Typography>
+              <Typography variant="body1" className="jobViewPage__metaValue jobViewPage__metaValue--location">
+                {job.location}
+                {job.postcode ? `, ${job.postcode}` : ''}
+              </Typography>
+            </Box>
+            <Box className="jobRow__col jobRow__contract jobViewPage__metaCol">
+              <Typography variant="caption" className="jobRow__label">Contract</Typography>
+              <Typography variant="body1" className="jobViewPage__metaValue jobViewPage__metaValue--contract">
+                {job.jobType}
+              </Typography>
+            </Box>
+            {job.wage && job.wage.trim() !== '' && (
+              <Box className="jobRow__col jobRow__wage jobViewPage__metaCol">
+                <Typography variant="caption" className="jobRow__label">Wage</Typography>
+                <Typography variant="body1" className="jobViewPage__metaValue jobViewPage__metaValue--wage">
+                  {job.wage}
+                </Typography>
+              </Box>
             )}
           </Box>
 
-        {/* Application instructions */}
-        <Box mb={4}>
-          <Typography variant="h5" gutterBottom>
-            How to apply
-          </Typography>
-          {(() => {
-            const display = job.applicationDisplay || 'email';
-            if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
-              return (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  href={job.applicationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                  sx={{ mt: 1 }}
-                >
-                  Apply Now
-                </Button>
-              );
-            }
-            if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
-              return (
-                <Typography variant="body1">
-                  <MuiLink
-                    color="primary"
-                    href={job.instagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                  >
-                    Apply via Instagram
-                  </MuiLink>
-                </Typography>
-              );
-            }
-            // default to email if selected or if others missing
-            if (job.contactEmail && job.contactEmail.trim() !== '') {
-              return (
-                <Typography variant="body1">
-                  To apply send your CV to{' '}
-                  <MuiLink
-                    color="primary"
-                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                  >
-                    {job.contactEmail}
-                  </MuiLink>
-                </Typography>
-              );
-            }
-            return (
-              <Typography variant="body1" color="text.secondary">
-                Application details not provided.
-              </Typography>
-            );
-          })()}
         </Box>
 
-          {job.contactEmail && job.contactEmail.trim() !== '' && (
-            <Box display="flex" alignItems="center" mt={2}>
-              <EmailIcon color="action" sx={{ mr: 1 }} />
-              <Typography variant="body1" color="text.secondary">
-                {job.contactEmail}
-              </Typography>
-            </Box>
-          )}
-        </Box>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Box mb={4}>
-          <Typography variant="h5" gutterBottom>
+        <Box mb={4} className="jobViewPage__section jobViewPage__descriptionSection">
+          <Typography variant="h5" gutterBottom className="jobViewPage__sectionTitle">
             Job Description
           </Typography>
-          <Box sx={{
+          <Box
+            className="jobView__markdown jobViewPage__markdown"
+            sx={{
             typography: 'body1',
             '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
             '& p': { mb: 2 },
@@ -323,88 +261,14 @@ const JobDetail: React.FC = () => {
               mb: 2,
             },
             '& a': { color: 'primary.main' },
-          }}>
+          }}
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {job.description}
             </ReactMarkdown>
           </Box>
-        </Box>
-
-        {job.wordOnTheStreet && (
-          <Box mb={4}>
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <FlagIcon color="success" />
-              <Typography variant="h5" gutterBottom>
-                Green Flags
-              </Typography>
-            </Box>
-            <Box sx={{
-              typography: 'body1',
-              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
-              '& p': { mb: 2 },
-              '& ul': { pl: 3, mb: 2 },
-              '& ol': { pl: 3, mb: 2 },
-              '& code': {
-                bgcolor: 'action.hover',
-                px: 0.5,
-                py: 0.25,
-                borderRadius: 0.5,
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-              },
-              '& pre': {
-                bgcolor: 'action.hover',
-                p: 2,
-                borderRadius: 1,
-                overflow: 'auto',
-                mb: 2,
-              },
-              '& a': { color: 'primary.main' },
-            }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {job.wordOnTheStreet}
-              </ReactMarkdown>
-            </Box>
-          </Box>
-        )}
-
-        {job.requirements && job.requirements.length > 0 && (
-          <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
-              Requirements
-            </Typography>
-            <List dense>
-              {job.requirements.map((requirement, index) => (
-                <ListItem key={index} sx={{ py: 0.5 }}>
-                  <ListItemText primary={`• ${requirement}`} />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        )}
-
-        {job.roles && job.roles.length > 0 && (
-          <Box mb={4}>
-            
-            <Box display="flex" flexWrap="wrap" gap={1}>
-              {job.roles.map((role, index) => (
-                <Chip
-                  key={index}
-                  label={role}
-                  color="primary"
-                  variant="outlined"
-                  size="small"
-                />
-              ))}
-            </Box>
-          </Box>
-        )}
-
-        {job.companyStrengths && job.companyStrengths.length > 0 && (
-          <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
-              Company strengths
-            </Typography>
-            <Box display="flex" flexWrap="wrap" gap={1}>
+          {job.companyStrengths && job.companyStrengths.length > 0 && (
+            <Box mt={2} display="flex" flexWrap="wrap" gap={1} className="jobView__strengthsList jobViewPage__strengthsInline">
               {job.companyStrengths.map((s, index) => (
                 <Chip
                   key={index}
@@ -412,18 +276,135 @@ const JobDetail: React.FC = () => {
                   color="success"
                   variant="outlined"
                   size="small"
+                  className="jobViewPage__strengthChip"
                 />
               ))}
+            </Box>
+          )}
+        </Box>
+
+        {job.wordOnTheStreet && (
+          <Box mb={4} className="jobView__adminNote jobViewPage__section jobViewPage__greenFlagsSection">
+            <Box display="flex" alignItems="center" gap={1} mb={1} className="jobView__adminNoteTitle">
+              <FlagIcon color="success" />
+              <Typography variant="h5" gutterBottom className="jobViewPage__sectionTitle">
+                Green Flags
+              </Typography>
+            </Box>
+            <Box
+              className="jobViewPage__greenFlagsMarkdown"
+              sx={{
+                typography: 'body1',
+                '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                '& p': { mb: 2 },
+                '& ul': { pl: 3, mb: 2 },
+                '& ol': { pl: 3, mb: 2 },
+                '& code': {
+                  bgcolor: 'action.hover',
+                  px: 0.5,
+                  py: 0.25,
+                  borderRadius: 0.5,
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                },
+                '& pre': {
+                  bgcolor: 'action.hover',
+                  p: 2,
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  mb: 2,
+                },
+                '& a': { color: 'primary.main' },
+              }}
+            >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {job.wordOnTheStreet}
+              </ReactMarkdown>
             </Box>
           </Box>
         )}
 
+        {/* Application instructions now follow the description, strengths, and green flags */}
+        <Box mb={4} className="jobViewPage__applySection">
+          <Typography variant="h5" gutterBottom className="jobViewPage__applyTitle">
+            How to apply
+          </Typography>
+          {(() => {
+            const display = job.applicationDisplay || 'email';
+            if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
+              return (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  href={job.applicationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  sx={{ mt: 1 }}
+                  className="jobView__applyButton jobViewPage__applyButton"
+                >
+                  Apply Now
+                </Button>
+              );
+            }
+            if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
+              return (
+                <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--instagram">
+                  <MuiLink
+                    color="primary"
+                    href={job.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    Apply via Instagram
+                  </MuiLink>
+                </Typography>
+              );
+            }
+            // default to email if selected or if others missing
+            if (job.contactEmail && job.contactEmail.trim() !== '') {
+              return (
+                <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--email">
+                  To apply send your CV to{' '}
+                  <MuiLink
+                    color="primary"
+                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                  >
+                    {job.contactEmail}
+                  </MuiLink>
+                </Typography>
+              );
+            }
+            return (
+              <Typography variant="body1" color="text.secondary">
+                Application details not provided.
+              </Typography>
+            );
+          })()}
+        </Box>
+
+        {job.requirements && job.requirements.length > 0 && (
+          <Box mb={4} className="jobViewPage__section jobViewPage__requirements">
+            <Typography variant="h5" gutterBottom className="jobViewPage__sectionTitle">
+              Requirements
+            </Typography>
+            <List dense className="jobViewPage__requirementsList">
+              {job.requirements.map((requirement, index) => (
+                <ListItem key={index} sx={{ py: 0.5 }} className="jobViewPage__requirementsItem">
+                  <ListItemText primary={`• ${requirement}`} className="jobViewPage__requirementsText" />
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        )}
+
         {job.skills && job.skills.length > 0 && (
-          <Box mb={4}>
-            <Typography variant="h5" gutterBottom>
+          <Box mb={4} className="jobViewPage__section jobViewPage__skills">
+            <Typography variant="h5" gutterBottom className="jobViewPage__sectionTitle">
               Skills
             </Typography>
-            <Box display="flex" flexWrap="wrap" gap={1}>
+            <Box display="flex" flexWrap="wrap" gap={1} className="jobViewPage__skillsList">
               {job.skills.map((skill, index) => (
                 <Chip
                   key={index}
@@ -439,28 +420,36 @@ const JobDetail: React.FC = () => {
 
         
 
-        <Box mt={4} pt={2} borderTop={1} borderColor="divider">
-          <Typography variant="body2" color="text.secondary">
+        <Box mt={4} pt={2} borderTop={1} borderColor="divider" className="jobViewPage__footer">
+          <Typography variant="body2" color="text.secondary" className="jobViewPage__postedOn">
             Posted on: {formatDate(job.createdAt)}
           </Typography>
         </Box>
       </Paper>
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={4}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={4}
+        className="jobViewPage__bottomBar"
+      >
         <Button
           variant="outlined"
           onClick={() => navigate('/')}
           startIcon={<ArrowBackIcon />}
+          className="jobViewPage__bottomBackBtn"
         >
           Back to Jobs
         </Button>
-        <Box display="flex" gap={2} alignItems="center">
+        <Box display="flex" gap={2} alignItems="center" className="jobViewPage__bottomActions">
           {currentUser && (
             <Button
               variant={isSaved(job.id) ? 'contained' : 'outlined'}
               color="primary"
               startIcon={isSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
               onClick={() => toggleSave(job)}
+              className="jobViewPage__saveBtn"
             >
               {isSaved(job.id) ? 'Saved' : 'Save'}
             </Button>
@@ -470,11 +459,12 @@ const JobDetail: React.FC = () => {
               variant="outlined"
               onClick={() => navigate(`/dashboard/edit/${job.id}`)}
               startIcon={<ArrowBackIcon />}
+              className="jobViewPage__editBtn"
             >
               Edit Job
             </Button>
           )}
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={1} className="jobViewPage__bottomApplyWrap">
             {job.ref && (
               <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
             )}
@@ -489,6 +479,7 @@ const JobDetail: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    className="jobView__applyButton jobViewPage__applyButton"
                   >
                     Apply Now
                   </Button>
@@ -503,6 +494,7 @@ const JobDetail: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--instagram"
                   >
                     Apply via Instagram
                   </Button>
@@ -515,6 +507,7 @@ const JobDetail: React.FC = () => {
                     color="primary"
                     href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
                     onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--email"
                   >
                     Apply via Email
                   </Button>

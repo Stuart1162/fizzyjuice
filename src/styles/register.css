@@ -6,7 +6,7 @@
 }
 
 /* Card */
-.register__card {
+div.register__card {
   padding: 32px;
   border-radius: 8px;
   background-color: transparent;
@@ -14,10 +14,13 @@
 }
 
 /* Title and subtitle */
-.register__title {
+h1.register__title {
   margin-bottom: 8px;
   font-weight: 500;
-  text-align: left;
+  font-family: 'Anton', sans-serif;
+  font-size: 3.5rem;
+  letter-spacing: -1px;
+  margin-bottom: 0;
 }
 
 .register__subtitle {

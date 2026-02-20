@@ -8,11 +8,14 @@
 /* Card */
 div.profile__card {
   border-radius: 12px;
+  background-color: transparent;
+  border:none;
 }
 
 /* Title */
 h5.profile__title {
   font-weight: 600;
+  margin-bottom: 2rem;
 }
 
 /* Form grid */

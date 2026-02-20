@@ -1,6 +1,10 @@
 /* Job list row styles */
-.jobRow {
+div.jobRow {
   background: #FBF9F4;
+}
+
+div.dashboard div.jobRow {
+  padding:0;
 }
 
 /* Collapsed state: dotted divider under summary */
@@ -124,8 +128,8 @@ div.jobRefChip span {
   margin-bottom: 6px;
 }
 
-.jobRow__title {
-  font-weight: 700;
+h6.jobRow__title {
+  line-height: 1.1;
 }
 
 .jobRow__company {
