@@ -19,10 +19,56 @@
   background: #FBF9F4;
 }
 
+div.jobViewPage__card {
+  background-color: transparent;
+  box-shadow: none;
+  padding:0;
+}
+
 /* Job details view */
 .jobView__content {
   padding-top: 8px;
-  
+}
+
+h1.jobViewPage__title {
+  font-family: Anton;
+  font-size: 4rem;
+  letter-spacing: -1px;
+  margin-bottom: 0;
+}
+
+p.jobViewPage__company {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
+div.jobViewPage__metaRow {
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+  padding-bottom: 1rem;
+}
+
+h5.jobViewPage__sectionTitle,
+h5.jobViewPage__applyTitle {
+  font-weight:500;
+  letter-spacing: -0.02rem;
+  font-size:1.3rem;
+}
+
+div.jobViewPage__strengthChip {
+  border:none;
+}
+
+div.jobViewPage__strengthChip span {
+  font-size:0.9rem;
+  border:1px solid #3B1906;
+  color:#3B1906;
+  border-radius: 18px;
+  padding:4px 12px;
+}
+
+div.jobViewPage__section {
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+  padding-bottom: 1rem;
 }
 
 .jobView__reference {
@@ -99,8 +145,8 @@
 }
 
 .jobView__adminNote svg {
-  width:1.25em;
-  height:1.25em;
+  width:1em;
+  height:1em;
 }
 
 .jobView__adminNote h6 {
@@ -118,10 +164,21 @@
 }
 
 
-.jobView__strengthsList {
-  display: flex;
+div.jobView__strengthsList {
+  display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin:1rem 0 1rem;
+}
+
+div.jobViewPage__greenFlagsSection {
+  padding:20px;
+  border-bottom: 0;
+}
+
+div.jobViewPage__greenFlagsSection h5 {
+  color:#074701;
+  margin-bottom: 0;
 }
 
 .jobView__applyButton {
