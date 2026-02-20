@@ -15,9 +15,13 @@ div.login__card {
 }
 
 /* Title and subtitle */
-.login__title {
+h1.login__title {
   margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'Anton', sans-serif;
+  font-size: 3.5rem;
+  letter-spacing: -1px;
+  margin-bottom: 0;
 }
 
 .login__subtitle {

@@ -1,6 +1,10 @@
 /* Job list row styles */
-.jobRow {
+div.jobRow {
   background: #FBF9F4;
+}
+
+div.dashboard div.jobRow {
+  padding:0;
 }
 
 /* Collapsed state: dotted divider under summary */

@@ -130,7 +130,7 @@ const InnerAppShell: React.FC = () => {
         style={{
           minHeight: 'calc(100vh - 64px - 56px)',
           padding: '20px 0',
-          backgroundColor: isPostJob ? '#FFFFFF' : undefined,
+          backgroundColor: isPostJob ? '#FBF9F4' : undefined,
         }}
       >
         <Routes>

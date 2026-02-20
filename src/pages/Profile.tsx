@@ -237,14 +237,14 @@ const Profile: React.FC = () => {
               </Box>
             </Box>
           )}
-          {role === 'jobseeker' && (
+          {false && role === 'jobseeker' && (
             <Box className="profile__cv">
               <Typography variant="subtitle1">CV</Typography>
               {cvUrl ? (
                 <Box display="flex" alignItems="center" gap={2} mt={1}>
                   <Button
                     variant="outlined"
-                    href={cvUrl}
+                    href={cvUrl as string}
                     target="_blank"
                     rel="noopener noreferrer"
                     disabled={cvBusy}
