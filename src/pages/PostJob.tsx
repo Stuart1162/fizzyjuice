@@ -88,9 +88,37 @@ const PostJob: React.FC = () => {
       try {
         const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
         const snap = await getDoc(prefRef);
-        const role = (snap.exists() ? (snap.data() as any).role : null) as string | null;
+        const data = snap.exists() ? (snap.data() as any) : null;
+        const role = (data?.role ?? null) as string | null;
         setIsAdmin(role === 'admin');
         setUserRole(role as 'jobseeker' | 'employer' | 'admin' | null);
+
+        // For employers, prefill job form fields from saved profile details
+        if (role === 'employer' && data) {
+          setJob((prev) => {
+            const next = { ...prev };
+            if (!next.company && typeof data.companyName === 'string') {
+              next.company = data.companyName;
+            }
+            if (!next.location && typeof data.companyLocation === 'string') {
+              next.location = data.companyLocation;
+            }
+            if (!next.postcode && typeof data.companyPostcode === 'string') {
+              next.postcode = data.companyPostcode;
+            }
+            if (!next.contactEmail) {
+              if (typeof data.applicationEmail === 'string' && data.applicationEmail) {
+                next.contactEmail = data.applicationEmail;
+              } else if (currentUser.email) {
+                next.contactEmail = currentUser.email;
+              }
+            }
+            if (!next.instagramUrl && typeof data.instagramUrl === 'string') {
+              next.instagramUrl = data.instagramUrl;
+            }
+            return next;
+          });
+        }
       } catch {
         setIsAdmin(false);
         setUserRole(null);

@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration from environment variables
 // Create a .env file in the project root with REACT_APP_ prefixed variables
@@ -16,10 +17,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
 export const db = getFirestore(app);
-
-// Initialize Authentication
 export const auth = getAuth(app);
+export const storage = getStorage(app);
 
 export default app;

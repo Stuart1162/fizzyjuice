@@ -124,8 +124,8 @@ div.jobRefChip span {
   margin-bottom: 6px;
 }
 
-.jobRow__title {
-  font-weight: 700;
+h6.jobRow__title {
+  line-height: 1.1;
 }
 
 .jobRow__company {
