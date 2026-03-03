@@ -32,7 +32,6 @@ const JobDetail: React.FC = () => {
   const { id: routeId } = useParams();
   const id = routeId as string | undefined;
   const navigate = useNavigate();
-  const location = useLocation();
   const { currentUser, isSuperAdmin } = useAuth();
   const { isSaved, toggleSave } = useSavedJobs();
   const [job, setJob] = useState<Job | null>(null);
