@@ -3,6 +3,7 @@ import { collection, collectionGroup, query, where, getDocs, doc, getDoc, update
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
+import { JobMetrics } from '../services/metrics';
 import {
   Container,
   Typography,
@@ -12,6 +13,8 @@ import {
   IconButton,
   Button,
   Divider,
+  Tabs,
+  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,6 +28,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BusinessIcon from '@mui/icons-material/Business';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -47,6 +51,10 @@ const Dashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   // allJobs: all jobs in the marketplace used to compute the personalised "Your list"
   const [allJobs, setAllJobs] = useState<Job[]>([]);
+  // aggregate metrics per job (views, saves, applies)
+  const [jobMetrics, setJobMetrics] = useState<Record<string, JobMetrics>>({});
+  // application counts per job, derived from the applications collection
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -78,7 +86,7 @@ const Dashboard: React.FC = () => {
     'Sustainable sourcing',
   ];
 
-  // Admin analytics state (superadmin only)
+  // Admin analytics state (superadmin + admin)
   const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
   const [strengthCounts, setStrengthCounts] = useState<Record<string, number>>({});
   const [jobseekersWithPrefs, setJobseekersWithPrefs] = useState<number>(0);
@@ -122,10 +130,12 @@ const Dashboard: React.FC = () => {
     loadPrefs();
   }, [currentUser]);
 
-  // Load analytics for superadmin: aggregate jobseeker preferences across all users
+  const canSeeAnalytics = isSuperAdmin || userRole === 'admin';
+
+  // Load analytics for superadmin/admin: aggregate jobseeker preferences across all users
   useEffect(() => {
     const run = async () => {
-      if (!isSuperAdmin) return;
+      if (!canSeeAnalytics) return;
       setAnalyticsLoading(true);
       try {
         // Prefer a collection group read of all 'prefs' docs, and filter to the 'jobseeker' doc
@@ -178,7 +188,7 @@ const Dashboard: React.FC = () => {
       }
     };
     run();
-  }, [isSuperAdmin]);
+  }, [canSeeAnalytics]);
 
   const filteredJobs = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -215,7 +225,6 @@ const Dashboard: React.FC = () => {
 
   // Separate draft and published jobs
   const draftJobs = useMemo(() => filteredJobs.filter(job => job.draft), [filteredJobs]);
-  const publishedJobs = useMemo(() => filteredJobs.filter(job => !job.draft), [filteredJobs]);
 
   // Helper to identify archived jobs (older than 14 days)
   const isArchived = (j: Job): boolean => {
@@ -230,6 +239,22 @@ const Dashboard: React.FC = () => {
     const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
     return (Date.now() - createdMs) > TWO_WEEKS_MS;
   };
+
+  // Live jobs: published and not archived; Archived jobs: published and older than threshold
+  const liveJobs = useMemo(() => {
+    const toMillis = (ts: any): number => {
+      if (!ts) return 0;
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      try { return new Date(ts).getTime() || 0; } catch { return 0; }
+    };
+    const live = filteredJobs.filter(job => !job.draft && !isArchived(job));
+    return [...live].sort((a, b) => {
+      const aMs = toMillis((a as any).createdAt || (a as any).updatedAt);
+      const bMs = toMillis((b as any).createdAt || (b as any).updatedAt);
+      return bMs - aMs;
+    });
+  }, [filteredJobs]);
 
   const archivedJobs = useMemo(() => filteredJobs.filter(job => !job.draft && isArchived(job)), [filteredJobs]);
 
@@ -251,8 +276,37 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const formatExpiryDate = (j: Job): string => {
+    const toMillis = (ts: any): number => {
+      if (!ts) return 0;
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      try { return new Date(ts).getTime() || 0; } catch { return 0; }
+    };
+    const createdMs = toMillis((j as any).createdAt || (j as any).updatedAt);
+    if (!createdMs) return 'Unknown';
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    return new Date(createdMs + TWO_WEEKS_MS).toLocaleDateString();
+  };
+
   // Pagination for Manage Posts section (admins/employers) - not used with accordion layout
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Tab selection for manage area
+  const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
+  const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
+
+  // Tab selection for jobseeker area (Your list vs Saved Jobs)
+  const [seekerTab, setSeekerTab] = useState<'yourList' | 'saved'>('yourList');
+
+  // When the role is known, default admins/superadmins to the "drafts" (New Jobs) tab once
+  useEffect(() => {
+    if (manageTabAutoSet) return;
+    if (isSuperAdmin || userRole === 'admin') {
+      setManageTab('drafts');
+      setManageTabAutoSet(true);
+    }
+  }, [isSuperAdmin, userRole, manageTabAutoSet]);
 
   // Compute personalized list:
   // - Filter by optional user prefs: location contains, roles intersect, contract types include, work arrangement include
@@ -327,12 +381,43 @@ const Dashboard: React.FC = () => {
         const myData = mySnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         setJobs(myData);
 
+        // Load application counts for the jobs shown in Manage Posts
+        try {
+          const appsRef = collection(db, 'applications');
+          const counts: Record<string, number> = {};
+          const jobIds = myData.map(j => j.id).filter(Boolean) as string[];
+
+          for (const jid of jobIds) {
+            const appsQuery = query(appsRef, where('jobId', '==', jid));
+            const appsSnap = await getDocs(appsQuery);
+            counts[jid] = appsSnap.size;
+          }
+
+          setApplicationCounts(counts);
+        } catch (e) {
+          console.error('Failed to load application counts', e);
+          setApplicationCounts({});
+        }
+
         // For Personalised list: fetch all jobs regardless of owner, but filter out drafts for non-admins
         const allSnap = await getDocs(baseRef);
         const allData = allSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         // Filter out drafts for non-admin users
         const filteredAllData = allData.filter(job => !job.draft || (isSuperAdmin || userRole === 'admin'));
         setAllJobs(filteredAllData);
+
+        // Load aggregate metrics (views, saves, applies) for all jobs
+        try {
+          const metricsSnap = await getDocs(collection(db, 'jobMetrics'));
+          const metricsMap: Record<string, JobMetrics> = {};
+          metricsSnap.docs.forEach((d) => {
+            metricsMap[d.id] = d.data() as JobMetrics;
+          });
+          setJobMetrics(metricsMap);
+        } catch (e) {
+          console.error('Failed to load job metrics', e);
+          setJobMetrics({});
+        }
       } catch (err) {
         console.error('Error loading jobs:', err);
         setError('Failed to load jobs.');
@@ -381,11 +466,37 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleCopyJobLink = (jobId: string) => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const url = `${origin}/jobs/${jobId}`;
+      if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(url).catch((err) => {
+          console.error('Failed to copy job link', err);
+        });
+      } else {
+        // Fallback: best-effort copy using a temporary input
+        const temp = document.createElement('input');
+        temp.value = url;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(temp);
+      }
+    } catch (e) {
+      console.error('Unexpected error copying job link', e);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }} className="dashboard">
       <Box display="flex" alignItems="center" gap={1} className="dashboard__header">
         <Typography variant="h4" gutterBottom className="dashboard__title">
-          {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
+          {isSuperAdmin ? 'Admin Dashboard' : 'Dashboard'}
         </Typography>
         {!isSuperAdmin && userRole === 'admin' && (
           <Chip label="Admin" color="primary" size="small" />
@@ -402,69 +513,77 @@ const Dashboard: React.FC = () => {
 
       {/* Preferences moved to dedicated page at /dashboard/personalise */}
 
-      {/* Admin Analytics (superadmins only) */}
-      {isSuperAdmin && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__analytics">
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6">Jobseeker Preferences Analytics</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {analyticsLoading ? 'Loading…' : `${jobseekersWithPrefs} jobseekers with preferences`}
-            </Typography>
+      {/* Jobseeker tabs: Your list / Saved Jobs (hide for employers, admins, and superadmins) */}
+      {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__seekerTabs">
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }} className="dashboard__tabs dashboard__tabs--seeker">
+            <Tabs
+              value={seekerTab}
+              onChange={(_e, v) => setSeekerTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab
+                label="Your list"
+                value="yourList"
+                className="dashboard__seekerTab dashboard__seekerTab--yourList"
+              />
+              <Tab
+                label="Saved jobs"
+                value="saved"
+                className="dashboard__seekerTab dashboard__seekerTab--saved"
+              />
+            </Tabs>
           </Box>
-          {analyticsLoading ? (
-            <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
-          ) : (
-            <Box display="grid" gap={1.25}>
-              {COMPANY_STRENGTH_OPTIONS.map((label) => (
-                <Box key={label} display="flex" alignItems="center" justifyContent="space-between">
-                  <Typography variant="body2">{label}</Typography>
-                  <Chip label={strengthCounts[label] ? strengthCounts[label] : 0} size="small" />
+
+          {seekerTab === 'yourList' && (
+            <Box className="dashboard__yourList">
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="h6" className="dashboard__yourListTitle">Your list</Typography>
+                  <Button
+                    size="small"
+                    component={RouterLink}
+                    to="/dashboard/personalise"
+                    className="dashboard__personaliseBtn"
+                  >
+                    Personalise
+                  </Button>
                 </Box>
-              ))}
+                <Typography variant="body2" color="text.secondary">
+                  {hasAnyPref ? `${yourList.length} matches` : 'Select preferences above'}
+                </Typography>
+              </Box>
+              {!hasAnyPref ? (
+                <Typography variant="body2" color="text.secondary">
+                  Choose your top 3 strengths on the Personalise page to see matching jobs.
+                </Typography>
+              ) : yourList.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No matching jobs yet. Check back soon.</Typography>
+              ) : (
+                <JobList jobsOverride={yourList} />
+              )}
             </Box>
           )}
-        </Paper>
-      )}
 
-      {/* Your list section first (jobseekers only; hide for employers, admins, and superadmins) */}
-      {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
-      <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__yourList">
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h6" className="dashboard__yourListTitle">Your list</Typography>
-            <Button size="small" component={RouterLink} to="/dashboard/personalise" className="dashboard__personaliseBtn">Personalise</Button>
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            {hasAnyPref ? `${yourList.length} matches` : 'Select preferences above'}
-          </Typography>
-        </Box>
-        {!hasAnyPref ? (
-          <Typography variant="body2" color="text.secondary">Choose your top 3 strengths on the Personalise page to see matching jobs.</Typography>
-        ) : yourList.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">No matching jobs yet. Check back soon.</Typography>
-        ) : (
-          <JobList jobsOverride={yourList} />
-        )}
-      </Paper>
-      )}
-
-      {/* Saved Jobs Section (hidden for superadmins, admins, and employers) */}
-      {!isSuperAdmin && userRole !== 'admin' && userRole !== 'employer' && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__saved">
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6" className="dashboard__savedTitle">Saved Jobs</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
-            </Typography>
-          </Box>
-          {savedLoading || savedDocsLoading ? (
-            <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
-          ) : savedJobDocs.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
-            </Typography>
-          ) : (
-            <JobList jobsOverride={savedJobDocs} />
+          {seekerTab === 'saved' && (
+            <Box className="dashboard__saved">
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h6" className="dashboard__savedTitle">Saved Jobs</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
+                </Typography>
+              </Box>
+              {savedLoading || savedDocsLoading ? (
+                <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
+              ) : savedJobDocs.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
+                </Typography>
+              ) : (
+                <JobList jobsOverride={savedJobDocs} />
+              )}
+            </Box>
           )}
         </Paper>
       )}
@@ -477,235 +596,328 @@ const Dashboard: React.FC = () => {
         <>
           {(isSuperAdmin || userRole === 'employer' || userRole === 'admin') && (
             <>
-              {userRole === 'employer' && (
-                <Typography variant="h6" gutterBottom>
-                  My Jobs
-                </Typography>
-              )}
-              <Box sx={{ mb: 2 }} className="dashboard__manageFilters">
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="Search jobs (title, company, location, description)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              {/* Manage area tabs: New Jobs (drafts), Live Jobs, Archive, Analytics */}
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }} className="dashboard__tabs">
+                <Tabs
+                  value={manageTab}
+                  onChange={(_e, v) => setManageTab(v)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                >
+                  {(isSuperAdmin || userRole === 'admin') && (
+                    <Tab label="New Jobs" value="drafts" />
+                  )}
+                  <Tab label="Live Jobs" value="live" />
+                  {(isSuperAdmin || userRole === 'admin') && (
+                    <Tab label="Archive" value="archive" />
+                  )}
+                  {canSeeAnalytics && (
+                    <Tab label="User Analytics" value="analytics" />
+                  )}
+                </Tabs>
               </Box>
 
-              {/* Draft Jobs Section */}
-              {(isSuperAdmin || userRole === 'admin') && draftJobs.length > 0 && (
-                <>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Draft Jobs ({draftJobs.length})
-                  </Typography>
-                  <Box sx={{ mb: 3 }} className="dashboard__drafts">
-                    {draftJobs.map(job => (
-                      <Accordion
-                        key={job.id}
-                        disableGutters
-                        expanded={expandedId === job.id}
-                        onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
-                        className="dashboard__jobAccordion"
-                      >
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                          <Box sx={{ width: '100%' }}>
-                            <Typography variant="h6">{job.title}</Typography>
-                            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mt={0.5}>
-                              <Chip icon={<BusinessIcon />} label={job.company} variant="outlined" size="small" />
-                              <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" size="small" />
-                              <Chip icon={<AccessTimeIcon />} label={job.jobType} variant="outlined" size="small" />
-                              {job.wage && (
-                                <Chip icon={<AttachMoneyIcon />} label={job.wage} variant="outlined" size="small" />
-                              )}
-                              <Chip label="Draft" color="warning" size="small" />
-                              <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
-                                <Typography variant="caption" color="text.secondary">
-                                  Posted: {formatCreatedAt(job.createdAt)}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Box>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Box className="dashboard__jobDetails">
-                            {job.ref && (
-                              <Box mb={2} display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2">Reference</Typography>
-                                <Chip label={`#${job.ref}`} size="small" />
-                              </Box>
-                            )}
-                            {job.roles && job.roles.length > 0 && (
-                              <Box mb={2}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  Role
-                                </Typography>
-                                <Box display="flex" flexWrap="wrap" gap={1}>
-                                  {job.roles.map((role, idx) => (
-                                    <Chip key={idx} label={role} color="primary" variant="outlined" size="small" />
-                                  ))}
-                                </Box>
-                              </Box>
-                            )}
-
-                            {(isSuperAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
-                              <Box mb={2}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  Green Flags
-                                </Typography>
-                                <Box sx={{
-                                  typography: 'body2',
-                                  '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
-                                  '& p': { mb: 1.5 },
-                                  '& ul': { pl: 3, mb: 1.5 },
-                                  '& ol': { pl: 3, mb: 1.5 },
-                                  '& code': {
-                                    bgcolor: 'action.hover',
-                                    px: 0.5,
-                                    py: 0.25,
-                                    borderRadius: 0.5,
-                                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                  },
-                                  '& pre': {
-                                    bgcolor: 'action.hover',
-                                    p: 2,
-                                    borderRadius: 1,
-                                    overflow: 'auto',
-                                    mb: 2,
-                                  },
-                                  '& a': { color: 'primary.main' },
-                                }}>
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {job.wordOnTheStreet}
-                                  </ReactMarkdown>
-                                </Box>
-                              </Box>
-                            )}
-
-                            <Divider sx={{ my: 2 }} />
-
-                            <Box sx={{
-                              typography: 'body2',
-                              '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
-                              '& p': { mb: 1.5 },
-                              '& ul': { pl: 3, mb: 1.5 },
-                              '& ol': { pl: 3, mb: 1.5 },
-                              '& code': {
-                                bgcolor: 'action.hover',
-                                px: 0.5,
-                                py: 0.25,
-                                borderRadius: 0.5,
-                                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                              },
-                              '& pre': {
-                                bgcolor: 'action.hover',
-                                p: 2,
-                                borderRadius: 1,
-                                overflow: 'auto',
-                                mb: 2,
-                              },
-                              '& a': { color: 'primary.main' },
-                            }}>
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {job.description}
-                              </ReactMarkdown>
-                            </Box>
-
-                            {job.companyStrengths && job.companyStrengths.length > 0 && (
-                              <Box mt={2}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  Company strengths
-                                </Typography>
-                                <Box display="flex" flexWrap="wrap" gap={1}>
-                                  {job.companyStrengths.map((s, idx) => (
-                                    <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
-                                  ))}
-                                </Box>
-                              </Box>
-                            )}
-
-                            <Box mt={2} display="flex" justifyContent="space-between">
-                              <Box />
-                              <Box display="flex" gap={1}>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  color="error"
-                                  onClick={() => setConfirmId(job.id!)}
-                                >
-                                  Delete
-                                </Button>
-                                <Button variant="outlined" size="small" onClick={() => handleApprove(job.id!)}>
-                                  Approve
-                                </Button>
-                                <Button
-                                  variant="contained"
-                                  color="primary"
-                                  href={job.applicationUrl && job.applicationUrl.trim() !== ''
-                                    ? job.applicationUrl
-                                    : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                                  startIcon={<EmailIcon />}
-                                  target={job.applicationUrl ? '_blank' : undefined}
-                                  rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
-                                >
-                                  Apply Now
-                                </Button>
-                              </Box>
-                            </Box>
-                          </Box>
-                        </AccordionDetails>
-                      </Accordion>
-                    ))}
-                  </Box>
-                </>
-              )}
-
-              {/* Published Jobs Section */}
-              <Typography variant="h6" gutterBottom sx={{ mt: draftJobs.length > 0 ? 3 : 0 }}>
-                Published Jobs ({publishedJobs.length})
-              </Typography>
-              {publishedJobs.length === 0 ? (
-                <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
-                  <Typography>
-                    {searchQuery.trim() ? 'No jobs match your search.' : "You haven't posted any jobs yet."}
-                  </Typography>
-                  {!searchQuery.trim() && (
-                    <Button variant="contained" sx={{ mt: 2 }} component={RouterLink} to="/post-job">
-                      Post your first job
-                    </Button>
-                  )}
-                </Paper>
-              ) : (
-                <Box display="grid" gap={2}>
-                  {publishedJobs.map(job => (
-                    <Paper key={job.id} variant="outlined" sx={{ p: 2 }} className="dashboard__jobCard">
-                      <Box display="flex" alignItems="center" justifyContent="space-between">
-                        <Box>
-                          <Typography variant="h6">{job.title}</Typography>
-                          <Typography variant="body2" color="text.secondary">{job.company} • {job.location}</Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <IconButton aria-label="edit" component={RouterLink} to={`/dashboard/edit/${job.id}`}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton aria-label="delete" color="error" onClick={() => setConfirmId(job.id!)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                      <Divider sx={{ my: 1.5 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {job.description.length > 160 ? job.description.slice(0, 160) + '…' : job.description}
-                      </Typography>
-                    </Paper>
-                  ))}
+              {manageTab !== 'analytics' && (
+                <Box sx={{ mb: 2 }} className="dashboard__manageFilters">
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search jobs (title, company, location, description)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </Box>
               )}
 
-              {/* Archived Jobs Section (admins/superadmins only) */}
-              {(isSuperAdmin || userRole === 'admin') && (
+              {/* New Jobs (Drafts) Tab */}
+              {manageTab === 'drafts' && (isSuperAdmin || userRole === 'admin') && (
+                <> 
+                  {(draftJobs.length === 0) ? (
+                    <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
+                      <Typography>
+                        {searchQuery.trim() ? 'No new jobs match your search.' : 'No new jobs.'}
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <Box sx={{ mb: 3 }} className="dashboard__drafts">
+                      {draftJobs.map(job => (
+                        <Accordion
+                          key={job.id}
+                          disableGutters
+                          expanded={expandedId === job.id}
+                          onChange={(_e, isExpanded) => setExpandedId(isExpanded ? (job.id as string) : null)}
+                          className="dashboard__jobAccordion"
+                        >
+                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Box sx={{ width: '100%' }}>
+                              <Typography variant="h6">{job.title}</Typography>
+                              <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mt={0.5}>
+                                <Chip icon={<BusinessIcon />} label={job.company} variant="outlined" size="small" />
+                                <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" size="small" />
+                                <Chip icon={<AccessTimeIcon />} label={job.jobType} variant="outlined" size="small" />
+                                {job.wage && (
+                                  <Chip icon={<AttachMoneyIcon />} label={job.wage} variant="outlined" size="small" />
+                                )}
+                                <Chip label="Draft" color="warning" size="small" />
+                                <Box sx={{ ml: 'auto' }} display="flex" alignItems="center" gap={1}>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Posted: {formatCreatedAt(job.createdAt)}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </AccordionSummary>
+                          <AccordionDetails>
+                            <Box className="dashboard__jobDetails">
+                              {job.ref && (
+                                <Box mb={2} display="flex" alignItems="center" gap={1}>
+                                  <Typography variant="subtitle2">Reference</Typography>
+                                  <Chip label={`#${job.ref}`} size="small" />
+                                </Box>
+                              )}
+                              {job.roles && job.roles.length > 0 && (
+                                <Box mb={2}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Role
+                                  </Typography>
+                                  <Box display="flex" flexWrap="wrap" gap={1}>
+                                    {job.roles.map((role, idx) => (
+                                      <Chip key={idx} label={role} color="primary" variant="outlined" size="small" />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+
+                              {(isSuperAdmin || (currentUser && job.createdBy === currentUser.uid)) && job.wordOnTheStreet && (
+                                <Box mb={2}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Green Flags
+                                  </Typography>
+                                  <Box sx={{
+                                    typography: 'body2',
+                                    '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                                    '& p': { mb: 1.5 },
+                                    '& ul': { pl: 3, mb: 1.5 },
+                                    '& ol': { pl: 3, mb: 1.5 },
+                                    '& code': {
+                                      bgcolor: 'action.hover',
+                                      px: 0.5,
+                                      py: 0.25,
+                                      borderRadius: 0.5,
+                                      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                    },
+                                    '& pre': {
+                                      bgcolor: 'action.hover',
+                                      p: 2,
+                                      borderRadius: 1,
+                                      overflow: 'auto',
+                                      mb: 2,
+                                    },
+                                    '& a': { color: 'primary.main' },
+                                  }}>
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {job.wordOnTheStreet}
+                                    </ReactMarkdown>
+                                  </Box>
+                                </Box>
+                              )}
+
+                              <Divider sx={{ my: 2 }} />
+
+                              <Box sx={{
+                                typography: 'body2',
+                                '& h1, & h2, & h3, & h4': { mt: 2, mb: 1 },
+                                '& p': { mb: 1.5 },
+                                '& ul': { pl: 3, mb: 1.5 },
+                                '& ol': { pl: 3, mb: 1.5 },
+                                '& code': {
+                                  bgcolor: 'action.hover',
+                                  px: 0.5,
+                                  py: 0.25,
+                                  borderRadius: 0.5,
+                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                },
+                                '& pre': {
+                                  bgcolor: 'action.hover',
+                                  p: 2,
+                                  borderRadius: 1,
+                                  overflow: 'auto',
+                                  mb: 2,
+                                },
+                                '& a': { color: 'primary.main' },
+                              }}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {job.description}
+                                </ReactMarkdown>
+                              </Box>
+
+                              {job.companyStrengths && job.companyStrengths.length > 0 && (
+                                <Box mt={2}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Company strengths
+                                  </Typography>
+                                  <Box display="flex" flexWrap="wrap" gap={1}>
+                                    {job.companyStrengths.map((s, idx) => (
+                                      <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+
+                              <Box mt={2} display="flex" justifyContent="space-between">
+                                <Box />
+                                <Box display="flex" gap={1}>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    color="error"
+                                    onClick={() => setConfirmId(job.id!)}
+                                  >
+                                    Delete
+                                  </Button>
+                                  <Button variant="outlined" size="small" onClick={() => handleApprove(job.id!)}>
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    color="primary"
+                                    href={job.applicationUrl && job.applicationUrl.trim() !== ''
+                                      ? job.applicationUrl
+                                      : `mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
+                                    startIcon={<EmailIcon />}
+                                    target={job.applicationUrl ? '_blank' : undefined}
+                                    rel={job.applicationUrl ? 'noopener noreferrer' : undefined}
+                                  >
+                                    Apply Now
+                                  </Button>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </AccordionDetails>
+                        </Accordion>
+                      ))}
+                    </Box>
+                  )}
+                </>
+              )}
+
+              {/* Live Jobs Tab */}
+              {manageTab === 'live' && (
                 <>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Archived Jobs ({archivedJobs.length})
+                  <Typography variant="h6" gutterBottom sx={{ mt: 0 }}>
+                    Live Jobs ({liveJobs.length})
+                  </Typography>
+                  {liveJobs.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
+                      <Typography>
+                        {searchQuery.trim() ? 'No jobs match your search.' : "You haven't posted any jobs yet."}
+                      </Typography>
+                      {!searchQuery.trim() && (
+                        <Button variant="contained" sx={{ mt: 2 }} component={RouterLink} to="/post-job">
+                          Post your first job
+                        </Button>
+                      )}
+                    </Paper>
+                  ) : (
+                    <Box className="dashboard__liveGrid">
+                      {liveJobs.map((job) => {
+                        const metrics = job.id ? jobMetrics[job.id] : undefined;
+                        const appliesFromApps = job.id ? applicationCounts[job.id] : undefined;
+                        const applies = appliesFromApps ?? (metrics?.applies ?? 0);
+                        const appliesLabel = applies === 1 ? '1 Application' : `${applies} Applications`;
+
+                        return (
+                          <Paper
+                            key={job.id}
+                            variant="outlined"
+                            sx={{ p: 2.5 }}
+                            className="dashboard__liveCard"
+                          >
+                            <Box className="dashboard__liveCardHeader">
+                              <Typography variant="h6" className="dashboard__liveJobTitle">
+                                {job.title}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" className="dashboard__liveMeta">
+                                {job.company} 
+                                {job.location && `- ${job.location}`}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Added {formatCreatedAt((job as any).createdAt || (job as any).updatedAt)} · Expires {formatExpiryDate(job)}
+                              </Typography>
+                              <Button
+                                variant="text"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/jobs/${job.id}/applications`}
+                                className="dashboard__liveApplicationsLink"
+                              >
+                                {appliesLabel}
+                              </Button>
+                            </Box>
+
+                            <Box className="dashboard__liveActions">
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => setConfirmId(job.id!)}
+                                className="dashboard__liveBtn dashboard__liveBtn--delete"
+                                startIcon={<DeleteIcon />}
+                              >
+                                Delete
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/edit/${job.id}`}
+                                className="dashboard__liveBtn dashboard__liveBtn--edit"
+                                startIcon={<EditIcon />}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component="a"
+                                href={`/jobs/${job.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="dashboard__liveBtn dashboard__liveBtn--viewJob"
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => handleCopyJobLink(job.id!)}
+                                className="dashboard__liveBtn dashboard__liveBtn--copy"
+                                startIcon={<ContentCopyIcon />}
+                              >
+                                Copy link
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/jobs/${job.id}/applications`}
+                                className="dashboard__liveBtn dashboard__liveBtn--view"
+                              >
+                                View applications
+                              </Button>
+                            </Box>
+                          </Paper>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </>
+              )}
+
+              {/* Archive Tab (admins/superadmins only) */}
+              {manageTab === 'archive' && (isSuperAdmin || userRole === 'admin') && (
+                <>
+                  <Typography variant="h6" gutterBottom sx={{ mt: 0 }}>
+                    Archive ({archivedJobs.length})
                   </Typography>
                   {archivedJobs.length === 0 ? (
                     <Paper variant="outlined" sx={{ p: 3, mt: 1 }}>
@@ -736,11 +948,34 @@ const Dashboard: React.FC = () => {
                   )}
                 </>
               )}
+
+              {/* Analytics Tab (superadmin + admin) */}
+              {manageTab === 'analytics' && canSeeAnalytics && (
+                <Paper variant="outlined" sx={{ p: 3, mt: 1 }} className="dashboard__analytics">
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                    <Typography variant="h6">Jobseeker Preference Analytics</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {analyticsLoading ? 'Loading…' : `${jobseekersWithPrefs} jobseekers with preferences`}
+                    </Typography>
+                  </Box>
+                  {analyticsLoading ? (
+                    <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
+                  ) : (
+                    <Box display="grid" gap={1.25}>
+                      {COMPANY_STRENGTH_OPTIONS.map((label) => (
+                        <Box key={label} display="flex" alignItems="center" justifyContent="space-between">
+                          <Typography variant="body2">{label}</Typography>
+                          <Chip label={strengthCounts[label] ? strengthCounts[label] : 0} size="small" />
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </Paper>
+              )}
             </>
           )}
         </>
       )}
-
       <Dialog open={!!confirmId} onClose={() => setConfirmId(null)} className="dashboard__confirmDialog">
         <DialogTitle>Delete this job?</DialogTitle>
         <DialogContent>

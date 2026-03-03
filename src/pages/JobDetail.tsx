@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,6 +32,7 @@ const JobDetail: React.FC = () => {
   const { id: routeId } = useParams();
   const id = routeId as string | undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, isSuperAdmin } = useAuth();
   const { isSaved, toggleSave } = useSavedJobs();
   const [job, setJob] = useState<Job | null>(null);
@@ -48,6 +49,8 @@ const JobDetail: React.FC = () => {
     el.setAttribute('content', content);
   };
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  
 
   useEffect(() => {
     let isCancelled = false;
@@ -133,6 +136,15 @@ const JobDetail: React.FC = () => {
     loadRole();
   }, [currentUser]);
 
+  const handleOpenApplyDialog = () => {
+    if (!job || !job.id) return;
+    if (!currentUser) {
+      navigate('/login', { state: { from: { pathname: `/jobs/${job.id}/apply` } } });
+      return;
+    }
+    navigate(`/jobs/${job.id}/apply`);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" my={4}>
@@ -174,6 +186,9 @@ const JobDetail: React.FC = () => {
       return 'N/A';
     }
   };
+
+  const display = job.applicationDisplay || 'email';
+  const isEmailPreferred = display === 'email';
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="jobViewPage">
@@ -318,65 +333,88 @@ const JobDetail: React.FC = () => {
         )}
 
         {/* Application instructions now follow the description, strengths, and green flags */}
-        <Box mb={4} className="jobViewPage__applySection">
-          <Typography variant="h5" gutterBottom className="jobViewPage__applyTitle">
-            How to apply
-          </Typography>
-          {(() => {
-            const display = job.applicationDisplay || 'email';
-            if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
-              return (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  href={job.applicationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                  sx={{ mt: 1 }}
-                  className="jobView__applyButton jobViewPage__applyButton"
-                >
-                  Apply Now
-                </Button>
-              );
-            }
-            if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
-              return (
-                <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--instagram">
-                  <MuiLink
+        {/* For logged-in users with email as the preferred method, we move the Apply button here and hide the instructions. */}
+        {!(currentUser && isEmailPreferred && job.contactEmail && job.contactEmail.trim() !== '') && (
+          <Box mb={4} className="jobViewPage__applySection">
+            <Typography variant="h5" gutterBottom className="jobViewPage__applyTitle">
+              How to apply
+            </Typography>
+            {(() => {
+              if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
+                return (
+                  <Button
+                    variant="contained"
                     color="primary"
-                    href={job.instagramUrl}
+                    href={job.applicationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    sx={{ mt: 1 }}
+                    className="jobView__applyButton jobViewPage__applyButton"
                   >
-                    Apply via Instagram
-                  </MuiLink>
-                </Typography>
-              );
-            }
-            // default to email if selected or if others missing
-            if (job.contactEmail && job.contactEmail.trim() !== '') {
+                    Apply Now
+                  </Button>
+                );
+              }
+              if (display === 'instagram' && job.instagramUrl && job.instagramUrl.trim() !== '') {
+                return (
+                  <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--instagram">
+                    <MuiLink
+                      color="primary"
+                      href={job.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    >
+                      Apply via Instagram
+                    </MuiLink>
+                  </Typography>
+                );
+              }
+              // default to email if selected or if others missing
+              if (job.contactEmail && job.contactEmail.trim() !== '') {
+                return (
+                  <Box>
+                    <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--email">
+                      You can apply directly via Fizzy Juice. We'll send your profile and CV to{' '}
+                      <strong>{job.contactEmail}</strong> together with your cover letter.
+                    </Typography>
+                    {!currentUser && (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleOpenApplyDialog}
+                        sx={{ mt: 2 }}
+                        className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--email"
+                      >
+                        Apply Now
+                      </Button>
+                    )}
+                  </Box>
+                );
+              }
               return (
-                <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--email">
-                  To apply send your CV to{' '}
-                  <MuiLink
-                    color="primary"
-                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                  >
-                    {job.contactEmail}
-                  </MuiLink>
+                <Typography variant="body1" color="text.secondary">
+                  Application details not provided.
                 </Typography>
               );
-            }
-            return (
-              <Typography variant="body1" color="text.secondary">
-                Application details not provided.
-              </Typography>
-            );
-          })()}
-        </Box>
+            })()}
+          </Box>
+        )}
+
+        {currentUser && isEmailPreferred && job.contactEmail && job.contactEmail.trim() !== '' && (
+          <Box mb={4} className="jobViewPage__applySection">
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={handleOpenApplyDialog}
+              className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--email"
+            >
+              Apply Now
+            </Button>
+          </Box>
+        )}
 
         {job.requirements && job.requirements.length > 0 && (
           <Box mb={4} className="jobViewPage__section jobViewPage__requirements">
@@ -463,7 +501,6 @@ const JobDetail: React.FC = () => {
               <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
             )}
             {(() => {
-              const display = job.applicationDisplay || 'email';
               if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
                 return (
                   <Button
@@ -495,15 +532,19 @@ const JobDetail: React.FC = () => {
                 );
               }
               if (job.contactEmail && job.contactEmail.trim() !== '') {
+                // For logged-in users with email as preferred method, the primary Apply button
+                // is rendered above in the main content area instead of the bottom bar.
+                if (currentUser && isEmailPreferred) {
+                  return null;
+                }
                 return (
                   <Button
                     variant="contained"
                     color="primary"
-                    href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                    onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                    onClick={handleOpenApplyDialog}
                     className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--email"
                   >
-                    Apply via Email
+                    Apply Now
                   </Button>
                 );
               }
@@ -512,9 +553,9 @@ const JobDetail: React.FC = () => {
           </Box>
         </Box>
       </Box>
+
     </Container>
 
-    
   );
 };
 

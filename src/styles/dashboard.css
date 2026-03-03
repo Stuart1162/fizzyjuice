@@ -9,8 +9,9 @@
 
 h4.dashboard__title {
   line-height: 1.2;
-  font-weight: 600;
+  font-weight: 500;
   font-size:3em;
+  letter-spacing: -1px;
   font-family: Anton;
   margin-bottom: 4px;
 }
@@ -47,7 +48,7 @@ h6.dashboard__savedTitle {
 }
 
 a.dashboard__personaliseBtn {
-  color:
+  color: #314ef1;
 }
 
 .dashboard__yourList .jobList,
@@ -91,8 +92,104 @@ div.dashboard__jobCard {
   background-color: transparent;
 }
 
+/* Live Jobs cards (employer) */
+.dashboard__liveGrid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .dashboard__liveGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard__liveCard {
+  border-radius: 12px;
+  background-color: #fdf8f3;
+}
+
+.dashboard__liveCardHeader {
+  margin-bottom: 16px;
+}
+
+h6.dashboard__liveJobTitle {
+  font-weight: 500;
+}
+
+.dashboard__liveMeta {
+  margin-top: 2px;
+}
+
+.dashboard__liveApplicationsLink {
+  padding: 0;
+  min-width: 0;
+  text-transform: none;
+  font-size: 0.9rem;
+  color: #314ef1;
+}
+
+.dashboard__liveActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard__liveBtn {
+  text-transform: none;
+  border-radius: 999px;
+  padding-inline: 1.1rem;
+}
+
+.dashboard__liveBtn--delete.MuiButton-root {
+  background-color: #ffe0e0 !important;
+  color: #8b1212 !important;
+  margin-right: auto; /* push the other buttons to the right */
+}
+
+.dashboard__liveBtn--edit.MuiButton-root {
+  background-color: #f1f1f1 !important;
+  color: #555 !important;
+}
+
+.dashboard__liveBtn--viewJob.MuiButton-root {
+  background-color: #f1f1f1 !important;
+  color: #555 !important;
+}
+
+.dashboard__liveBtn--copy.MuiButton-root {
+  background-color: #f1f1f1 !important;
+  color: #555 !important;
+}
+
+.dashboard__liveBtn--view.MuiButton-root {
+  background-color: #e2e3ff !important;
+  color: #314ef1 !important;
+}
+
 .dashboard__confirmDialog {
   backdrop-filter: blur(1px);
+}
+
+div.dashboard__seekerTabs {
+  background-color: transparent;
+  border:none;
+  padding:0;
+}
+
+.dashboard__tabs--seeker span {
+  display:none;
+}
+
+button.dashboard__seekerTab {
+  text-transform: none;
+  font-size:1em;
+  color: #3b1906;
+  background-color: rgba(0,0,0,0);
+  border:none;
+  border-radius:4px;
+  margin-bottom: 10px;
+  margin-right:4px;
 }
 
 /* Tablet styles */

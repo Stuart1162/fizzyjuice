@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Container, Paper, Typography, Box, TextField, Button } from '@mui/material';
+import { Container, Paper, Typography, Box, TextField, Button, Select, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
 import '../styles/profile.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';
-import { auth, db, storage } from '../firebase';
+import { auth, db } from '../firebase';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { supabase } from '../supabaseClient';
 
 const Profile: React.FC = () => {
   const { currentUser, signOut } = useAuth();
@@ -21,6 +21,19 @@ const Profile: React.FC = () => {
   const [companyPostcode, setCompanyPostcode] = useState('');
   const [applicationEmail, setApplicationEmail] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
+  // Jobseeker-specific profile fields
+  const [preferredJobTitle, setPreferredJobTitle] = useState('');
+  const [jobLocationCity, setJobLocationCity] = useState('');
+  const [jobPostcode, setJobPostcode] = useState('');
+  const [availability, setAvailability] = useState<string[]>([]);
+  const [shiftPreference, setShiftPreference] = useState<string[]>([]);
+  const [yearsExperience, setYearsExperience] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [certFoodSafety, setCertFoodSafety] = useState(false);
+  const [certRSA, setCertRSA] = useState(false);
+  const [certFirstAid, setCertFirstAid] = useState(false);
+  const [certBarista, setCertBarista] = useState(false);
+  const [certHACCP, setCertHACCP] = useState(false);
   const [cvUrl, setCvUrl] = useState<string | null>(null);
   const [cvFileName, setCvFileName] = useState<string | null>(null);
   const [cvPath, setCvPath] = useState<string | null>(null);
@@ -56,6 +69,46 @@ const Profile: React.FC = () => {
           }
           if (typeof data?.instagramUrl === 'string') {
             setInstagramUrl(data.instagramUrl);
+          }
+          if (typeof data?.preferredJobTitle === 'string') {
+            setPreferredJobTitle(data.preferredJobTitle);
+          }
+          if (typeof data?.jobLocationCity === 'string') {
+            setJobLocationCity(data.jobLocationCity);
+          }
+          if (typeof data?.jobPostcode === 'string') {
+            setJobPostcode(data.jobPostcode);
+          }
+          if (Array.isArray(data?.availability)) {
+            setAvailability((data.availability || []) as string[]);
+          } else if (typeof data?.availability === 'string') {
+            setAvailability([data.availability]);
+          }
+          if (Array.isArray(data?.shiftPreference)) {
+            setShiftPreference((data.shiftPreference || []) as string[]);
+          } else if (typeof data?.shiftPreference === 'string') {
+            setShiftPreference([data.shiftPreference]);
+          }
+          if (typeof data?.yearsExperience === 'string') {
+            setYearsExperience(data.yearsExperience);
+          }
+          if (typeof data?.linkedinUrl === 'string') {
+            setLinkedinUrl(data.linkedinUrl);
+          }
+          if (typeof data?.certFoodSafety === 'boolean') {
+            setCertFoodSafety(data.certFoodSafety);
+          }
+          if (typeof data?.certRSA === 'boolean') {
+            setCertRSA(data.certRSA);
+          }
+          if (typeof data?.certFirstAid === 'boolean') {
+            setCertFirstAid(data.certFirstAid);
+          }
+          if (typeof data?.certBarista === 'boolean') {
+            setCertBarista(data.certBarista);
+          }
+          if (typeof data?.certHACCP === 'boolean') {
+            setCertHACCP(data.certHACCP);
           }
           if (typeof data?.cvUrl === 'string') {
             setCvUrl(data.cvUrl);
@@ -93,6 +146,18 @@ const Profile: React.FC = () => {
         companyPostcode: companyPostcode || null,
         applicationEmail: applicationEmail || null,
         instagramUrl: instagramUrl || null,
+        preferredJobTitle: preferredJobTitle || null,
+        jobLocationCity: jobLocationCity || null,
+        jobPostcode: jobPostcode || null,
+        availability: availability && availability.length > 0 ? availability : [],
+        shiftPreference: shiftPreference && shiftPreference.length > 0 ? shiftPreference : [],
+        yearsExperience: yearsExperience || null,
+        linkedinUrl: linkedinUrl || null,
+        certFoodSafety,
+        certRSA,
+        certFirstAid,
+        certBarista,
+        certHACCP,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
       enqueueSnackbar('Profile updated', { variant: 'success' });
@@ -115,15 +180,33 @@ const Profile: React.FC = () => {
     }
     try {
       setCvBusy(true);
+
+      // Best-effort delete any previously stored CV in Supabase
       if (cvPath) {
         try {
-          await deleteObject(storageRef(storage, cvPath));
-        } catch (e) {}
+          await supabase.storage.from('user-cvs').remove([cvPath]);
+        } catch (e) {
+          // ignore cleanup errors
+        }
       }
-      const path = `user-cvs/${currentUser.uid}/${Date.now()}-${file.name}`;
-      const ref = storageRef(storage, path);
-      const snap = await uploadBytes(ref, file);
-      const url = await getDownloadURL(snap.ref);
+
+      const path = `${currentUser.uid}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase
+        .storage
+        .from('user-cvs')
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('user-cvs')
+        .getPublicUrl(path);
+
+      const url = publicUrlData?.publicUrl || null;
+
       const profileRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
       await setDoc(profileRef, {
         cvUrl: url,
@@ -131,11 +214,13 @@ const Profile: React.FC = () => {
         cvStoragePath: path,
         cvUpdatedAt: new Date().toISOString(),
       }, { merge: true });
+
       setCvUrl(url);
       setCvFileName(file.name);
       setCvPath(path);
       enqueueSnackbar('CV uploaded.', { variant: 'success' });
     } catch (e) {
+      console.error(e);
       enqueueSnackbar('Failed to upload CV.', { variant: 'error' });
     } finally {
       setCvBusy(false);
@@ -147,8 +232,10 @@ const Profile: React.FC = () => {
     try {
       setCvBusy(true);
       try {
-        await deleteObject(storageRef(storage, cvPath));
-      } catch (e) {}
+        await supabase.storage.from('user-cvs').remove([cvPath]);
+      } catch (e) {
+        // ignore cleanup errors
+      }
       const profileRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
       await setDoc(profileRef, {
         cvUrl: null,
@@ -190,8 +277,8 @@ const Profile: React.FC = () => {
           />
           {role === 'employer' && (
             <Box mt={2} className="profile__employerDetails">
-              <Typography variant="subtitle1">Employer details (optional)</Typography>
-              <Box mt={2}>
+              <Typography variant="subtitle1" className="profile__sectionTitle">Employer details (optional)</Typography>
+              <Box mt={2} className="profile__employerFields">
                 <TextField
                   label="Company name"
                   value={companyName}
@@ -237,57 +324,299 @@ const Profile: React.FC = () => {
               </Box>
             </Box>
           )}
-          {false && role === 'jobseeker' && (
-            <Box className="profile__cv">
-              <Typography variant="subtitle1">CV</Typography>
-              {cvUrl ? (
-                <Box display="flex" alignItems="center" gap={2} mt={1}>
-                  <Button
-                    variant="outlined"
-                    href={cvUrl as string}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    disabled={cvBusy}
-                  >
-                    {cvFileName || 'View CV'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={cvBusy}
-                  >
-                    {cvBusy ? 'Uploading…' : 'Replace CV'}
-                  </Button>
-                  <Button
-                    variant="text"
-                    color="error"
-                    onClick={handleDeleteCv}
-                    disabled={cvBusy}
-                  >
-                    Delete
-                  </Button>
+          {role === 'jobseeker' && (
+            <>
+              <Box mt={2} className="profile__jobseekerDetails">
+                <Typography variant="subtitle1" className="profile__sectionTitle">About you</Typography>
+                <Box mt={2} className="profile__jobseekerFields">
+                  <TextField
+                    label="Preferred job title"
+                    value={preferredJobTitle}
+                    onChange={(e) => setPreferredJobTitle(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Location (City)"
+                    value={jobLocationCity}
+                    onChange={(e) => setJobLocationCity(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Postcode"
+                    value={jobPostcode}
+                    onChange={(e) => setJobPostcode(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Box mt={2} className="profile__availability">
+                    <Typography variant="subtitle2" className="profile__subTitle">Availability</Typography>
+                    <Box className="profile__availabilityOptions">
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={availability.includes('full-time')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setAvailability((prev) =>
+                                checked
+                                  ? [...prev, 'full-time']
+                                  : prev.filter((v) => v !== 'full-time')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Full-time"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={availability.includes('part-time')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setAvailability((prev) =>
+                                checked
+                                  ? [...prev, 'part-time']
+                                  : prev.filter((v) => v !== 'part-time')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Part-time"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={availability.includes('casual')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setAvailability((prev) =>
+                                checked
+                                  ? [...prev, 'casual']
+                                  : prev.filter((v) => v !== 'casual')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Casual"
+                      />
+                    </Box>
+                  </Box>
+                  <Box mt={2} className="profile__shiftPrefs">
+                    <Typography variant="subtitle2" className="profile__subTitle">Shift preference</Typography>
+                    <Box className="profile__shiftPrefsOptions">
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={shiftPreference.includes('am')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setShiftPreference((prev) =>
+                                checked
+                                  ? [...prev, 'am']
+                                  : prev.filter((v) => v !== 'am')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="AM"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={shiftPreference.includes('pm')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setShiftPreference((prev) =>
+                                checked
+                                  ? [...prev, 'pm']
+                                  : prev.filter((v) => v !== 'pm')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="PM"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={shiftPreference.includes('split')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setShiftPreference((prev) =>
+                                checked
+                                  ? [...prev, 'split']
+                                  : prev.filter((v) => v !== 'split')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Split shift"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={shiftPreference.includes('weekend')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setShiftPreference((prev) =>
+                                checked
+                                  ? [...prev, 'weekend']
+                                  : prev.filter((v) => v !== 'weekend')
+                              );
+                            }}
+                            disabled={loading}
+                          />
+                        }
+                        label="Weekend"
+                      />
+                    </Box>
+                  </Box>
+                  <TextField
+                    label="Years experience"
+                    value={yearsExperience}
+                    onChange={(e) => setYearsExperience(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Box mt={2} className="profile__certifications">
+                    <Typography variant="subtitle2" className="profile__subTitle">Certifications</Typography>
+                    <Box className="profile__certificationsOptions">
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={certFoodSafety}
+                            onChange={(e) => setCertFoodSafety(e.target.checked)}
+                            disabled={loading}
+                          />
+                        }
+                        label="Food Safety"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={certRSA}
+                            onChange={(e) => setCertRSA(e.target.checked)}
+                            disabled={loading}
+                          />
+                        }
+                        label="RSA / Alcohol service license"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={certFirstAid}
+                            onChange={(e) => setCertFirstAid(e.target.checked)}
+                            disabled={loading}
+                          />
+                        }
+                        label="First Aid"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={certBarista}
+                            onChange={(e) => setCertBarista(e.target.checked)}
+                            disabled={loading}
+                          />
+                        }
+                        label="Barista certification"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={certHACCP}
+                            onChange={(e) => setCertHACCP(e.target.checked)}
+                            disabled={loading}
+                          />
+                        }
+                        label="HACCP"
+                      />
+                    </Box>
+                  </Box>
+                  <TextField
+                    label="Instagram profile link"
+                    type="url"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="LinkedIn profile link"
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
                 </Box>
-              ) : (
-                <Box mt={1} display="flex" alignItems="center" gap={2}>
-                  <Typography variant="body2">No CV uploaded.</Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={cvBusy}
-                  >
-                    {cvBusy ? 'Uploading…' : 'Upload CV'}
-                  </Button>
-                </Box>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                style={{ display: 'none' }}
-                onChange={handleCvFileChange}
-              />
-            </Box>
+              </Box>
+
+              <Box className="profile__cv">
+                <Typography variant="subtitle1">CV</Typography>
+                {cvUrl ? (
+                  <Box display="flex" alignItems="center" gap={2} mt={1}>
+                    <Button
+                      variant="outlined"
+                      href={cvUrl as string}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      disabled={cvBusy}
+                    >
+                      {cvFileName || 'View CV'}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={cvBusy}
+                    >
+                      {cvBusy ? 'Uploading…' : 'Replace CV'}
+                    </Button>
+                    <Button
+                      variant="text"
+                      color="error"
+                      onClick={handleDeleteCv}
+                      disabled={cvBusy}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box mt={1} display="flex" alignItems="center" gap={2}>
+                    <Typography variant="body2">No CV uploaded.</Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={cvBusy}
+                    >
+                      {cvBusy ? 'Uploading…' : 'Upload CV'}
+                    </Button>
+                  </Box>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  style={{ display: 'none' }}
+                  onChange={handleCvFileChange}
+                />
+              </Box>
+            </>
           )}
           <Box className="profile__actions">
             <Button variant="outlined" color="inherit" onClick={signOut} className="profile__logoutBtn">

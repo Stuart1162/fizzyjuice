@@ -1,4 +1,4 @@
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -74,6 +74,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [savePromptOpen, setSavePromptOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   // Keep refs for each accordion to scroll into view on expand
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -182,6 +183,16 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
       return true;
     });
   }, [jobs, filterText, filters, isAdmin]);
+
+  const handleApplyFromList = (job: Job) => {
+    if (!job.id) return;
+    try { incrementApply(job.id as string); } catch {}
+    if (!currentUser) {
+      navigate('/login', { state: { from: { pathname: `/jobs/${job.id}` } } });
+      return;
+    }
+    navigate(`/jobs/${job.id}`);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -428,8 +439,14 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   </Box>
                 )}
 
-                <Box mt={2} display="flex" alignItems="center" justifyContent="space-between" className="jobView__actions">
-                  {/* Left side: Apply button or instructions based on applicationDisplay */}
+                <Box
+                  mt={2}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  className="jobView__actions"
+                >
+                  {/* Left side: Apply button or instructions based on applicationDisplay (URL/Instagram only) */}
                   {(() => {
                     const display = job.applicationDisplay || 'email';
                     if (display === 'url' && job.applicationUrl && job.applicationUrl.trim() !== '') {
@@ -443,6 +460,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
+                            sx={{ whiteSpace: 'nowrap' }}
                           >
                             Apply Now
                           </Button>
@@ -469,21 +487,17 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                         </Box>
                       );
                     }
+                    // For email-based applications we handle the Apply button on the right-hand side
+                    // but still show the job reference chip on the left
                     if (job.contactEmail && job.contactEmail.trim() !== '') {
-                      return (
-                        <Box>
-                          <Typography variant="body1" sx={{ fontWeight: 500, fontSize: 18 }}>
-                            To apply send your CV to{' '}
-                            <MuiLink
-                              color="primary"
-                              href={`mailto:${job.contactEmail}?subject=Application for ${job.title} position`}
-                              onClick={() => { try { if (job.id) incrementApply(job.id as string); } catch {} }}
-                            >
-                              {job.contactEmail}
-                            </MuiLink>
-                          </Typography>
-                        </Box>
-                      );
+                      if (job.ref) {
+                        return (
+                          <Box className="jobView__applyWrap">
+                            <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
+                          </Box>
+                        );
+                      }
+                      return <Box />;
                     }
                     return (
                       <Typography variant="body2" color="text.secondary">
@@ -492,31 +506,56 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                     );
                   })()}
 
-                  {/* Right side: Open Job link (new tab) */}
+                  {/* Right side: Open Job link (new tab) and on-site Apply button for email jobs */}
                   {job.id && (
                     isMobile ? (
-                      <IconButton
-                        component="a"
-                        href={`/jobs/${job.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Open job in new tab"
-                        className="jobView__openIconBtn"
-                      >
-                        <OpenInNewIcon fontSize="small" />
-                      </IconButton>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <IconButton
+                          component="a"
+                          href={`/jobs/${job.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open job in new tab"
+                          className="jobView__openIconBtn"
+                        >
+                          <OpenInNewIcon fontSize="small" />
+                        </IconButton>
+                        {job.contactEmail && job.contactEmail.trim() !== '' && (
+                          <Button
+                            className="jobView__applyButton"
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleApplyFromList(job)}
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            Apply Now
+                          </Button>
+                        )}
+                      </Box>
                     ) : (
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        href={`/jobs/${job.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        endIcon={<OpenInNewIcon fontSize="small" />}
-                        className="jobView__openBtn"
-                      >
-                        Open in new tab
-                      </Button>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <IconButton
+                          component="a"
+                          href={`/jobs/${job.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open job in new tab"
+                          className="jobView__openIconBtn"
+                        >
+                          <OpenInNewIcon fontSize="small" />
+                        </IconButton>
+                        {job.contactEmail && job.contactEmail.trim() !== '' && (
+                          <Button
+                            className="jobView__applyButton"
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleApplyFromList(job)}
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            Apply Now
+                          </Button>
+                        )}
+                      </Box>
                     )
                   )}
                 </Box>
