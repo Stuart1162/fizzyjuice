@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Container, Paper, Typography, Box, TextField, Button, Select, MenuItem, FormControlLabel, Checkbox } from '@mui/material';
+import { Container, Paper, Typography, Box, TextField, Button, FormControlLabel, Checkbox } from '@mui/material';
 import '../styles/profile.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';

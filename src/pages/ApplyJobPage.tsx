@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
@@ -78,7 +78,7 @@ const ApplyJobPage: React.FC = () => {
     };
   }, [id]);
 
-  const loadApplicantProfile = async () => {
+  const loadApplicantProfile = useCallback(async () => {
     if (!currentUser || profileLoaded || profileLoading) return;
     setProfileLoading(true);
     try {
@@ -132,13 +132,13 @@ const ApplyJobPage: React.FC = () => {
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, [currentUser, profileLoaded, profileLoading, enqueueSnackbar]);
 
   useEffect(() => {
     if (currentUser) {
       loadApplicantProfile();
     }
-  }, [currentUser]);
+  }, [currentUser, loadApplicantProfile]);
 
   const handlePickCv = () => {
     if (fileInputRef.current) {
