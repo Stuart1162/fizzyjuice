@@ -374,10 +374,23 @@ const JobDetail: React.FC = () => {
               // default to email if selected or if others missing
               if (job.contactEmail && job.contactEmail.trim() !== '') {
                 return (
-                  <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--email">
-                    You can apply directly via Fizzy Juice. We'll send your profile and CV to{' '}
-                    <strong>{job.contactEmail}</strong> together with your cover letter.
-                  </Typography>
+                  <Box>
+                    <Typography variant="body1" className="jobViewPage__applyText jobViewPage__applyText--email">
+                      You can apply directly via Fizzy Juice. We'll send your profile and CV to{' '}
+                      <strong>{job.contactEmail}</strong> together with your cover letter.
+                    </Typography>
+                    {!currentUser && (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleOpenApplyDialog}
+                        sx={{ mt: 2 }}
+                        className="jobView__applyButton jobViewPage__applyButton jobViewPage__applyButton--email"
+                      >
+                        Apply Now
+                      </Button>
+                    )}
+                  </Box>
                 );
               }
               return (

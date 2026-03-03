@@ -1,0 +1,233 @@
+.applicationsPage {
+  /* Page container spacing is driven mostly by MUI; this keeps background consistent */
+}
+
+.applicationsPage__header {
+  margin-bottom: 1.5rem;
+}
+
+.applicationsPage__jobInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+h5.applicationsPage__title {
+  font-family: 'anton', sans-serif;
+  font-weight: 500;
+  font-size: 2rem;
+}
+
+.applicationsPage__meta {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.applicationsPage__backButton {
+  text-transform: none;
+  border-radius: 999px;
+}
+
+.applicationsPage__tabs {
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.applicationsPage__tab {
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 0px solid #ddd;
+  background: #f7f3ec;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.applicationsPage__tab--active {
+  background: #fff;
+  border-color: #cfa57a;
+  color:#314ef1;
+}
+
+.applicationsPage__list {
+  display: grid;
+  gap: 1rem;
+}
+
+div.applicationsPage__card {
+  border-radius: 8px;
+  border:1px solid rgba(0,0,0,0.05);
+}
+
+.applicationsPage__cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.applicationsPage__cardHeaderLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+h6.applicationsPage__applicantName {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.applicationsPage__applicantEmail {
+  font-size: 0.9rem;
+}
+
+.applicationsPage__cardHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+a.applicationsPage__cvButton {
+  text-transform: none;
+  border-radius: 4px;
+  background: #e2e3ff;
+  color: #4151b5;
+}
+
+/* Subtle hover darken for CV button */
+a.applicationsPage__cvButton:hover {
+  background: #d4d5ff;
+}
+
+.applicationsPage__section {
+  margin-top: 0.5rem;
+}
+
+h6.applicationsPage__sectionTitle {
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.applicationsPage__sectionBody {
+  white-space: pre-line;
+}
+
+.applicationsPage__details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.applicationsPage__detailRow {
+  font-size: 0.95rem;
+}
+
+.applicationsPage__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.applicationsPage__actions .MuiButton-root {
+  text-transform: none;
+  border-radius: 999px;
+  padding-inline: 1.1rem;
+  padding-block: 0.25rem;
+  font-weight: 500;
+}
+
+/* Subtle hover darken for action buttons (only when enabled) */
+.applicationsPage__actions .MuiButton-root:not(.Mui-disabled):hover {
+  filter: brightness(0.97);
+}
+
+/* Disabled state for action buttons */
+.applicationsPage__actions .MuiButton-root.Mui-disabled {
+  background: #f0f0f0;
+  color: #9e9e9e;
+  cursor: default;
+}
+
+/* First button: Reject (red) */
+.applicationsPage__actions .MuiButton-root:first-child {
+  border: none;
+  background: #ffe9e9;
+  color: #b02a24;
+  border-radius: 4px;
+}
+
+/* Second button: Shortlist (green) */
+.applicationsPage__actions .MuiButton-root:last-child {
+  border: none;
+  background: #e9f9ec;
+  color: #267a34;
+  border-radius: 4px;
+}
+
+/* FINAL override: when action buttons are disabled, always grey them out */
+.applicationsPage__actions .MuiButton-root.Mui-disabled {
+  background: #f0f0f0 !important;
+  color: #9e9e9e !important;
+  cursor: default;
+}
+
+/* ----------------------------------------- */
+/* Mobile tweaks                            */
+/* ----------------------------------------- */
+
+@media (max-width: 600px) {
+  .applicationsPage {
+    padding-top: 2.5rem;
+  }
+
+  .applicationsPage__header {
+    margin-bottom: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  h5.applicationsPage__title {
+    font-size: 1.6rem;
+    line-height: 1.1;
+  }
+
+  .applicationsPage__backButton {
+    align-self: stretch;
+    justify-content: center;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .applicationsPage__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .applicationsPage__tab {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .applicationsPage__cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .applicationsPage__cardHeaderRight {
+    align-self: stretch;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .applicationsPage__actions {
+    flex-wrap: wrap;
+  }
+
+  .applicationsPage__actions .MuiButton-root {
+    padding-inline: 0.9rem;
+    padding-block: 0.25rem;
+    font-size: 0.8rem;
+  }
+}

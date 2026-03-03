@@ -3,6 +3,7 @@ import { collection, collectionGroup, query, where, getDocs, doc, getDoc, update
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
+import { JobMetrics } from '../services/metrics';
 import {
   Container,
   Typography,
@@ -27,6 +28,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BusinessIcon from '@mui/icons-material/Business';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -49,6 +51,10 @@ const Dashboard: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   // allJobs: all jobs in the marketplace used to compute the personalised "Your list"
   const [allJobs, setAllJobs] = useState<Job[]>([]);
+  // aggregate metrics per job (views, saves, applies)
+  const [jobMetrics, setJobMetrics] = useState<Record<string, JobMetrics>>({});
+  // application counts per job, derived from the applications collection
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -375,12 +381,43 @@ const Dashboard: React.FC = () => {
         const myData = mySnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         setJobs(myData);
 
+        // Load application counts for the jobs shown in Manage Posts
+        try {
+          const appsRef = collection(db, 'applications');
+          const counts: Record<string, number> = {};
+          const jobIds = myData.map(j => j.id).filter(Boolean) as string[];
+
+          for (const jid of jobIds) {
+            const appsQuery = query(appsRef, where('jobId', '==', jid));
+            const appsSnap = await getDocs(appsQuery);
+            counts[jid] = appsSnap.size;
+          }
+
+          setApplicationCounts(counts);
+        } catch (e) {
+          console.error('Failed to load application counts', e);
+          setApplicationCounts({});
+        }
+
         // For Personalised list: fetch all jobs regardless of owner, but filter out drafts for non-admins
         const allSnap = await getDocs(baseRef);
         const allData = allSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         // Filter out drafts for non-admin users
         const filteredAllData = allData.filter(job => !job.draft || (isSuperAdmin || userRole === 'admin'));
         setAllJobs(filteredAllData);
+
+        // Load aggregate metrics (views, saves, applies) for all jobs
+        try {
+          const metricsSnap = await getDocs(collection(db, 'jobMetrics'));
+          const metricsMap: Record<string, JobMetrics> = {};
+          metricsSnap.docs.forEach((d) => {
+            metricsMap[d.id] = d.data() as JobMetrics;
+          });
+          setJobMetrics(metricsMap);
+        } catch (e) {
+          console.error('Failed to load job metrics', e);
+          setJobMetrics({});
+        }
       } catch (err) {
         console.error('Error loading jobs:', err);
         setError('Failed to load jobs.');
@@ -429,11 +466,37 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleCopyJobLink = (jobId: string) => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const url = `${origin}/jobs/${jobId}`;
+      if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(url).catch((err) => {
+          console.error('Failed to copy job link', err);
+        });
+      } else {
+        // Fallback: best-effort copy using a temporary input
+        const temp = document.createElement('input');
+        temp.value = url;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(temp);
+      }
+    } catch (e) {
+      console.error('Unexpected error copying job link', e);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }} className="dashboard">
       <Box display="flex" alignItems="center" gap={1} className="dashboard__header">
         <Typography variant="h4" gutterBottom className="dashboard__title">
-          {isSuperAdmin ? 'Admin Dashboard' : 'Your Dashboard'}
+          {isSuperAdmin ? 'Admin Dashboard' : 'Dashboard'}
         </Typography>
         {!isSuperAdmin && userRole === 'admin' && (
           <Chip label="Admin" color="primary" size="small" />
@@ -533,11 +596,6 @@ const Dashboard: React.FC = () => {
         <>
           {(isSuperAdmin || userRole === 'employer' || userRole === 'admin') && (
             <>
-              {userRole === 'employer' && (
-                <Typography variant="h6" gutterBottom>
-                  My Jobs
-                </Typography>
-              )}
               {/* Manage area tabs: New Jobs (drafts), Live Jobs, Archive, Analytics */}
               <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }} className="dashboard__tabs">
                 <Tabs
@@ -761,32 +819,95 @@ const Dashboard: React.FC = () => {
                       )}
                     </Paper>
                   ) : (
-                    <Box display="grid" gap={2}>
-                      {liveJobs.map(job => (
-                        <Paper key={job.id} variant="outlined" sx={{ p: 2 }} className="dashboard__jobCard">
-                          <Box display="flex" alignItems="center" justifyContent="space-between">
-                            <Box>
-                              <Typography variant="h6">{job.title}</Typography>
-                              <Typography variant="body2" color="text.secondary">{job.company} • {job.location}</Typography>
-                              <Typography variant="caption" color="text.secondary">
+                    <Box className="dashboard__liveGrid">
+                      {liveJobs.map((job) => {
+                        const metrics = job.id ? jobMetrics[job.id] : undefined;
+                        const appliesFromApps = job.id ? applicationCounts[job.id] : undefined;
+                        const applies = appliesFromApps ?? (metrics?.applies ?? 0);
+                        const appliesLabel = applies === 1 ? '1 Application' : `${applies} Applications`;
+
+                        return (
+                          <Paper
+                            key={job.id}
+                            variant="outlined"
+                            sx={{ p: 2.5 }}
+                            className="dashboard__liveCard"
+                          >
+                            <Box className="dashboard__liveCardHeader">
+                              <Typography variant="h6" className="dashboard__liveJobTitle">
+                                {job.title}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" className="dashboard__liveMeta">
+                                {job.company} 
+                                {job.location && `- ${job.location}`}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" display="block">
                                 Added {formatCreatedAt((job as any).createdAt || (job as any).updatedAt)} · Expires {formatExpiryDate(job)}
                               </Typography>
+                              <Button
+                                variant="text"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/jobs/${job.id}/applications`}
+                                className="dashboard__liveApplicationsLink"
+                              >
+                                {appliesLabel}
+                              </Button>
                             </Box>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <IconButton aria-label="edit" component={RouterLink} to={`/dashboard/edit/${job.id}`}>
-                                <EditIcon />
-                              </IconButton>
-                              <IconButton aria-label="delete" color="error" onClick={() => setConfirmId(job.id!)}>
-                                <DeleteIcon />
-                              </IconButton>
+
+                            <Box className="dashboard__liveActions">
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => setConfirmId(job.id!)}
+                                className="dashboard__liveBtn dashboard__liveBtn--delete"
+                                startIcon={<DeleteIcon />}
+                              >
+                                Delete
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/edit/${job.id}`}
+                                className="dashboard__liveBtn dashboard__liveBtn--edit"
+                                startIcon={<EditIcon />}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component="a"
+                                href={`/jobs/${job.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="dashboard__liveBtn dashboard__liveBtn--viewJob"
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => handleCopyJobLink(job.id!)}
+                                className="dashboard__liveBtn dashboard__liveBtn--copy"
+                                startIcon={<ContentCopyIcon />}
+                              >
+                                Copy link
+                              </Button>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                component={RouterLink}
+                                to={`/dashboard/jobs/${job.id}/applications`}
+                                className="dashboard__liveBtn dashboard__liveBtn--view"
+                              >
+                                View applications
+                              </Button>
                             </Box>
-                          </Box>
-                          <Divider sx={{ my: 1.5 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {job.description.length > 160 ? job.description.slice(0, 160) + '…' : job.description}
-                          </Typography>
-                        </Paper>
-                      ))}
+                          </Paper>
+                        );
+                      })}
                     </Box>
                   )}
                 </>

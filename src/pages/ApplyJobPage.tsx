@@ -10,7 +10,7 @@ import {
   CircularProgress,
   Link as MuiLink,
 } from '@mui/material';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
@@ -248,6 +248,27 @@ const ApplyJobPage: React.FC = () => {
 
       if (!res.ok) {
         throw new Error('Application request failed');
+      }
+
+      // Persist an application record so employers can see a list of applicants per job
+      try {
+        const applicationsRef = collection(db, 'applications');
+        await addDoc(applicationsRef, {
+          jobId: job.id || null,
+          jobTitle: job.title,
+          employerId: (job as any).createdBy || null,
+          employerEmail: job.contactEmail.trim(),
+          applicantId: currentUser.uid,
+          applicantName: summary.name || null,
+          applicantEmail: currentUser.email || null,
+          coverLetter: coverLetter || null,
+          cvUrl: body.cvUrl || null,
+          profileSummary: body.profileSummary || null,
+          appliedAt: serverTimestamp(),
+        });
+      } catch (e) {
+        // Non-fatal: if persisting the application fails, still count and show success to the user
+        console.error('Failed to persist application record', e);
       }
 
       try { if (job.id) await incrementApply(job.id as string); } catch {}

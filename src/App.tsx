@@ -16,6 +16,7 @@ import { SnackbarProvider } from 'notistack';
 import PrivateRoute from './components/auth/PrivateRoute';
 import Dashboard from './pages/Dashboard';
 import EditJob from './pages/EditJob';
+import JobApplicationsPage from './pages/JobApplicationsPage';
 import { SavedJobsProvider } from './contexts/SavedJobsContext';
 import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
@@ -164,6 +165,14 @@ const InnerAppShell: React.FC = () => {
             element={
               <PrivateRoute>
                 <EditJob />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/dashboard/jobs/:jobId/applications"
+            element={
+              <PrivateRoute>
+                <JobApplicationsPage />
               </PrivateRoute>
             }
           />

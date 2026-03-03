@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import {
   Container,
   Paper,
@@ -40,9 +42,29 @@ const Login: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      await signIn(email, password);
+      const cred = await signIn(email, password);
       enqueueSnackbar('Successfully logged in!', { variant: 'success' });
-      navigate(from, { replace: true });
+
+      // Default redirect target is where the user was trying to go
+      let target = from;
+
+      try {
+        const uid = cred.user?.uid;
+        if (uid) {
+          const profileRef = doc(db, 'users', uid, 'prefs', 'profile');
+          const snap = await getDoc(profileRef);
+          const role = snap.exists() ? (snap.data() as any).role : null;
+
+          // If an employer was heading to the profile page, send them to their dashboard instead
+          if (role === 'employer' && target === '/profile') {
+            target = '/dashboard';
+          }
+        }
+      } catch (e) {
+        // If role lookup fails, just fall back to the original target
+      }
+
+      navigate(target, { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
       setError('Failed to sign in. ' + (err.message || 'Please check your credentials.'));
