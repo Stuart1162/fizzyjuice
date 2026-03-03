@@ -7,6 +7,8 @@ import Header from './components/layout/Header';
 import Home from './pages/Home';
 import PostJob from './pages/PostJob';
 import JobDetail from './pages/JobDetail';
+import ApplyJobPage from './pages/ApplyJobPage';
+import ApplySuccess from './pages/ApplySuccess';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -136,6 +138,8 @@ const InnerAppShell: React.FC = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/jobs/:id" element={<JobDetail />} />
+          <Route path="/jobs/:id/apply" element={<ApplyJobPage />} />
+          <Route path="/jobs/:id/applied" element={<ApplySuccess />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

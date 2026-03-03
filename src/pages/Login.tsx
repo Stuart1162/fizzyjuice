@@ -60,7 +60,7 @@ const Login: React.FC = () => {
         </Typography>
 
         <Typography variant="body1" color="textSecondary" align="center" paragraph className="login__subtitle">
-          Sign in to post jobs and manage your listings
+          Sign in to post and apply to jobs
         </Typography>
 
         {error && (
