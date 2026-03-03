@@ -290,6 +290,9 @@ const Dashboard: React.FC = () => {
   const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
   const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
 
+  // Tab selection for jobseeker area (Your list vs Saved Jobs)
+  const [seekerTab, setSeekerTab] = useState<'yourList' | 'saved'>('yourList');
+
   // When the role is known, default admins/superadmins to the "drafts" (New Jobs) tab once
   useEffect(() => {
     if (manageTabAutoSet) return;
@@ -447,45 +450,77 @@ const Dashboard: React.FC = () => {
 
       {/* Preferences moved to dedicated page at /dashboard/personalise */}
 
-      {/* Your list section first (jobseekers only; hide for employers, admins, and superadmins) */}
+      {/* Jobseeker tabs: Your list / Saved Jobs (hide for employers, admins, and superadmins) */}
       {userRole !== 'employer' && userRole !== 'admin' && !isSuperAdmin && (
-      <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__yourList">
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h6" className="dashboard__yourListTitle">Your list</Typography>
-            <Button size="small" component={RouterLink} to="/dashboard/personalise" className="dashboard__personaliseBtn">Personalise</Button>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__seekerTabs">
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }} className="dashboard__tabs dashboard__tabs--seeker">
+            <Tabs
+              value={seekerTab}
+              onChange={(_e, v) => setSeekerTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab
+                label="Your list"
+                value="yourList"
+                className="dashboard__seekerTab dashboard__seekerTab--yourList"
+              />
+              <Tab
+                label="Saved jobs"
+                value="saved"
+                className="dashboard__seekerTab dashboard__seekerTab--saved"
+              />
+            </Tabs>
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            {hasAnyPref ? `${yourList.length} matches` : 'Select preferences above'}
-          </Typography>
-        </Box>
-        {!hasAnyPref ? (
-          <Typography variant="body2" color="text.secondary">Choose your top 3 strengths on the Personalise page to see matching jobs.</Typography>
-        ) : yourList.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">No matching jobs yet. Check back soon.</Typography>
-        ) : (
-          <JobList jobsOverride={yourList} />
-        )}
-      </Paper>
-      )}
 
-      {/* Saved Jobs Section (hidden for superadmins, admins, and employers) */}
-      {!isSuperAdmin && userRole !== 'admin' && userRole !== 'employer' && (
-        <Paper variant="outlined" sx={{ p: 3, mb: 4 }} className="dashboard__saved">
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6" className="dashboard__savedTitle">Saved Jobs</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
-            </Typography>
-          </Box>
-          {savedLoading || savedDocsLoading ? (
-            <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
-          ) : savedJobDocs.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
-            </Typography>
-          ) : (
-            <JobList jobsOverride={savedJobDocs} />
+          {seekerTab === 'yourList' && (
+            <Box className="dashboard__yourList">
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="h6" className="dashboard__yourListTitle">Your list</Typography>
+                  <Button
+                    size="small"
+                    component={RouterLink}
+                    to="/dashboard/personalise"
+                    className="dashboard__personaliseBtn"
+                  >
+                    Personalise
+                  </Button>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  {hasAnyPref ? `${yourList.length} matches` : 'Select preferences above'}
+                </Typography>
+              </Box>
+              {!hasAnyPref ? (
+                <Typography variant="body2" color="text.secondary">
+                  Choose your top 3 strengths on the Personalise page to see matching jobs.
+                </Typography>
+              ) : yourList.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">No matching jobs yet. Check back soon.</Typography>
+              ) : (
+                <JobList jobsOverride={yourList} />
+              )}
+            </Box>
+          )}
+
+          {seekerTab === 'saved' && (
+            <Box className="dashboard__saved">
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h6" className="dashboard__savedTitle">Saved Jobs</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {savedLoading ? 'Loading…' : `${savedJobs.length} saved`}
+                </Typography>
+              </Box>
+              {savedLoading || savedDocsLoading ? (
+                <Box display="flex" justifyContent="center" my={2}><CircularProgress size={20} /></Box>
+              ) : savedJobDocs.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  You haven't saved any jobs yet. Browse jobs on the Home page and click "Save" to bookmark them.
+                </Typography>
+              ) : (
+                <JobList jobsOverride={savedJobDocs} />
+              )}
+            </Box>
           )}
         </Paper>
       )}
