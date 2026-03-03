@@ -136,14 +136,47 @@ app.post('/api/apply-via-email', async (req, res) => {
     lines.push('');
     if (profileSummary && typeof profileSummary === 'object') {
       lines.push('Candidate profile details:');
-      Object.entries(profileSummary).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') return;
-        lines.push(`- ${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`);
-      });
-      lines.push('');
-    }
-    if (profileUrl) {
-      lines.push(`View profile (requires Fizzy Juice login): ${profileUrl}`);
+
+      const {
+        // preferredJobTitle is intentionally omitted from the email
+        locationCity,
+        postcode,
+        availability,
+        shiftPreference,
+        yearsExperience,
+        instagramUrl,
+        linkedinUrl,
+        certifications,
+      } = profileSummary;
+
+      if (locationCity) {
+        lines.push(`- Location: ${String(locationCity)}`);
+      }
+      if (postcode) {
+        lines.push(`- Postcode: ${String(postcode)}`);
+      }
+      if (availability && (Array.isArray(availability) ? availability.length : String(availability).trim() !== '')) {
+        const val = Array.isArray(availability) ? availability.join(', ') : String(availability);
+        lines.push(`- Availability: ${val}`);
+      }
+      if (shiftPreference && (Array.isArray(shiftPreference) ? shiftPreference.length : String(shiftPreference).trim() !== '')) {
+        const val = Array.isArray(shiftPreference) ? shiftPreference.join(', ') : String(shiftPreference);
+        lines.push(`- Shift Preference: ${val}`);
+      }
+      if (yearsExperience !== undefined && yearsExperience !== null && String(yearsExperience).trim() !== '') {
+        lines.push(`- Years Experience: ${String(yearsExperience)}`);
+      }
+      if (instagramUrl && String(instagramUrl).trim() !== '') {
+        lines.push(`- Instagram: ${String(instagramUrl)}`);
+      }
+      if (linkedinUrl && String(linkedinUrl).trim() !== '') {
+        lines.push(`- Linkedin: ${String(linkedinUrl)}`);
+      }
+      if (certifications && (Array.isArray(certifications) ? certifications.length : String(certifications).trim() !== '')) {
+        const val = Array.isArray(certifications) ? certifications.join(', ') : String(certifications);
+        lines.push(`- Certifications: ${val}`);
+      }
+
       lines.push('');
     }
     if (cvUrl) {
