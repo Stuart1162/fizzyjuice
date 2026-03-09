@@ -20,6 +20,7 @@ import {
   Checkbox,
   FormHelperText,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
 
 import '../styles/postajob.css';
@@ -51,6 +52,7 @@ const PostJob: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, isSuperAdmin } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
   // Form state excluding requirements and skills (removed from posting UI)
@@ -301,10 +303,12 @@ const PostJob: React.FC = () => {
         };
         await addDoc(collection(db, 'jobs'), jobData);
         clearDraft();
-        // Show success message and redirect
         setError('');
-        setIsSubmitting(false);
-        navigate('/');
+        enqueueSnackbar(
+          "Your job has been successfully submitted for review. Once approved (usually within a couple hours) it'll be published live and you can track applications.",
+          { variant: 'success' }
+        );
+        navigate('/dashboard');
       } catch (err) {
         console.error('Error posting job as draft:', err);
         setError('Failed to post job. Please try again.');
