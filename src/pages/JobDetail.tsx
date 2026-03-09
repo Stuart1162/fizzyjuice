@@ -27,6 +27,7 @@ import { useSavedJobs } from '../contexts/SavedJobsContext';
 import { Link as MuiLink } from '@mui/material';
 import { incrementApply, incrementView } from '../services/metrics';
 import '../styles/jobview.css';
+import { buildJobUrl } from '../utils/seo';
 
 const JobDetail: React.FC = () => {
   const { id: routeId } = useParams();
@@ -104,11 +105,14 @@ const JobDetail: React.FC = () => {
   useEffect(() => {
     if (!job) return;
     const title = `${job.title} at ${job.company} — Fizzy Juice`;
-    const desc = job.description ? `${job.description.replace(/\s+/g, ' ').slice(0, 140)}…` : `${job.title} at ${job.company}`;
+    const rawDesc = job.description ? job.description.replace(/\s+/g, ' ') : `${job.title} at ${job.company}`;
+    const desc = rawDesc.slice(0, 160);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const url = `${origin}/jobs/${job.id}`;
+    const url = buildJobUrl(job, origin);
     const img = (job as any).imageUrl || `${origin}/logo192.png`;
     document.title = title;
+    // Standard meta description
+    upsertMeta('name', 'description', desc);
     upsertMeta('property', 'og:type', 'article');
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', desc);
@@ -118,6 +122,77 @@ const JobDetail: React.FC = () => {
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', desc);
     upsertMeta('name', 'twitter:image', img);
+
+    // Canonical URL
+    if (typeof document !== 'undefined') {
+      let canon = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+      if (!canon) {
+        canon = document.createElement('link');
+        canon.setAttribute('rel', 'canonical');
+        document.head.appendChild(canon);
+      }
+      canon.setAttribute('href', url);
+    }
+
+    // Schema.org JobPosting structured data
+    try {
+      const dateVal: any = (job as any).createdAt;
+      let datePosted: string | undefined;
+      if (dateVal && typeof dateVal.toDate === 'function') {
+        datePosted = dateVal.toDate().toISOString();
+      } else if (dateVal instanceof Date) {
+        datePosted = dateVal.toISOString();
+      } else if (dateVal) {
+        try {
+          datePosted = new Date(dateVal).toISOString();
+        } catch {
+          datePosted = undefined;
+        }
+      }
+
+      const jobPosting: any = {
+        '@context': 'https://schema.org',
+        '@type': 'JobPosting',
+        title: job.title,
+        description: rawDesc,
+        datePosted,
+        employmentType: job.jobType,
+        hiringOrganization: {
+          '@type': 'Organization',
+          name: job.company,
+        },
+        jobLocation: {
+          '@type': 'Place',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: job.location,
+            postalCode: job.postcode || undefined,
+            addressCountry: 'GB',
+          },
+        },
+        jobLocationType: 'ON_SITE',
+        identifier: {
+          '@type': 'PropertyValue',
+          name: 'Fizzy Juice',
+          value: job.id,
+        },
+        url,
+      };
+
+      if (typeof document !== 'undefined') {
+        let script = document.getElementById('jobposting-jsonld') as HTMLScriptElement | null;
+        if (!script) {
+          script = document.createElement('script');
+          script.type = 'application/ld+json';
+          script.id = 'jobposting-jsonld';
+          document.head.appendChild(script);
+        }
+        script.textContent = JSON.stringify(jobPosting);
+      }
+    } catch (e) {
+      // Fail silently if JSON-LD cannot be generated
+      // console.error('Failed to generate JobPosting JSON-LD', e);
+    }
   }, [job]);
 
   useEffect(() => {

@@ -35,6 +35,7 @@ import { useSavedJobs } from '../../contexts/SavedJobsContext';
 import '../../styles/joblist.css';
 import '../../styles/jobview.css';
 import { incrementApply, incrementView } from '../../services/metrics';
+import { buildJobPath } from '../../utils/seo';
 
 interface JobListFilters {
   location?: string;
@@ -187,11 +188,12 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
   const handleApplyFromList = (job: Job) => {
     if (!job.id) return;
     try { incrementApply(job.id as string); } catch {}
+    const jobPath = buildJobPath(job);
     if (!currentUser) {
-      navigate('/login', { state: { from: { pathname: `/jobs/${job.id}` } } });
+      navigate('/login', { state: { from: { pathname: jobPath } } });
       return;
     }
-    navigate(`/jobs/${job.id}`);
+    navigate(jobPath);
   };
 
   useEffect(() => {
@@ -512,7 +514,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                       <Box display="flex" alignItems="center" gap={1}>
                         <IconButton
                           component="a"
-                          href={`/jobs/${job.id}`}
+                          href={buildJobPath(job)}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label="Open job in new tab"

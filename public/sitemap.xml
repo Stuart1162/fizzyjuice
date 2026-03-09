@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core pages -->
+  <url>
+    <loc>https://fizzyjuice.uk/</loc>
+  </url>
+
+  <!-- SEO category pages -->
+  <url>
+    <loc>https://fizzyjuice.uk/jobs/category/hospitality-jobs-edinburgh</loc>
+  </url>
+  <url>
+    <loc>https://fizzyjuice.uk/jobs/category/hospitality-jobs-glasgow</loc>
+  </url>
+  <url>
+    <loc>https://fizzyjuice.uk/jobs/category/chef-jobs-edinburgh</loc>
+  </url>
+  <url>
+    <loc>https://fizzyjuice.uk/jobs/category/chef-jobs-glasgow</loc>
+  </url>
+</urlset>
