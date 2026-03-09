@@ -11,6 +11,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Job } from '../types/job';
+import { buildJobPath } from '../utils/seo';
 
 const ApplySuccessPage: React.FC = () => {
   const { id: routeId } = useParams();
@@ -75,7 +76,7 @@ const ApplySuccessPage: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="jobViewPage">
       <Box mb={3} className="jobViewPage__backRow">
-        <Button variant="text" color="primary" onClick={() => navigate(`/jobs/${job.id}`)}>
+        <Button variant="text" color="primary" onClick={() => navigate(buildJobPath(job))}>
           Back to job
         </Button>
       </Box>
@@ -100,7 +101,7 @@ const ApplySuccessPage: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate(`/jobs/${job.id}`)}
+            onClick={() => navigate(buildJobPath(job))}
           >
             View job again
           </Button>

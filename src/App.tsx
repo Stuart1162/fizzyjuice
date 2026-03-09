@@ -7,6 +7,7 @@ import Header from './components/layout/Header';
 import Home from './pages/Home';
 import PostJob from './pages/PostJob';
 import JobDetail from './pages/JobDetail';
+import JobCategoryPage from './pages/JobCategoryPage';
 import ApplyJobPage from './pages/ApplyJobPage';
 import ApplySuccess from './pages/ApplySuccess';
 import Login from './pages/Login';
@@ -138,9 +139,14 @@ const InnerAppShell: React.FC = () => {
       >
         <Routes>
           <Route path="/" element={<Home />} />
+          {/* Slugged job detail route (preferred) with id + slug */}
+          <Route path="/jobs/:id/:slug" element={<JobDetail />} />
+          {/* Backwards-compatible route without slug */}
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/jobs/:id/apply" element={<ApplyJobPage />} />
           <Route path="/jobs/:id/applied" element={<ApplySuccess />} />
+          {/* SEO category pages for role + location combinations */}
+          <Route path="/jobs/category/:slug" element={<JobCategoryPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

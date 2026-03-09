@@ -40,6 +40,7 @@ import { useSavedJobs } from '../contexts/SavedJobsContext';
 import JobList from '../components/jobs/JobList';
 
 import '../styles/dashboard.css';
+import { buildJobPath } from '../utils/seo';
 
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
@@ -465,10 +466,10 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCopyJobLink = (jobId: string) => {
+  const handleCopyJobLink = (job: Job) => {
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const url = `${origin}/jobs/${jobId}`;
+      const url = `${origin}${buildJobPath(job)}`;
       if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         navigator.clipboard.writeText(url).catch((err) => {
           console.error('Failed to copy job link', err);
@@ -878,7 +879,7 @@ const Dashboard: React.FC = () => {
                                 variant="contained"
                                 size="small"
                                 component="a"
-                                href={`/jobs/${job.id}`}
+                                href={buildJobPath(job as Job)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="dashboard__liveBtn dashboard__liveBtn--viewJob"
@@ -888,7 +889,7 @@ const Dashboard: React.FC = () => {
                               <Button
                                 variant="contained"
                                 size="small"
-                                onClick={() => handleCopyJobLink(job.id!)}
+                                onClick={() => handleCopyJobLink(job as Job)}
                                 className="dashboard__liveBtn dashboard__liveBtn--copy"
                                 startIcon={<ContentCopyIcon />}
                               >
