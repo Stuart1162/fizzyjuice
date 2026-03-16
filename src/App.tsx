@@ -28,7 +28,8 @@ import AdminUsers from './pages/AdminUsers';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#5672FF',
+      main: '#FF7100',
+      contrastText: '#3F0000',
     },
     secondary: {
       main: '#dc004e',
@@ -85,6 +86,38 @@ const theme = createTheme({
           '&:hover': { boxShadow: 'none' },
           '&:active': { boxShadow: 'none' },
           '&:focus': { boxShadow: 'none' },
+          '&.MuiButton-containedPrimary:hover': {
+            backgroundColor: '#D25D00',
+          },
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#3F0000',
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focused': {
+            color: '#3F0000',
+          },
+        },
+      },
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          color: '#3F0000',
+          textDecoration: 'underline',
+          '&:hover': {
+            textDecoration: 'underline',
+          },
         },
       },
     },

@@ -42,6 +42,9 @@ interface JobListFilters {
   roles?: NonNullable<Job['roles']>;
   contractTypes?: Job['jobType'][];
   shifts?: NonNullable<Job['shifts']>;
+  centreLat?: number | null;
+  centreLng?: number | null;
+  radiusKm?: number | null;
 }
 
 interface JobListProps {
@@ -65,6 +68,20 @@ const isArchived = (j: Job): boolean => {
   if (!created) return false;
   const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
   return (Date.now() - created) > TWO_WEEKS_MS;
+};
+
+// Haversine distance between two lat/lng points in kilometres
+const haversineDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
 const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverride }) => {
@@ -158,6 +175,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
     const selectedRoles = f.roles || [];
     const selectedContracts = f.contractTypes || [];
     const selectedShifts = f.shifts || [];
+    const centreLat = typeof f.centreLat === 'number' ? f.centreLat : null;
+    const centreLng = typeof f.centreLng === 'number' ? f.centreLng : null;
+    const radiusKm = typeof f.radiusKm === 'number' && f.radiusKm > 0 ? f.radiusKm : null;
 
     return base.filter((job) => {
       // Location contains
@@ -180,6 +200,17 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
         const jobShifts = job.shifts || [];
         const hasAnyShift = jobShifts.some((s) => selectedShifts.includes(s));
         if (!hasAnyShift) return false;
+      }
+
+      // Optional geo-radius filter
+      if (centreLat !== null && centreLng !== null && radiusKm !== null) {
+        const jobLat = (job as any).lat;
+        const jobLng = (job as any).lng;
+        if (typeof jobLat !== 'number' || typeof jobLng !== 'number') {
+          return false;
+        }
+        const distance = haversineDistanceKm(centreLat, centreLng, jobLat, jobLng);
+        if (distance > radiusKm) return false;
       }
       return true;
     });

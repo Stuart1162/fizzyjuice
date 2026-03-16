@@ -4,6 +4,9 @@ export interface Job {
   company: string;
   location: string;
   postcode?: string;
+  // Optional geo-coordinates for location-based search
+  lat?: number;
+  lng?: number;
   description: string;
   requirements: string[];
   skills: string[];

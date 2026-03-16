@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
 import { useSnackbar } from 'notistack';
+import { geocodePostcode } from '../utils/geo';
 
 const jobTypes: Job['jobType'][] = ['Full-time', 'Part-time', 'Contract', 'Temporary'];
 const ROLE_OPTIONS: NonNullable<Job['roles']> = [
@@ -171,7 +172,7 @@ const EditJob: React.FC = () => {
       if (fromGetter && fromGetter !== job.description) {
         setJob(prev => ({ ...prev, description: fromGetter }));
       }
-      const payload = {
+      let payload: any = {
         title: job.title,
         company: job.company,
         location: job.location,
@@ -188,6 +189,22 @@ const EditJob: React.FC = () => {
         wordOnTheStreet: job.wordOnTheStreet || '',
         updatedAt: serverTimestamp(),
       };
+
+      // Best-effort postcode geocoding. If postcode is provided, try to update
+      // lat/lng. If postcode is cleared, also clear lat/lng.
+      const trimmedPostcode = (job.postcode || '').trim();
+      if (trimmedPostcode) {
+        try {
+          const coords = await geocodePostcode(trimmedPostcode);
+          payload.lat = coords.lat;
+          payload.lng = coords.lng;
+        } catch (e) {
+          console.warn('[EditJob] Failed to geocode postcode', trimmedPostcode, e);
+        }
+      } else {
+        payload.lat = null;
+        payload.lng = null;
+      }
       console.info('[EditJob] Saving payload', {
         source: fromGetter ? 'editor-getter' : 'state',
         len: (payload.description || '').length,

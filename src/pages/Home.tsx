@@ -12,6 +12,8 @@ import {
   FormControlLabel,
   FormGroup,
   IconButton,
+  Button,
+  FormHelperText,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -20,6 +22,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import JobList from '../components/jobs/JobList';
 import { Job } from '../types/job';
+import { geocodePostcode } from '../utils/geo';
 import '../styles/home.css';
 
 const Home: React.FC = () => {
@@ -27,6 +30,11 @@ const Home: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [locationFilter, setLocationFilter] = useState('');
+  const [postcodeFilter, setPostcodeFilter] = useState('');
+  const [radiusKmInput, setRadiusKmInput] = useState('5');
+  const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(null);
+  const [postcodeError, setPostcodeError] = useState<string | null>(null);
+  const [isApplyingPostcode, setIsApplyingPostcode] = useState(false);
 
   const ROLE_OPTIONS: NonNullable<Job['roles']> = [
     'Baker',
@@ -62,14 +70,50 @@ const Home: React.FC = () => {
     setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   };
 
+  const handleApplyPostcodeRadius = async () => {
+    const trimmedPostcode = postcodeFilter.trim();
+    if (!trimmedPostcode) {
+      // Clear radius filter if postcode is cleared
+      setCentre(null);
+      setPostcodeError(null);
+      return;
+    }
+    const radiusVal = parseFloat(radiusKmInput || '0');
+    if (!radiusVal || radiusVal <= 0) {
+      setPostcodeError('Please enter a radius greater than 0');
+      return;
+    }
+    setIsApplyingPostcode(true);
+    setPostcodeError(null);
+    try {
+      const coords = await geocodePostcode(trimmedPostcode);
+      setCentre({ lat: coords.lat, lng: coords.lng });
+    } catch (e) {
+      console.warn('[Home] Failed to geocode postcode', trimmedPostcode, e);
+      setCentre(null);
+      setPostcodeError('Please enter a valid UK postcode (e.g. SW1A 1AA)');
+    } finally {
+      setIsApplyingPostcode(false);
+    }
+  };
+
+  const handleClearPostcodeRadius = () => {
+    setPostcodeFilter('');
+    setCentre(null);
+    setPostcodeError(null);
+  };
+
   const filters = useMemo(
     () => ({
       location: locationFilter,
       roles: selectedRoles as NonNullable<Job['roles']>,
       contractTypes: selectedContracts as Job['jobType'][],
       shifts: selectedShifts as NonNullable<Job['shifts']>,
+      centreLat: centre ? centre.lat : null,
+      centreLng: centre ? centre.lng : null,
+      radiusKm: centre ? parseFloat(radiusKmInput || '0') || null : null,
     }),
-    [locationFilter, selectedRoles, selectedContracts, selectedShifts]
+    [locationFilter, selectedRoles, selectedContracts, selectedShifts, centre, radiusKmInput]
   );
 
   return (
@@ -128,15 +172,49 @@ const Home: React.FC = () => {
                     <Typography>Location</Typography>
                   </AccordionSummary>
                   <AccordionDetails className="home__locationDetails">
-                    <TextField
-                      fullWidth
-                      size="small"
-                      variant="outlined"
-                      placeholder="e.g., London, Remote"
-                      value={locationFilter}
-                      onChange={(e) => setLocationFilter(e.target.value)}
-                      className="home__locationInput"
-                    />
+                    <Box>
+                      <Box display="flex" gap={1} mb={1}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder="Postcode (e.g., EH1 1AA)"
+                          value={postcodeFilter}
+                          onChange={(e) => setPostcodeFilter(e.target.value)}
+                          className="home__locationInput"
+                        />
+                        <TextField
+                          size="small"
+                          variant="outlined"
+                          type="number"
+                          inputProps={{ min: 1, style: { width: 80 } }}
+                          label="km"
+                          value={radiusKmInput}
+                          onChange={(e) => setRadiusKmInput(e.target.value)}
+                          className="home__locationInput"
+                        />
+                      </Box>
+                      <Box display="flex" gap={1} mt={0.5}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleApplyPostcodeRadius}
+                          disabled={isApplyingPostcode}
+                          sx={{ color: '#3B1904', borderColor: '#3B1904' }}
+                        >
+                          {isApplyingPostcode ? 'Searching…' : 'Search'}
+                        </Button>
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={handleClearPostcodeRadius}
+                          disabled={isApplyingPostcode}
+                          sx={{ color: '#3B1904' }}
+                        >
+                          Clear
+                        </Button>
+                      </Box>
+                    </Box>
                   </AccordionDetails>
                 </Accordion>
 
@@ -251,15 +329,49 @@ const Home: React.FC = () => {
                   <Typography>Location</Typography>
                 </AccordionSummary>
                 <AccordionDetails className="home__locationDetails">
-                  <TextField
-                    fullWidth
-                    size="small"
-                    variant="outlined"
-                    placeholder="e.g., London, Remote"
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    className="home__locationInput"
-                  />
+                  <Box>
+                    <Box display="flex" gap={1} mb={1}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        variant="outlined"
+                        placeholder="Postcode (e.g., EH1 1AA)"
+                        value={postcodeFilter}
+                        onChange={(e) => setPostcodeFilter(e.target.value)}
+                        className="home__locationInput"
+                      />
+                      <TextField
+                        size="small"
+                        variant="outlined"
+                        type="number"
+                        inputProps={{ min: 1, style: { width: 80 } }}
+                        label="km"
+                        value={radiusKmInput}
+                        onChange={(e) => setRadiusKmInput(e.target.value)}
+                        className="home__locationInput"
+                      />
+                    </Box>
+                    <Box display="flex" gap={1} mt={0.5}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleApplyPostcodeRadius}
+                        disabled={isApplyingPostcode}
+                        sx={{ color: '#3B1904', borderColor: '#3B1904' }}
+                      >
+                        {isApplyingPostcode ? 'Searching…' : 'Search'}
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={handleClearPostcodeRadius}
+                        disabled={isApplyingPostcode}
+                        sx={{ color: '#3B1904' }}
+                      >
+                        Clear
+                      </Button>
+                    </Box>
+                  </Box>
                 </AccordionDetails>
               </Accordion>
 
