@@ -48,7 +48,7 @@ h1.login__title {
 
 .login__emailInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline,
 .login__passwordInput .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #5672FF;
+  border-color: #3F0000;
   border-width: 2px;
 }
 
@@ -70,7 +70,8 @@ h1.login__title {
 
 .login__forgotLink,
 .login__registerLink {
-  color: #3B1906;
+  color: #3F0000;
+  text-decoration: underline;
 }
 
 .login__forgotLink:hover,

@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import RichMarkdownEditor from '../components/editor/RichMarkdownEditor';
+import { geocodePostcode } from '../utils/geo';
 
 import '../styles/postajob.css';
 
@@ -173,6 +174,20 @@ const PostJob: React.FC = () => {
   };
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
+  // Best-effort postcode geocoding. We do not block job posting if lookup fails;
+  // instead we simply omit lat/lng so the job will not participate in radius search.
+  const getLatLngForPostcode = async (postcode?: string) => {
+    const trimmed = (postcode || '').trim();
+    if (!trimmed) return null;
+    try {
+      const coords = await geocodePostcode(trimmed);
+      return coords;
+    } catch (e) {
+      console.warn('[PostJob] Failed to geocode postcode', trimmed, e);
+      return null;
+    }
+  };
+
   // If returning from Stripe with paid=1 and we have a draft, auto-submit it
   useEffect(() => {
     if (paid && !autoSubmitRef.current) {
@@ -191,6 +206,7 @@ const PostJob: React.FC = () => {
           try {
             const user = auth.currentUser;
             const refCode = await getUniqueRef();
+            const latLng = await getLatLngForPostcode(draft.postcode);
             const jobData = {
               ...draft,
               requirements: [],
@@ -198,6 +214,7 @@ const PostJob: React.FC = () => {
               createdAt: serverTimestamp(),
               createdBy: user ? user.uid : 'anonymous',
               ref: refCode,
+              ...(latLng ? { lat: latLng.lat, lng: latLng.lng } : {}),
             };
             await addDoc(collection(db, 'jobs'), jobData);
             clearDraft();
@@ -268,6 +285,10 @@ const PostJob: React.FC = () => {
       setError('Please fill in all required fields');
       return;
     }
+    if (!job.postcode || !job.postcode.trim()) {
+      setError('Please enter a valid UK postcode so we can show your job in "near me" searches');
+      return;
+    }
     // Validate selected application display option has its value
     const display = job.applicationDisplay || 'email';
     if (display === 'email' && !job.contactEmail) {
@@ -292,6 +313,7 @@ const PostJob: React.FC = () => {
         setIsSubmitting(true);
         const user = auth.currentUser;
         const refCode = await getUniqueRef();
+        const latLng = await getLatLngForPostcode(job.postcode);
         const jobData = {
           ...job,
           requirements: [],
@@ -300,6 +322,7 @@ const PostJob: React.FC = () => {
           createdBy: user ? user.uid : 'anonymous',
           ref: refCode,
           draft: true, // Pending admin approval
+          ...(latLng ? { lat: latLng.lat, lng: latLng.lng } : {}),
         };
         await addDoc(collection(db, 'jobs'), jobData);
         clearDraft();
@@ -325,6 +348,7 @@ const PostJob: React.FC = () => {
         setIsSubmitting(true);
         const user = auth.currentUser;
         const refCode = await getUniqueRef();
+        const latLng = await getLatLngForPostcode(job.postcode);
         const jobData = {
           ...job,
           requirements: [],
@@ -333,6 +357,7 @@ const PostJob: React.FC = () => {
           createdBy: user ? user.uid : 'anonymous',
           ref: refCode,
           draft: false, // Approved immediately for admins
+          ...(latLng ? { lat: latLng.lat, lng: latLng.lng } : {}),
         };
         await addDoc(collection(db, 'jobs'), jobData);
         clearDraft();
@@ -453,6 +478,7 @@ const PostJob: React.FC = () => {
       setIsSubmitting(true);
       const user = auth.currentUser;
       const refCode = await getUniqueRef();
+      const latLng = await getLatLngForPostcode(job.postcode);
       const jobData = {
         ...job,
         requirements: [],
@@ -460,6 +486,7 @@ const PostJob: React.FC = () => {
         createdAt: serverTimestamp(),
         createdBy: user ? user.uid : 'anonymous',
         ref: refCode,
+        ...(latLng ? { lat: latLng.lat, lng: latLng.lng } : {}),
       };
       await addDoc(collection(db, 'jobs'), jobData);
       clearDraft();

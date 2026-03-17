@@ -42,6 +42,8 @@ import JobList from '../components/jobs/JobList';
 import '../styles/dashboard.css';
 import { buildJobPath } from '../utils/seo';
 
+const LIVE_JOBS_PER_PAGE = 20;
+
 const Dashboard: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
   const { savedJobs, loading: savedLoading } = useSavedJobs();
@@ -292,9 +294,14 @@ const Dashboard: React.FC = () => {
   // Pagination for Manage Posts section (admins/employers) - not used with accordion layout
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Admin-only pagination state for Live Jobs tab
+  const [livePage, setLivePage] = useState<number>(1);
+
   // Tab selection for manage area
   const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
   const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
+
+  const isAdminLike = isSuperAdmin || userRole === 'admin';
 
   // Tab selection for jobseeker area (Your list vs Saved Jobs)
   const [seekerTab, setSeekerTab] = useState<'yourList' | 'saved'>('yourList');
@@ -307,6 +314,33 @@ const Dashboard: React.FC = () => {
       setManageTabAutoSet(true);
     }
   }, [isSuperAdmin, userRole, manageTabAutoSet]);
+
+  // Reset or clamp Live Jobs page when filters or job counts change
+  useEffect(() => {
+    if (!isAdminLike) {
+      if (livePage !== 1) setLivePage(1);
+      return;
+    }
+    const totalPages = Math.max(1, Math.ceil(liveJobs.length / LIVE_JOBS_PER_PAGE));
+    if (livePage > totalPages) {
+      setLivePage(totalPages);
+    }
+  }, [isAdminLike, liveJobs.length, livePage]);
+
+  useEffect(() => {
+    if (manageTab === 'live') {
+      setLivePage(1);
+    }
+  }, [manageTab]);
+
+  const paginatedLiveJobs = useMemo(() => {
+    if (!isAdminLike) return liveJobs;
+    if (liveJobs.length === 0) return liveJobs;
+    const totalPages = Math.max(1, Math.ceil(liveJobs.length / LIVE_JOBS_PER_PAGE));
+    const safePage = Math.min(livePage, totalPages);
+    const start = (safePage - 1) * LIVE_JOBS_PER_PAGE;
+    return liveJobs.slice(start, start + LIVE_JOBS_PER_PAGE);
+  }, [liveJobs, livePage, isAdminLike]);
 
   // Compute personalized list:
   // - Filter by optional user prefs: location contains, roles intersect, contract types include, work arrangement include
@@ -885,7 +919,7 @@ const Dashboard: React.FC = () => {
                     </Paper>
                   ) : (
                     <Box className="dashboard__liveGrid">
-                      {liveJobs.map((job) => {
+                      {(isAdminLike ? paginatedLiveJobs : liveJobs).map((job) => {
                         const metrics = job.id ? jobMetrics[job.id] : undefined;
                         const appliesFromApps = job.id ? applicationCounts[job.id] : undefined;
                         const applies = appliesFromApps ?? (metrics?.applies ?? 0);
@@ -973,6 +1007,31 @@ const Dashboard: React.FC = () => {
                           </Paper>
                         );
                       })}
+                    </Box>
+                  )}
+                  {isAdminLike && liveJobs.length > LIVE_JOBS_PER_PAGE && (
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+                      <Typography variant="body2" color="text.secondary">
+                        Page {livePage} of {Math.ceil(liveJobs.length / LIVE_JOBS_PER_PAGE)}
+                      </Typography>
+                      <Box display="flex" gap={1}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled={livePage <= 1}
+                          onClick={() => setLivePage((p) => Math.max(1, p - 1))}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          disabled={livePage >= Math.ceil(liveJobs.length / LIVE_JOBS_PER_PAGE)}
+                          onClick={() => setLivePage((p) => Math.min(Math.ceil(liveJobs.length / LIVE_JOBS_PER_PAGE), p + 1))}
+                        >
+                          Next
+                        </Button>
+                      </Box>
                     </Box>
                   )}
                 </>

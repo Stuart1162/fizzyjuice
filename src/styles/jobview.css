@@ -197,8 +197,9 @@ div.jobViewPage__greenFlagsSection h5 {
   margin-bottom: 0;
 }
 
-.jobView__applyButton {
+button.jobView__applyButton {
   min-width: 140px;
+  width:auto;
 }
 
 div.jobView__section {
