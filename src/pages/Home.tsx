@@ -13,7 +13,6 @@ import {
   FormGroup,
   IconButton,
   Button,
-  FormHelperText,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -29,11 +28,9 @@ const Home: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [locationFilter, setLocationFilter] = useState('');
   const [postcodeFilter, setPostcodeFilter] = useState('');
   const [radiusKmInput, setRadiusKmInput] = useState('5');
   const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(null);
-  const [postcodeError, setPostcodeError] = useState<string | null>(null);
   const [isApplyingPostcode, setIsApplyingPostcode] = useState(false);
 
   const ROLE_OPTIONS: NonNullable<Job['roles']> = [
@@ -75,23 +72,19 @@ const Home: React.FC = () => {
     if (!trimmedPostcode) {
       // Clear radius filter if postcode is cleared
       setCentre(null);
-      setPostcodeError(null);
       return;
     }
     const radiusVal = parseFloat(radiusKmInput || '0');
     if (!radiusVal || radiusVal <= 0) {
-      setPostcodeError('Please enter a radius greater than 0');
       return;
     }
     setIsApplyingPostcode(true);
-    setPostcodeError(null);
     try {
       const coords = await geocodePostcode(trimmedPostcode);
       setCentre({ lat: coords.lat, lng: coords.lng });
     } catch (e) {
       console.warn('[Home] Failed to geocode postcode', trimmedPostcode, e);
       setCentre(null);
-      setPostcodeError('Please enter a valid UK postcode (e.g. SW1A 1AA)');
     } finally {
       setIsApplyingPostcode(false);
     }
@@ -100,12 +93,10 @@ const Home: React.FC = () => {
   const handleClearPostcodeRadius = () => {
     setPostcodeFilter('');
     setCentre(null);
-    setPostcodeError(null);
   };
 
   const filters = useMemo(
     () => ({
-      location: locationFilter,
       roles: selectedRoles as NonNullable<Job['roles']>,
       contractTypes: selectedContracts as Job['jobType'][],
       shifts: selectedShifts as NonNullable<Job['shifts']>,
@@ -113,7 +104,7 @@ const Home: React.FC = () => {
       centreLng: centre ? centre.lng : null,
       radiusKm: centre ? parseFloat(radiusKmInput || '0') || null : null,
     }),
-    [locationFilter, selectedRoles, selectedContracts, selectedShifts, centre, radiusKmInput]
+    [selectedRoles, selectedContracts, selectedShifts, centre, radiusKmInput]
   );
 
   return (
