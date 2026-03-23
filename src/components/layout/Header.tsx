@@ -95,7 +95,9 @@ const Header: React.FC = () => {
       <Drawer anchor="right" open={mobileOpen} onClose={toggleMobile} PaperProps={{ className: 'navbar__drawer' }}>
         <Box sx={{ width: 280 }} role="presentation" onClick={toggleMobile} onKeyDown={toggleMobile} className="navbar__drawerContent">
           <Box className="navbar__drawerHeader" sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="h6" className="navbar__drawerTitle">Fizzy Juice</Typography>
+            <Box component={RouterLink} to="/" className="navbar__brand">
+              <Box component="img" src="/smiley.svg" alt="Fizzy Juice" className="navbar__logo" />
+            </Box>
           </Box>
           <List className="navbar__drawerList">
             {currentUser ? (

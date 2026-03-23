@@ -99,4 +99,8 @@ h1.login__title {
     font-family:Anton;
   }
 
+  div.register__divider {
+    margin-top: 2rem;
+  }
+
 }

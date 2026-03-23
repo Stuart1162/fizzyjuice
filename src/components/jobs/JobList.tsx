@@ -475,8 +475,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                 <Box
                   mt={2}
                   display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
+                  flexDirection={isMobile ? 'column' : 'row'}
+                  alignItems={isMobile ? 'stretch' : 'center'}
+                  justifyContent={isMobile ? 'flex-start' : 'space-between'}
                   className="jobView__actions"
                 >
                   {/* Left side: Apply button or instructions based on applicationDisplay (URL/Instagram only) */}
@@ -542,29 +543,31 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   {/* Right side: Open Job link (new tab) and on-site Apply button for email jobs */}
                   {job.id && (
                     isMobile ? (
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <IconButton
-                          component="a"
-                          href={buildJobPath(job)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Open job in new tab"
-                          className="jobView__openIconBtn"
-                        >
-                          <Box display="flex" alignItems="center" gap={0.5}>
-                            <Typography variant="body2" className="jobView__openIconLabel">
-                              Open in new tab
-                            </Typography>
-                            <OpenInNewIcon fontSize="small" />
-                          </Box>
-                        </IconButton>
+                      <Box display="flex" flexDirection="column" alignItems="stretch" gap={1}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <IconButton
+                            component="a"
+                            href={buildJobPath(job)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Open job in new tab"
+                            className="jobView__openIconBtn"
+                          >
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                              <Typography variant="body2" className="jobView__openIconLabel">
+                                Open in new tab
+                              </Typography>
+                              <OpenInNewIcon fontSize="small" />
+                            </Box>
+                          </IconButton>
+                        </Box>
                         {job.contactEmail && job.contactEmail.trim() !== '' && (
                           <Button
                             className="jobView__applyButton"
                             variant="contained"
                             color="primary"
                             onClick={() => handleApplyFromList(job)}
-                            sx={{ whiteSpace: 'nowrap' }}
+                            fullWidth
                           >
                             Apply Now
                           </Button>
