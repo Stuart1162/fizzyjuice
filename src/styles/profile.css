@@ -209,4 +209,10 @@ div.public-employer-profile__benefitChip {
   
   .profile__actions { gap: 8px; }
   .profile__saveBtn { flex: 1; }
+
+  /* On mobile, remove the left border from the public employer profile right column */
+  div.public-employer-profile__right {
+    border-left: none;
+    padding:0;
+  }
 }
