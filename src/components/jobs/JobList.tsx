@@ -322,7 +322,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
             }}
             TransitionProps={{
               unmountOnExit: true,
-              timeout: { enter: 320, exit: 320 },
+              timeout: { enter: 160, exit: 160 },
               easing: {
                 enter: 'cubic-bezier(0.22, 1, 0.36, 1)', /* easeOutCubic */
                 exit: 'cubic-bezier(0.22, 1, 0.36, 1)',  /* easeOutCubic for smoother close */
@@ -551,7 +551,12 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                           aria-label="Open job in new tab"
                           className="jobView__openIconBtn"
                         >
-                          <OpenInNewIcon fontSize="small" />
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Typography variant="body2" className="jobView__openIconLabel">
+                              Open in new tab
+                            </Typography>
+                            <OpenInNewIcon fontSize="small" />
+                          </Box>
                         </IconButton>
                         {job.contactEmail && job.contactEmail.trim() !== '' && (
                           <Button
@@ -575,7 +580,12 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                           aria-label="Open job in new tab"
                           className="jobView__openIconBtn"
                         >
-                          <OpenInNewIcon fontSize="small" />
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <Typography variant="body2" className="jobView__openIconLabel">
+                              Open in new tab
+                            </Typography>
+                            <OpenInNewIcon fontSize="small" />
+                          </Box>
                         </IconButton>
                         {job.contactEmail && job.contactEmail.trim() !== '' && (
                           <Button

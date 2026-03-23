@@ -23,6 +23,8 @@ import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import AdminUsers from './pages/AdminUsers';
+import EmployerPublicProfile from './pages/EmployerPublicProfile';
+import EmployerDirectory from './pages/EmployerDirectory';
 
 // Create a theme instance
 const theme = createTheme({
@@ -180,6 +182,9 @@ const InnerAppShell: React.FC = () => {
           <Route path="/jobs/:id/applied" element={<ApplySuccess />} />
           {/* SEO category pages for role + location combinations */}
           <Route path="/jobs/category/:slug" element={<JobCategoryPage />} />
+          {/* Employer directory + public employer profile pages */}
+          <Route path="/employers" element={<EmployerDirectory />} />
+          <Route path="/employers/:slug" element={<EmployerPublicProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

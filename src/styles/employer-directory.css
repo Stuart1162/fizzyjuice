@@ -1,0 +1,108 @@
+div.employer-directory {
+  /* Overall spacing to match profile/public pages */
+  padding-top: 1rem;
+  max-width: 100%;
+}
+
+.employer-directory__header {
+  margin-bottom: 2.5rem;
+}
+
+.employer-directory__intro {
+  max-width: 42rem;
+}
+
+div.employer-directory__header h1 {
+  font-size:4rem;
+  margin-bottom: 5px;
+}
+
+div.employer-directory__filtersRow {
+  row-gap: 1rem;
+  margin-bottom: 20px;
+}
+
+.employer-directory__locationFilters {
+  align-items: flex-start;
+}
+
+.employer-directory__postcodeActions {
+  margin-top: 0.25rem;
+}
+
+.employer-directory__results {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: 1.5rem;
+  row-gap: 1.5rem;
+  border-top:2px dotted rgba(59, 25, 6, 0.4);
+  padding-top:40px;
+}
+
+div.employer-directory__item {
+  border:1px dotted rgba(59, 25, 6, 0.4);
+  padding-bottom: 1.5rem;
+  padding:20px;
+}
+
+
+
+a.employer-directory__itemName {
+  text-decoration: none;
+  letter-spacing: -1%;
+}
+
+a.employer-directory__itemName:hover {
+  text-decoration: underline;
+}
+
+h6.employer-directory__itemDescription {
+  margin-top:0;
+}
+
+div.employer-directory__itemMeta {
+  column-gap: 0.75rem;
+  margin-top:0;
+}
+
+/* Living Wage Employer chip on directory cards */
+div.employer-directory__itemLivingWageTag {
+  background-color: #b4ffba;
+  color: #2e7d32;
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-top: 10px;
+  height: 30px;
+}
+
+.employer-directory__itemLivingWageTag .MuiChip-label {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* 2 columns on medium screens, 4 on desktop */
+@media (min-width: 600px) {
+  .employer-directory__results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .employer-directory__results {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* On larger screens, keep the search field from stretching too wide */
+@media (min-width: 900px) {
+  .employer-directory__filtersRow--location {
+    align-items: flex-start;
+  }
+
+  .employer-directory__searchInput {
+    max-width: 320px;
+    flex: 0 0 320px;
+  }
+}

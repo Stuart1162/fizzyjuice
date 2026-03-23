@@ -63,6 +63,7 @@ const Header: React.FC = () => {
           <Box className="navbar__actions navbar__actions--desktop">
             {currentUser ? (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
+                <Button color="inherit" component={RouterLink} to="/employers">Companies</Button>
                 {(isSuperAdmin || userRole === 'admin') && (
                   <>
                     <Button color="inherit" component={RouterLink} to="/reports">Reports</Button>
@@ -77,6 +78,7 @@ const Header: React.FC = () => {
               </Box>
             ) : (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
+                <Button color="inherit" component={RouterLink} to="/employers">Companies</Button>
                 <Button variant="outlined" color="inherit" component={RouterLink} to="/login" className="navbar__signin">Sign in</Button>
                 <Button variant="contained" color="primary" component={RouterLink} to="/post-job">Post a job</Button>
               </Box>
@@ -98,6 +100,11 @@ const Header: React.FC = () => {
           <List className="navbar__drawerList">
             {currentUser ? (
               <>
+                <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/employers" className="navbar__drawerItem">
+                    <ListItemText primary="Companies" />
+                  </ListItemButton>
+                </ListItem>
                 {(isSuperAdmin || userRole === 'admin') && (
                   <>
                     <ListItem disablePadding>
@@ -130,8 +137,13 @@ const Header: React.FC = () => {
                   </ListItemButton>
                 </ListItem>
               </>
-            ) : (
-              <>
+              ) : (
+                <>
+                <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/employers" className="navbar__drawerItem">
+                    <ListItemText primary="Companies" />
+                  </ListItemButton>
+                </ListItem>
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/login" className="navbar__drawerItem">
                     <ListItemText primary="Sign in" />

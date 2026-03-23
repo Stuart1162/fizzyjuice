@@ -1,0 +1,41 @@
+// Styles for the employer directory page
+div.employer-directory {
+  max-width:90%;
+  padding-top: 1rem;
+
+  &__header {
+    margin-bottom: 2.5rem;
+  }
+
+  &__intro {
+    max-width: 42rem;
+  }
+
+  &__filtersRow {
+    row-gap: 1rem;
+  }
+
+  &__locationFilters {
+    align-items: flex-start;
+  }
+
+  &__postcodeActions {
+    margin-top: 0.25rem;
+  }
+
+  &__results {
+    margin-top: 1.5rem;
+  }
+
+  &__item {
+    padding-bottom: 1.5rem;
+  }
+
+  &__itemName {
+    text-decoration: none;
+  }
+
+  &__itemMeta {
+    column-gap: 0.75rem;
+  }
+}
