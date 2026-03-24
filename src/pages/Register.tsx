@@ -60,19 +60,68 @@ const Register: React.FC = () => {
       return setError('Password should be at least 6 characters');
     }
 
+    if (formData.role === 'employer' && !formData.businessName.trim()) {
+      return setError('Please enter your business name');
+    }
+
     try {
       setError('');
       setLoading(true);
       const cred = await signUp(formData.email, formData.password, formData.displayName);
-      // Persist role to profile
+      // Prepare a stable slug for the employer's public company profile (if applicable)
+      let publicEmployerSlug: string | null = null;
+      if (formData.role === 'employer') {
+        const baseForSlug = (formData.businessName || formData.displayName || formData.email).trim();
+        if (baseForSlug) {
+          publicEmployerSlug =
+            baseForSlug
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '') || null;
+        }
+      }
+
+      // Persist role (and initial employer details) to profile
       if (cred.user?.uid) {
-        await setDoc(doc(db, 'users', cred.user.uid, 'prefs', 'profile'), {
+        const profileRef = doc(db, 'users', cred.user.uid, 'prefs', 'profile');
+        const profilePayload: any = {
           role: formData.role,
           displayName: formData.displayName,
           email: formData.email,
+          // Keep both names for backward-compat, but use companyName going forward
+          companyName: formData.businessName || null,
           businessName: formData.businessName || null,
           createdAt: new Date().toISOString(),
-        }, { merge: true });
+        };
+        if (formData.role === 'employer' && publicEmployerSlug) {
+          profilePayload.publicEmployerSlug = publicEmployerSlug;
+        }
+        await setDoc(profileRef, profilePayload, { merge: true });
+
+        // For employers, also create a minimal public employer profile document keyed by slug
+        if (formData.role === 'employer' && publicEmployerSlug) {
+          const publicRef = doc(db, 'employerProfiles', publicEmployerSlug);
+          await setDoc(publicRef, {
+            companyName: formData.businessName || formData.displayName || formData.email || null,
+            location: null,
+            postcode: null,
+            shortDescription: null,
+            about: null,
+            culture: null,
+            benefits: [],
+            businessTypes: [],
+            livingWageEmployer: null,
+            addressLine1: null,
+            addressLine2: null,
+            telephone: null,
+            email: formData.email,
+            website: null,
+            instagram: null,
+            ownerUid: cred.user.uid,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }, { merge: true });
+        }
       }
       enqueueSnackbar('Account created successfully!', { variant: 'success' });
       // Redirect: jobseeker -> onboarding, employer -> dashboard
@@ -144,7 +193,7 @@ const Register: React.FC = () => {
               <TextField
                 fullWidth
                 id="businessName"
-                label="Business Name"
+                label="Business Name *"
                 name="businessName"
                 autoComplete="organization"
                 value={formData.businessName}

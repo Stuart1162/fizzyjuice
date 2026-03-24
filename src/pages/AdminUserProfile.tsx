@@ -217,6 +217,88 @@ const AdminUserProfile: React.FC = () => {
     }
   };
 
+  const handleRegenerateEmployerSlug = async () => {
+    if (!uid || !profile || profile.role !== 'employer') return;
+
+    const baseForSlug = (companyName || (profile as any).companyName || (profile as any).displayName || (profile as any).email || '').trim();
+    if (!baseForSlug) {
+      setSnackbar({ message: 'Please enter a company name first.', severity: 'error' });
+      return;
+    }
+
+    const newSlug = baseForSlug
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    if (!newSlug) {
+      setSnackbar({ message: 'Could not generate a valid URL from the company name.', severity: 'error' });
+      return;
+    }
+
+    const currentSlug = (profile as any).publicEmployerSlug as string | undefined;
+    if (currentSlug === newSlug) {
+      setSnackbar({ message: 'Company URL is already using this name.', severity: 'success' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const profileRef = doc(db, 'users', uid, 'prefs', 'profile');
+      await setDoc(
+        profileRef,
+        {
+          companyName: companyName || null,
+          publicEmployerSlug: newSlug,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      const publicRef = doc(db, 'employerProfiles', newSlug);
+      await setDoc(
+        publicRef,
+        {
+          companyName: companyName || (profile as any).displayName || (profile as any).email || null,
+          location: companyLocation || null,
+          postcode: companyPostcode || null,
+          shortDescription: shortDescription || null,
+          about: about || null,
+          culture: culture || null,
+          addressLine1: addressLine1 || null,
+          addressLine2: addressLine2 || null,
+          telephone: employerTelephone || null,
+          email: applicationEmail || (profile as any).email || null,
+          website: websiteUrl || null,
+          instagram: instagramUrl || null,
+          livingWageEmployer: livingWageEmployer,
+          ownerUid: uid,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              companyName,
+              companyLocation,
+              companyPostcode,
+              publicEmployerSlug: newSlug,
+            }
+          : prev
+      );
+
+      setSnackbar({ message: 'Company URL updated to use the business name.', severity: 'success' });
+    } catch (e: any) {
+      setSnackbar({ message: e?.message || 'Failed to update company URL.', severity: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!currentUser) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -397,15 +479,28 @@ const AdminUserProfile: React.FC = () => {
                 helperText="Enter 'yes' or 'no' to override, or leave blank to unset"
               />
             </Box>
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSaveEmployer}
-                disabled={saving}
-              >
-                {saving ? 'Saving…' : 'Save employer profile'}
-              </Button>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+              <Typography variant="body2" color="textSecondary">
+                Current company URL slug: {(profile as any).publicEmployerSlug || 'not set'}
+              </Typography>
+              <Box display="flex" gap={1}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={handleRegenerateEmployerSlug}
+                  disabled={saving}
+                >
+                  Update company URL from name
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSaveEmployer}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving…' : 'Save employer profile'}
+                </Button>
+              </Box>
             </Box>
           </Box>
         )}
