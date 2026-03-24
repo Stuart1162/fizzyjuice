@@ -7,10 +7,13 @@ import {
   Box,
   CircularProgress,
   Alert,
+  TextField,
+  Button,
+  Snackbar,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AdminUserProfileData {
   displayName?: string | null;
@@ -26,6 +29,22 @@ const AdminUserProfile: React.FC = () => {
   const [profile, setProfile] = useState<AdminUserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+
+  const [companyName, setCompanyName] = useState('');
+  const [companyLocation, setCompanyLocation] = useState('');
+  const [companyPostcode, setCompanyPostcode] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [about, setAbout] = useState('');
+  const [culture, setCulture] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [applicationEmail, setApplicationEmail] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [employerTelephone, setEmployerTelephone] = useState('');
+  const [livingWageEmployer, setLivingWageEmployer] = useState<boolean | null>(null);
 
   // Determine if current user is an admin (from their profile prefs)
   useEffect(() => {
@@ -96,6 +115,108 @@ const AdminUserProfile: React.FC = () => {
     };
   }, [uid, currentUser, isSuperAdmin, isAdminRole]);
 
+  useEffect(() => {
+    if (!profile) return;
+    setCompanyName((profile as any).companyName || '');
+    setCompanyLocation((profile as any).companyLocation || '');
+    setCompanyPostcode((profile as any).companyPostcode || '');
+    setShortDescription((profile as any).employerShortDescription || '');
+    setAbout((profile as any).employerAbout || '');
+    setCulture((profile as any).employerCulture || '');
+    setWebsiteUrl((profile as any).websiteUrl || '');
+    setApplicationEmail((profile as any).applicationEmail || '');
+    setInstagramUrl((profile as any).instagramUrl || '');
+    setAddressLine1((profile as any).addressLine1 || '');
+    setAddressLine2((profile as any).addressLine2 || '');
+    setEmployerTelephone((profile as any).employerTelephone || '');
+    const lw = (profile as any).livingWageEmployer;
+    setLivingWageEmployer(typeof lw === 'boolean' ? lw : null);
+  }, [profile]);
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(null);
+  };
+
+  const handleSaveEmployer = async () => {
+    if (!uid || !profile || profile.role !== 'employer') return;
+    try {
+      setSaving(true);
+      const profileRef = doc(db, 'users', uid, 'prefs', 'profile');
+      await setDoc(
+        profileRef,
+        {
+          companyName: companyName || null,
+          companyLocation: companyLocation || null,
+          companyPostcode: companyPostcode || null,
+          employerShortDescription: shortDescription || null,
+          employerAbout: about || null,
+          employerCulture: culture || null,
+          websiteUrl: websiteUrl || null,
+          applicationEmail: applicationEmail || null,
+          instagramUrl: instagramUrl || null,
+          addressLine1: addressLine1 || null,
+          addressLine2: addressLine2 || null,
+          employerTelephone: employerTelephone || null,
+          livingWageEmployer: livingWageEmployer,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+
+      const slug = (profile as any).publicEmployerSlug as string | undefined;
+      if (slug) {
+        const publicRef = doc(db, 'employerProfiles', slug);
+        await setDoc(
+          publicRef,
+          {
+            companyName: companyName || (profile as any).displayName || (profile as any).email || null,
+            location: companyLocation || null,
+            postcode: companyPostcode || null,
+            shortDescription: shortDescription || null,
+            about: about || null,
+            culture: culture || null,
+            addressLine1: addressLine1 || null,
+            addressLine2: addressLine2 || null,
+            telephone: employerTelephone || null,
+            email: applicationEmail || null,
+            website: websiteUrl || null,
+            instagram: instagramUrl || null,
+            livingWageEmployer: livingWageEmployer,
+            ownerUid: uid,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
+
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              companyName,
+              companyLocation,
+              companyPostcode,
+              employerShortDescription: shortDescription,
+              employerAbout: about,
+              employerCulture: culture,
+              websiteUrl,
+              applicationEmail,
+              instagramUrl,
+              addressLine1,
+              addressLine2,
+              employerTelephone,
+              livingWageEmployer,
+            }
+          : prev
+      );
+      setSnackbar({ message: 'Employer profile updated.', severity: 'success' });
+    } catch (e: any) {
+      setSnackbar({ message: e?.message || 'Failed to update employer profile.', severity: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!currentUser) {
     return (
       <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -160,6 +281,134 @@ const AdminUserProfile: React.FC = () => {
           <Typography variant="subtitle1">Role</Typography>
           <Typography variant="body1">{role}</Typography>
         </Box>
+        {profile.role === 'employer' && (
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>
+              Employer profile details
+            </Typography>
+            <Box mb={2}>
+              <TextField
+                label="Company name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Location"
+                value={companyLocation}
+                onChange={(e) => setCompanyLocation(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Postcode"
+                value={companyPostcode}
+                onChange={(e) => setCompanyPostcode(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Short description"
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                fullWidth
+                margin="normal"
+                inputProps={{ maxLength: 50 }}
+                helperText="Max 50 characters"
+              />
+              <TextField
+                label="About"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={4}
+              />
+              <TextField
+                label="Culture"
+                value={culture}
+                onChange={(e) => setCulture(e.target.value)}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={4}
+              />
+              <TextField
+                label="Website link"
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Application email"
+                value={applicationEmail}
+                onChange={(e) => setApplicationEmail(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Instagram profile link"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Address line 1"
+                value={addressLine1}
+                onChange={(e) => setAddressLine1(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Address line 2"
+                value={addressLine2}
+                onChange={(e) => setAddressLine2(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Telephone number"
+                value={employerTelephone}
+                onChange={(e) => setEmployerTelephone(e.target.value)}
+                fullWidth
+                margin="normal"
+              />
+              <TextField
+                label="Living Wage Employer (yes/no)"
+                value={
+                  livingWageEmployer === true
+                    ? 'yes'
+                    : livingWageEmployer === false
+                    ? 'no'
+                    : ''
+                }
+                onChange={(e) => {
+                  const v = e.target.value.trim().toLowerCase();
+                  if (v === 'yes') setLivingWageEmployer(true);
+                  else if (v === 'no') setLivingWageEmployer(false);
+                  else setLivingWageEmployer(null);
+                }}
+                fullWidth
+                margin="normal"
+                helperText="Enter 'yes' or 'no' to override, or leave blank to unset"
+              />
+            </Box>
+            <Box display="flex" justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSaveEmployer}
+                disabled={saving}
+              >
+                {saving ? 'Saving…' : 'Save employer profile'}
+              </Button>
+            </Box>
+          </Box>
+        )}
         <Box>
           <Typography variant="subtitle1" gutterBottom>
             Raw profile data
@@ -177,6 +426,18 @@ const AdminUserProfile: React.FC = () => {
             {JSON.stringify(profile, null, 2)}
           </Box>
         </Box>
+        {snackbar && (
+          <Snackbar
+            open
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+        )}
       </Paper>
     </Container>
   );
