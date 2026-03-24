@@ -88,13 +88,6 @@ const EmployerPublicProfile: React.FC = () => {
     }
   };
 
-  const isArchived = (job: Job): boolean => {
-    const created = toMillis((job as any).createdAt || (job as any).updatedAt);
-    if (!created) return false;
-    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
-    return Date.now() - created > TWO_WEEKS_MS;
-  };
-
   useEffect(() => {
     const ownerUid = data?.ownerUid;
     if (!ownerUid) {
@@ -103,6 +96,13 @@ const EmployerPublicProfile: React.FC = () => {
     }
 
     let cancelled = false;
+    const isArchived = (job: Job): boolean => {
+      const created = toMillis((job as any).createdAt || (job as any).updatedAt);
+      if (!created) return false;
+      const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+      return Date.now() - created > TWO_WEEKS_MS;
+    };
+
     const loadJobs = async () => {
       try {
         setJobsLoading(true);
@@ -142,7 +142,6 @@ const EmployerPublicProfile: React.FC = () => {
 
   const companyName = data?.companyName || 'Employer';
   const shortDescription = data?.shortDescription || '';
-  const location = data?.location || data?.postcode || '';
   const addressLines = [data?.addressLine1, data?.addressLine2, data?.location, data?.postcode]
     .filter((v): v is string => !!v && v.trim().length > 0);
   const benefits = Array.isArray(data?.benefits) ? data!.benefits! : [];
