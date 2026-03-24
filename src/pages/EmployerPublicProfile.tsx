@@ -138,11 +138,10 @@ const EmployerPublicProfile: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [data?.ownerUid]);
+  }, [data?.ownerUid, isArchived]);
 
   const companyName = data?.companyName || 'Employer';
   const shortDescription = data?.shortDescription || '';
-  const location = data?.location || data?.postcode || '';
   const addressLines = [data?.addressLine1, data?.addressLine2, data?.location, data?.postcode]
     .filter((v): v is string => !!v && v.trim().length > 0);
   const benefits = Array.isArray(data?.benefits) ? data!.benefits! : [];
