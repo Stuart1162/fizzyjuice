@@ -1,5 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Container, Paper, Typography, Box, TextField, Button, FormControlLabel, Checkbox } from '@mui/material';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  FormControlLabel,
+  Checkbox,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
+} from '@mui/material';
 import '../styles/profile.css';
 import { useAuth } from '../contexts/AuthContext';
 import { useSnackbar } from 'notistack';
@@ -7,6 +20,31 @@ import { auth, db } from '../firebase';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { supabase } from '../supabaseClient';
+import { Link as RouterLink } from 'react-router-dom';
+
+const EMPLOYER_BENEFIT_OPTIONS: string[] = [
+  'Flexible hours',
+  'Early finish',
+  'Consistent rota',
+  'No late finishes',
+  'Paid breaks',
+  'Actual breaks',
+  'Living wage',
+  'Tips shared fairly',
+  'Staff meals',
+  'Paid holidays',
+];
+
+const EMPLOYER_BUSINESS_TYPE_OPTIONS: string[] = [
+  'Restaurant',
+  'Cafe',
+  'Bakery',
+  'Pub',
+  'Bar',
+  'Production',
+  'Hotel',
+  'Other',
+];
 
 const Profile: React.FC = () => {
   const { currentUser, signOut } = useAuth();
@@ -21,6 +59,16 @@ const Profile: React.FC = () => {
   const [companyPostcode, setCompanyPostcode] = useState('');
   const [applicationEmail, setApplicationEmail] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
+  const [employerShortDescription, setEmployerShortDescription] = useState('');
+  const [employerAbout, setEmployerAbout] = useState('');
+  const [employerCulture, setEmployerCulture] = useState('');
+  const [employerBenefits, setEmployerBenefits] = useState<string[]>([]);
+  const [employerBusinessTypes, setEmployerBusinessTypes] = useState<string[]>([]);
+  const [livingWageEmployer, setLivingWageEmployer] = useState<boolean | null>(null);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [employerTelephone, setEmployerTelephone] = useState('');
   // Jobseeker-specific profile fields
   const [preferredJobTitle, setPreferredJobTitle] = useState('');
   const [jobLocationCity, setJobLocationCity] = useState('');
@@ -39,6 +87,7 @@ const Profile: React.FC = () => {
   const [cvPath, setCvPath] = useState<string | null>(null);
   const [cvBusy, setCvBusy] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [publicEmployerSlug, setPublicEmployerSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -69,6 +118,36 @@ const Profile: React.FC = () => {
           }
           if (typeof data?.instagramUrl === 'string') {
             setInstagramUrl(data.instagramUrl);
+          }
+          if (typeof data?.employerShortDescription === 'string') {
+            setEmployerShortDescription(data.employerShortDescription);
+          }
+          if (typeof data?.employerAbout === 'string') {
+            setEmployerAbout(data.employerAbout);
+          }
+          if (typeof data?.employerCulture === 'string') {
+            setEmployerCulture(data.employerCulture);
+          }
+          if (Array.isArray(data?.employerBenefits)) {
+            setEmployerBenefits((data.employerBenefits || []) as string[]);
+          }
+          if (Array.isArray(data?.employerBusinessTypes)) {
+            setEmployerBusinessTypes((data.employerBusinessTypes || []) as string[]);
+          }
+          if (typeof data?.livingWageEmployer === 'boolean') {
+            setLivingWageEmployer(data.livingWageEmployer);
+          }
+          if (typeof data?.websiteUrl === 'string') {
+            setWebsiteUrl(data.websiteUrl);
+          }
+          if (typeof data?.addressLine1 === 'string') {
+            setAddressLine1(data.addressLine1);
+          }
+          if (typeof data?.addressLine2 === 'string') {
+            setAddressLine2(data.addressLine2);
+          }
+          if (typeof data?.employerTelephone === 'string') {
+            setEmployerTelephone(data.employerTelephone);
           }
           if (typeof data?.preferredJobTitle === 'string') {
             setPreferredJobTitle(data.preferredJobTitle);
@@ -119,6 +198,9 @@ const Profile: React.FC = () => {
           if (typeof data?.cvStoragePath === 'string') {
             setCvPath(data.cvStoragePath);
           }
+          if (typeof data?.publicEmployerSlug === 'string') {
+            setPublicEmployerSlug(data.publicEmployerSlug || null);
+          }
         }
       } catch (e) {
         enqueueSnackbar('Failed to load profile', { variant: 'error' });
@@ -133,11 +215,25 @@ const Profile: React.FC = () => {
     if (!currentUser) return;
     try {
       setSaving(true);
+
+      // For employers, ensure we have a stable, slugified public profile id based on company name
+      let nextSlug = publicEmployerSlug;
+      if (role === 'employer') {
+        const baseForSlug = (companyName || displayName || currentUser.email || '').trim();
+        if (!nextSlug && baseForSlug) {
+          nextSlug = baseForSlug
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            || null;
+        }
+      }
+
       // Update Firebase Auth displayName
       await updateProfile(auth.currentUser!, { displayName: displayName || undefined });
       // Persist to Firestore profile doc
       const profileRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
-      await setDoc(profileRef, {
+      const profilePayload: any = {
         displayName,
         email: currentUser.email,
         role: role || undefined,
@@ -146,6 +242,16 @@ const Profile: React.FC = () => {
         companyPostcode: companyPostcode || null,
         applicationEmail: applicationEmail || null,
         instagramUrl: instagramUrl || null,
+        employerShortDescription: employerShortDescription || null,
+        employerAbout: employerAbout || null,
+        employerCulture: employerCulture || null,
+        employerBenefits: employerBenefits && employerBenefits.length > 0 ? employerBenefits : [],
+        employerBusinessTypes: employerBusinessTypes && employerBusinessTypes.length > 0 ? employerBusinessTypes : [],
+        livingWageEmployer: livingWageEmployer,
+        websiteUrl: websiteUrl || null,
+        addressLine1: addressLine1 || null,
+        addressLine2: addressLine2 || null,
+        employerTelephone: employerTelephone || null,
         preferredJobTitle: preferredJobTitle || null,
         jobLocationCity: jobLocationCity || null,
         jobPostcode: jobPostcode || null,
@@ -159,7 +265,36 @@ const Profile: React.FC = () => {
         certBarista,
         certHACCP,
         updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      };
+      if (role === 'employer' && nextSlug) {
+        profilePayload.publicEmployerSlug = nextSlug;
+      }
+      await setDoc(profileRef, profilePayload, { merge: true });
+
+      // Keep a lightweight, public employer profile in a separate collection, keyed by slug
+      if (role === 'employer' && nextSlug) {
+        const publicRef = doc(db, 'employerProfiles', nextSlug);
+        await setDoc(publicRef, {
+          companyName: companyName || displayName || currentUser.email || null,
+          location: companyLocation || null,
+          postcode: companyPostcode || null,
+          shortDescription: employerShortDescription || null,
+          about: employerAbout || null,
+          culture: employerCulture || null,
+          benefits: employerBenefits && employerBenefits.length > 0 ? employerBenefits : [],
+          businessTypes: employerBusinessTypes && employerBusinessTypes.length > 0 ? employerBusinessTypes : [],
+          livingWageEmployer: livingWageEmployer,
+          addressLine1: addressLine1 || null,
+          addressLine2: addressLine2 || null,
+          telephone: employerTelephone || null,
+          email: applicationEmail || null,
+          website: websiteUrl || null,
+          instagram: instagramUrl || null,
+          ownerUid: currentUser.uid,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+        setPublicEmployerSlug(nextSlug);
+      }
       enqueueSnackbar('Profile updated', { variant: 'success' });
     } catch (e: any) {
       console.error(e);
@@ -255,9 +390,22 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4, mb: 6 }} className="profile">
+    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="profile">
       <Paper variant="outlined" sx={{ p: 3 }} className="profile__card">
-        <Typography variant="h5" gutterBottom className="profile__title">Profile</Typography>
+        <Box className="profile__header" display="flex" alignItems="baseline" justifyContent="space-between">
+          <Typography variant="h5" gutterBottom className="profile__title">Profile</Typography>
+          {role === 'employer' && currentUser && publicEmployerSlug && (
+            <Button
+              variant="text"
+              color="primary"
+              component={RouterLink}
+              to={`/employers/${publicEmployerSlug}`}
+              className="profile__publicLink"
+            >
+              View public profile
+            </Button>
+          )}
+        </Box>
         <Box className="profile__form">
           <TextField
             label="Full name"
@@ -287,40 +435,197 @@ const Profile: React.FC = () => {
                   fullWidth
                   margin="normal"
                 />
-                <TextField
-                  label="Location"
-                  value={companyLocation}
-                  onChange={(e) => setCompanyLocation(e.target.value)}
-                  disabled={loading}
-                  fullWidth
-                  margin="normal"
-                />
-                <TextField
-                  label="Postcode"
-                  value={companyPostcode}
-                  onChange={(e) => setCompanyPostcode(e.target.value)}
-                  disabled={loading}
-                  fullWidth
-                  margin="normal"
-                />
-                <TextField
-                  label="Application email"
-                  type="email"
-                  value={applicationEmail}
-                  onChange={(e) => setApplicationEmail(e.target.value)}
-                  disabled={loading}
-                  fullWidth
-                  margin="normal"
-                />
-                <TextField
-                  label="Instagram profile link"
-                  type="url"
-                  value={instagramUrl}
-                  onChange={(e) => setInstagramUrl(e.target.value)}
-                  disabled={loading}
-                  fullWidth
-                  margin="normal"
-                />
+                <Box mt={3}>
+                  <Typography variant="subtitle1" className="profile__sectionTitle">About your business</Typography>
+                  <TextField
+                    label="Short description"
+                    value={employerShortDescription}
+                    onChange={(e) => setEmployerShortDescription(e.target.value.slice(0, 50))}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                    inputProps={{ maxLength: 50 }}
+                    helperText="Max 50 characters"
+                  />
+                  <TextField
+                    label="About"
+                    value={employerAbout}
+                    onChange={(e) => setEmployerAbout(e.target.value.slice(0, 400))}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                    multiline
+                    rows={4}
+                    inputProps={{ maxLength: 400 }}
+                    helperText="Max 400 characters"
+                  />
+                </Box>
+
+                <Box mt={3}>
+                  <Typography variant="subtitle1" className="profile__sectionTitle">Address</Typography>
+                  <TextField
+                    label="Address line 1"
+                    value={addressLine1}
+                    onChange={(e) => setAddressLine1(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Address line 2"
+                    value={addressLine2}
+                    onChange={(e) => setAddressLine2(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Location"
+                    value={companyLocation}
+                    onChange={(e) => setCompanyLocation(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Postcode"
+                    value={companyPostcode}
+                    onChange={(e) => setCompanyPostcode(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Culture"
+                    value={employerCulture}
+                    onChange={(e) => setEmployerCulture(e.target.value.slice(0, 400))}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                    multiline
+                    rows={4}
+                    inputProps={{ maxLength: 400 }}
+                    helperText="Max 400 characters"
+                  />
+                </Box>
+
+                <Box mt={3}>
+                  <Typography variant="subtitle1" className="profile__sectionTitle">Business type</Typography>
+                  <Box mt={1}>
+                    {EMPLOYER_BUSINESS_TYPE_OPTIONS.map((opt) => {
+                      const checked = employerBusinessTypes.includes(opt);
+                      return (
+                        <FormControlLabel
+                          key={opt}
+                          control={
+                            <Checkbox
+                              checked={checked}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                setEmployerBusinessTypes((prev) => {
+                                  if (isChecked) {
+                                    return prev.includes(opt) ? prev : [...prev, opt];
+                                  }
+                                  return prev.filter((v) => v !== opt);
+                                });
+                              }}
+                              disabled={loading}
+                            />
+                          }
+                          label={opt}
+                        />
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                <Box mt={3}>
+                  <Typography variant="subtitle1" className="profile__sectionTitle">Employee benefits</Typography>
+                  <Box mt={1}>
+                    {EMPLOYER_BENEFIT_OPTIONS.map((opt) => {
+                      const checked = employerBenefits.includes(opt);
+                      return (
+                        <FormControlLabel
+                          key={opt}
+                          control={
+                            <Checkbox
+                              checked={checked}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                setEmployerBenefits((prev) => {
+                                  if (isChecked) {
+                                    return prev.includes(opt) ? prev : [...prev, opt];
+                                  }
+                                  return prev.filter((v) => v !== opt);
+                                });
+                              }}
+                              disabled={loading}
+                            />
+                          }
+                          label={opt}
+                        />
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                <Box mt={3}>
+                  <FormControl component="fieldset">
+                    <FormLabel component="legend">Living Wage Employer</FormLabel>
+                    <RadioGroup
+                      row
+                      value={livingWageEmployer === true ? 'yes' : livingWageEmployer === false ? 'no' : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'yes') setLivingWageEmployer(true);
+                        else if (val === 'no') setLivingWageEmployer(false);
+                        else setLivingWageEmployer(null);
+                      }}
+                    >
+                      <FormControlLabel value="yes" control={<Radio />} label="Yes" disabled={loading} />
+                      <FormControlLabel value="no" control={<Radio />} label="No" disabled={loading} />
+                    </RadioGroup>
+                  </FormControl>
+                </Box>
+
+                <Box mt={3}>
+                  <Typography variant="subtitle1" className="profile__sectionTitle">Contact details</Typography>
+                  <TextField
+                    label="Telephone number"
+                    value={employerTelephone}
+                    onChange={(e) => setEmployerTelephone(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Website link"
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Application email"
+                    type="email"
+                    value={applicationEmail}
+                    onChange={(e) => setApplicationEmail(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Instagram profile link"
+                    type="url"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    disabled={loading}
+                    fullWidth
+                    margin="normal"
+                  />
+                </Box>
               </Box>
             </Box>
           )}

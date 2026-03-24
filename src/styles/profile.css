@@ -16,6 +16,9 @@ div.profile__card {
 h5.profile__title {
   font-weight: 500;
   margin-bottom: 2rem;
+  font-family: Anton;
+  font-size: 4.5rem;
+  letter-spacing: -2%;
 }
 
 /* Form grid */
@@ -24,6 +27,11 @@ h5.profile__title {
   gap: 16px;
 }
 
+a.profile__publicLink {
+  font-family: Anton;
+  font-size: 1.2rem;
+  letter-spacing: -1%;
+}
 /* Inputs */
 .profile__nameInput .MuiOutlinedInput-root,
 .profile__emailInput .MuiOutlinedInput-root {
@@ -40,6 +48,144 @@ h5.profile__title {
 
 .profile__logoutBtn {}
 .profile__saveBtn {}
+
+/* PUBLIC PROFILE */
+div.public-employer-profile {
+  max-width:100%;
+  padding:0 24px;
+  margin-top:6rem;
+}
+
+div.public-employer-profile__card {
+  padding:0;
+  background-color: transparent;
+}
+
+h1.public-employer-profile__companyName {
+  font-size:5rem;
+  letter-spacing: -2%;
+  margin-bottom: 0;
+}
+
+h2.public-employer-profile__jobsTitle {
+  font-family: Anton;
+  font-size: 2rem;
+  letter-spacing: -1%;
+}
+
+div.public-employer-profile__header {
+  padding-bottom: 24px;
+  border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
+  margin-bottom:0;
+}
+
+div.public-employer-profile__body {
+}
+
+.public-employer-profile__body h6 {
+  font-family: Anton;
+  letter-spacing: -1%;
+}
+
+div.public-employer-profile__left {
+  padding-top: 24px;
+}
+
+div.public-employer-profile__right {
+  border-left: 2px dotted rgba(59, 25, 6, 0.4);
+  padding-left: 24px;
+  padding-top: 24px;
+}
+/* Contact details list */
+.public-employer-profile__contactList {
+  margin-top: 12px;
+  padding-left: 0;
+}
+
+.public-employer-profile__contactList li {
+  align-items: flex-start;
+}
+
+div.public-employer-profile__contactIcon {
+  min-width: auto;
+}
+
+div.public-employer-profile__jobs {
+    border-top: 2px dotted rgba(59, 25, 6, 0.4);
+    margin-top: 0;
+    padding-top: 24px;
+}
+
+div.public-employer-profile__livingWageChip {
+  background-color: #b4ffba;
+  border:none;
+  font-weight:500;
+  letter-spacing: -1%;
+}
+
+li.public-employer-profile__contactItem {
+  display: flex;
+  align-items: flex-start;
+  column-gap: 6px;
+  margin-bottom: 4px;
+}
+
+.public-employer-profile__contactItem div.MuiListItemText-root {
+  margin:3px 0;
+}
+
+.public-employer-profile__contactIcon {
+  min-width: 32px; /* override MUI default */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.public-employer-profile__contactIcon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: #ff7a1a;
+}
+
+/* Slight extra space under stacked address block */
+.public-employer-profile__contactAddress {
+  margin-bottom: 24px;
+}
+
+/* Ensure contact text inherits the dark brand colour */
+.public-employer-profile__contactList .MuiListItemText-primary,
+.public-employer-profile__contactList .MuiListItemText-secondary {
+  color: #3b1906;
+}
+
+/* Add checkmark before each employee benefit chip label */
+.public-employer-profile__benefitChip .MuiChip-label::before {
+  content: '\2713  ';
+  font-weight: 700;
+  color: #49b24e;
+}
+
+/* Workplace benefits chip colours */
+div.public-employer-profile__benefitChip {
+  border-color: #49b24e;
+  color: #2e7d32;
+}
+
+.public-employer-profile__benefitChip .MuiChip-label {
+  color: #2e7d32;
+}
+
+/* Links for Instagram / Website in contact details */
+.public-employer-profile__contactLink {
+  color: #3b1906;
+  text-decoration: none;
+}
+
+.public-employer-profile__contactLink:hover,
+.public-employer-profile__contactLink:focus {
+  text-decoration: underline;
+}
 
 /* Tablet styles */
 @media (min-width: 600px) and (max-width: 899.95px) {
@@ -63,4 +209,10 @@ h5.profile__title {
   
   .profile__actions { gap: 8px; }
   .profile__saveBtn { flex: 1; }
+
+  /* On mobile, remove the left border from the public employer profile right column */
+  div.public-employer-profile__right {
+    border-left: none;
+    padding:0;
+  }
 }

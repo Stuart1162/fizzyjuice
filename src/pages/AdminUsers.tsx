@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Shape for a user profile document located at users/{uid}/prefs/profile
@@ -10,6 +11,8 @@ interface UserProfileDoc {
   email?: string;
   displayName?: string;
   role?: 'jobseeker' | 'employer' | 'admin';
+  publicEmployerSlug?: string | null;
+  companyName?: string | null;
 }
 
 interface JobLite {
@@ -29,6 +32,7 @@ const AdminUsers: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserProfileDoc | null>(null);
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [creatingEmployerUid, setCreatingEmployerUid] = useState<string | null>(null);
 
   // Fetch admin role for current user
   useEffect(() => {
@@ -47,6 +51,46 @@ const AdminUsers: React.FC = () => {
     fetchRole();
     return () => { isCancelled = true; };
   }, [currentUser]);
+
+  const handleCreateEmployerProfile = async (profile: UserProfileDoc) => {
+    if (!profile.uid) return;
+    setCreatingEmployerUid(profile.uid);
+    try {
+      const baseForSlug = (profile.companyName || profile.displayName || profile.email || profile.uid).trim();
+      let slug = baseForSlug
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      if (!slug) {
+        slug = `employer-${profile.uid}`;
+      }
+
+      // If this slug is already taken, fall back to a uid-based slug
+      const existingRef = doc(db, 'employerProfiles', slug);
+      const existingSnap = await getDoc(existingRef);
+      if (existingSnap.exists()) {
+        slug = `employer-${profile.uid}`;
+      }
+
+      const publicRef = doc(db, 'employerProfiles', slug);
+      await setDoc(publicRef, {
+        companyName: profile.companyName || profile.displayName || profile.email || null,
+        email: profile.email || null,
+        ownerUid: profile.uid,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      const userProfileRef = doc(db, 'users', profile.uid, 'prefs', 'profile');
+      await setDoc(userProfileRef, { publicEmployerSlug: slug }, { merge: true });
+
+      setProfiles((prev) => prev.map((p) => (p.uid === profile.uid ? { ...p, publicEmployerSlug: slug } : p)));
+      setSnackbar({ message: 'Company page created.', severity: 'success' });
+    } catch (e: any) {
+      setSnackbar({ message: e?.message || 'Failed to create company page.', severity: 'error' });
+    } finally {
+      setCreatingEmployerUid(null);
+    }
+  };
 
   // Fetch all user profiles (admins only)
   useEffect(() => {
@@ -68,6 +112,8 @@ const AdminUsers: React.FC = () => {
               email: data?.email || undefined,
               displayName: data?.displayName || undefined,
               role: data?.role || undefined,
+              publicEmployerSlug: data?.publicEmployerSlug || null,
+              companyName: data?.companyName || null,
             };
           });
         if (cancelled) return;
@@ -229,6 +275,8 @@ const AdminUsers: React.FC = () => {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
+              <TableCell>Jobseeker</TableCell>
+              <TableCell>Employer</TableCell>
               <TableCell>Jobs (refs)</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -240,10 +288,51 @@ const AdminUsers: React.FC = () => {
                 <TableCell>{p.email || '—'}</TableCell>
                 <TableCell>{p.role || '—'}</TableCell>
                 <TableCell>
+                  {p.role === 'jobseeker' ? (
+                    <Button
+                      size="small"
+                      variant="text"
+                      component={RouterLink}
+                      to={`/admin/users/${p.uid}/profile`}
+                    >
+                      View profile
+                    </Button>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">—</Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {p.role === 'employer' ? (
+                    p.publicEmployerSlug ? (
+                      <Button
+                        size="small"
+                        variant="text"
+                        component={RouterLink}
+                        to={`/employers/${p.publicEmployerSlug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Company page
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleCreateEmployerProfile(p)}
+                        disabled={creatingEmployerUid === p.uid}
+                      >
+                        {creatingEmployerUid === p.uid ? 'Creating…' : 'Create company page'}
+                      </Button>
+                    )
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">—</Typography>
+                  )}
+                </TableCell>
+                <TableCell>
                   <Box display="flex" gap={1} flexWrap="wrap">
                     {(jobRefsByUser[p.uid] || []).length > 0 ? (
                       (jobRefsByUser[p.uid] || []).map((ref) => (
-                        <Chip key={`${p.uid}-${ref}`} label={`#${ref}`} size="small" variant="outlined" />
+                        <Chip key={ref} label={`#${ref}`} size="small" variant="outlined" />
                       ))
                     ) : (
                       <Typography variant="body2" color="text.secondary">None</Typography>
@@ -251,15 +340,25 @@ const AdminUsers: React.FC = () => {
                   </Box>
                 </TableCell>
                 <TableCell align="right">
-                  <Button
-                    size="small"
-                    color="error"
-                    variant="outlined"
-                    onClick={() => handleRequestDelete(p)}
-                    disabled={deletingUid === p.uid}
-                  >
-                    {deletingUid === p.uid ? 'Deleting...' : 'Delete'}
-                  </Button>
+                  <Box display="flex" justifyContent="flex-end" gap={1}>
+                    <Button
+                      size="small"
+                      variant="text"
+                      component={RouterLink}
+                      to={`/admin/users/${p.uid}/profile`}
+                    >
+                      View profile
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                      onClick={() => handleRequestDelete(p)}
+                      disabled={deletingUid === p.uid}
+                    >
+                      {deletingUid === p.uid ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
