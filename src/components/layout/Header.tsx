@@ -69,6 +69,17 @@ const Header: React.FC = () => {
                     <Button color="inherit" component={RouterLink} to="/admin/users">Users</Button>
                   </>
                 )}
+                {userRole === 'jobseeker' && (
+                  <Button
+                    color="inherit"
+                    component="a"
+                    href="https://www.notion.so/Your-Name-32d3ee58ac0780fb96f4e29f9d1fdee1?source=copy_link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    CV Template
+                  </Button>
+                )}
                 {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <Button color="inherit" component={RouterLink} to="/post-job">Post a job</Button>
                 )}
@@ -113,6 +124,19 @@ const Header: React.FC = () => {
                       </ListItemButton>
                     </ListItem>
                   </>
+                )}
+                {userRole === 'jobseeker' && (
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      component="a"
+                      href="https://www.notion.so/Your-Name-32d3ee58ac0780fb96f4e29f9d1fdee1?source=copy_link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="navbar__drawerItem"
+                    >
+                      <ListItemText primary="CV Template" />
+                    </ListItemButton>
+                  </ListItem>
                 )}
                 {(userRole === 'employer' || userRole === 'admin' || isSuperAdmin) && (
                   <ListItem disablePadding>
