@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -10,6 +11,7 @@ interface UserProfileDoc {
   email?: string;
   displayName?: string;
   role?: 'jobseeker' | 'employer' | 'admin';
+  publicEmployerSlug?: string | null;
 }
 
 interface JobLite {
@@ -68,6 +70,7 @@ const AdminUsers: React.FC = () => {
               email: data?.email || undefined,
               displayName: data?.displayName || undefined,
               role: data?.role || undefined,
+              publicEmployerSlug: data?.publicEmployerSlug || null,
             };
           });
         if (cancelled) return;
@@ -229,6 +232,8 @@ const AdminUsers: React.FC = () => {
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
+              <TableCell>Jobseeker</TableCell>
+              <TableCell>Employer</TableCell>
               <TableCell>Jobs (refs)</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -240,10 +245,40 @@ const AdminUsers: React.FC = () => {
                 <TableCell>{p.email || '—'}</TableCell>
                 <TableCell>{p.role || '—'}</TableCell>
                 <TableCell>
+                  {p.role === 'jobseeker' ? (
+                    <Button
+                      size="small"
+                      variant="text"
+                      component={RouterLink}
+                      to={`/admin/users/${p.uid}/profile`}
+                    >
+                      View profile
+                    </Button>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">—</Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {p.role === 'employer' && p.publicEmployerSlug ? (
+                    <Button
+                      size="small"
+                      variant="text"
+                      component={RouterLink}
+                      to={`/employers/${p.publicEmployerSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Company page
+                    </Button>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">—</Typography>
+                  )}
+                </TableCell>
+                <TableCell>
                   <Box display="flex" gap={1} flexWrap="wrap">
                     {(jobRefsByUser[p.uid] || []).length > 0 ? (
                       (jobRefsByUser[p.uid] || []).map((ref) => (
-                        <Chip key={`${p.uid}-${ref}`} label={`#${ref}`} size="small" variant="outlined" />
+                        <Chip key={ref} label={`#${ref}`} size="small" variant="outlined" />
                       ))
                     ) : (
                       <Typography variant="body2" color="text.secondary">None</Typography>
