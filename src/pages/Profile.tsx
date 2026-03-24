@@ -213,6 +213,11 @@ const Profile: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser) return;
+    // Require a business name for employers so we can always create a company page
+    if (role === 'employer' && !companyName.trim()) {
+      enqueueSnackbar('Please enter your company name to complete your employer profile.', { variant: 'error' });
+      return;
+    }
     try {
       setSaving(true);
 
@@ -425,7 +430,7 @@ const Profile: React.FC = () => {
           />
           {role === 'employer' && (
             <Box mt={2} className="profile__employerDetails">
-              <Typography variant="subtitle1" className="profile__sectionTitle">Employer details (optional)</Typography>
+              <Typography variant="subtitle1" className="profile__sectionTitle">Employer details</Typography>
               <Box mt={2} className="profile__employerFields">
                 <TextField
                   label="Company name"
