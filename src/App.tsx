@@ -284,6 +284,13 @@ const InnerAppShell: React.FC = () => {
           >
             Heretic Studio
           </a>
+          {'  •  '}
+          <a
+            href="/sitemap.xml"
+            style={{ color: 'inherit', textDecoration: 'underline' }}
+          >
+            Sitemap
+          </a>
         </Typography>
       </footer>
     </div>
