@@ -308,7 +308,7 @@ const AdminUsers: React.FC = () => {
                         size="small"
                         variant="text"
                         component={RouterLink}
-                        to={`/employers/${p.publicEmployerSlug}`}
+                        to={`/companies/${p.publicEmployerSlug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

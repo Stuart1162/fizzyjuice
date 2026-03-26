@@ -66,7 +66,7 @@ const toMillis = (ts: any): number => {
 const isArchived = (j: Job): boolean => {
   const created = toMillis((j as any).createdAt || (j as any).updatedAt);
   if (!created) return false;
-  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+  const TWO_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
   return (Date.now() - created) > TWO_WEEKS_MS;
 };
 

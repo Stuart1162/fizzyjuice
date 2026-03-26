@@ -236,9 +236,10 @@ const Dashboard: React.FC = () => {
       if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
       try { return new Date(ts).getTime() || 0; } catch { return 0; }
     };
-    const createdMs = toMillis((j as any).createdAt || (j as any).updatedAt);
+    // Prefer updatedAt so that restoring (which bumps updatedAt) brings a job back to Live
+    const createdMs = toMillis((j as any).updatedAt || (j as any).createdAt);
     if (!createdMs) return false;
-    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    const TWO_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
     return (Date.now() - createdMs) > TWO_WEEKS_MS;
   };
 
@@ -252,8 +253,8 @@ const Dashboard: React.FC = () => {
     };
     const live = filteredJobs.filter(job => !job.draft && !isArchived(job));
     return [...live].sort((a, b) => {
-      const aMs = toMillis((a as any).createdAt || (a as any).updatedAt);
-      const bMs = toMillis((b as any).createdAt || (b as any).updatedAt);
+      const aMs = toMillis((a as any).updatedAt || (a as any).createdAt);
+      const bMs = toMillis((b as any).updatedAt || (b as any).createdAt);
       return bMs - aMs;
     });
   }, [filteredJobs]);
@@ -285,9 +286,10 @@ const Dashboard: React.FC = () => {
       if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
       try { return new Date(ts).getTime() || 0; } catch { return 0; }
     };
-    const createdMs = toMillis((j as any).createdAt || (j as any).updatedAt);
+    // Use updatedAt if present so restored jobs get a fresh expiry window
+    const createdMs = toMillis((j as any).updatedAt || (j as any).createdAt);
     if (!createdMs) return 'Unknown';
-    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+    const TWO_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
     return new Date(createdMs + TWO_WEEKS_MS).toLocaleDateString();
   };
 
@@ -543,6 +545,19 @@ const Dashboard: React.FC = () => {
         <Typography variant="body1" color="text.secondary" gutterBottom className="dashboard__subtitle">
           {isSuperAdmin ? 'Manage all job posts on the site.' : 'View your saved jobs and manage the jobs you have posted.'}
         </Typography>
+      )}
+
+      {(isSuperAdmin || userRole === 'admin') && (
+        <Box mb={2} className="dashboard__adminShortcuts" display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            component={RouterLink}
+            to="/admin/company-claims"
+          >
+            View company claims
+          </Button>
+        </Box>
       )}
 
       {/* Preferences moved to dedicated page at /dashboard/personalise */}

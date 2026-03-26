@@ -78,6 +78,11 @@ const PostJob: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paid, setPaid] = useState(false);
   const autoSubmitRef = useRef(false);
+  const [adminCompanyOptions, setAdminCompanyOptions] = useState<
+    { slug: string; companyName: string; ownerUid: string }[]
+  >([]);
+  const [adminCompanyLoading, setAdminCompanyLoading] = useState(false);
+  const [adminLinkedOwnerUid, setAdminLinkedOwnerUid] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -129,6 +134,52 @@ const PostJob: React.FC = () => {
     };
     loadRole();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!(isSuperAdmin || isAdmin)) {
+      setAdminCompanyOptions([]);
+      setAdminLinkedOwnerUid(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadCompanies = async () => {
+      try {
+        setAdminCompanyLoading(true);
+        const snap = await getDocs(collection(db, 'employerProfiles'));
+        if (cancelled) return;
+        const options: { slug: string; companyName: string; ownerUid: string }[] = [];
+        snap.forEach((docSnap) => {
+          const d = docSnap.data() as any;
+          if (d && d.ownerUid) {
+            options.push({
+              slug: docSnap.id,
+              companyName: typeof d.companyName === 'string' && d.companyName
+                ? d.companyName
+                : docSnap.id,
+              ownerUid: d.ownerUid as string,
+            });
+          }
+        });
+        options.sort((a, b) => a.companyName.localeCompare(b.companyName));
+        setAdminCompanyOptions(options);
+      } catch {
+        if (!cancelled) {
+          setAdminCompanyOptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setAdminCompanyLoading(false);
+        }
+      }
+    };
+
+    void loadCompanies();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin, isAdmin]);
 
   // Load draft from localStorage if exists
   useEffect(() => {
@@ -349,12 +400,13 @@ const PostJob: React.FC = () => {
         const user = auth.currentUser;
         const refCode = await getUniqueRef();
         const latLng = await getLatLngForPostcode(job.postcode);
+        const createdByUid = adminLinkedOwnerUid || (user ? user.uid : 'anonymous');
         const jobData = {
           ...job,
           requirements: [],
           skills: [],
           createdAt: serverTimestamp(),
-          createdBy: user ? user.uid : 'anonymous',
+          createdBy: createdByUid,
           ref: refCode,
           draft: false, // Approved immediately for admins
           ...(latLng ? { lat: latLng.lat, lng: latLng.lng } : {}),
@@ -529,6 +581,35 @@ const PostJob: React.FC = () => {
                 <TextField fullWidth id="company" name="company" placeholder="e.g. Fizzy Juice Bakery" value={job.company} onChange={handleInputChange} />
               </Box>
             </Box>
+
+            {(isSuperAdmin || isAdmin) && (
+              <Box className="postajob__row2">
+                <Box className="postajob__meta">
+                  <Typography className="postajob__metaLabel">Link to company profile (optional)</Typography>
+                </Box>
+                <Box className="postajob__field">
+                  <Autocomplete
+                    options={adminCompanyOptions}
+                    loading={adminCompanyLoading}
+                    getOptionLabel={(option) => option.companyName || option.slug}
+                    value={
+                      adminLinkedOwnerUid
+                        ? adminCompanyOptions.find((c) => c.ownerUid === adminLinkedOwnerUid) || null
+                        : null
+                    }
+                    onChange={(_e, newValue) => {
+                      setAdminLinkedOwnerUid(newValue ? newValue.ownerUid : null);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Search companies to link this job to"
+                      />
+                    )}
+                  />
+                </Box>
+              </Box>
+            )}
 
             <Box className="postajob__row2">
               <Box className="postajob__meta">

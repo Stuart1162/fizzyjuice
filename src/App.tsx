@@ -24,6 +24,8 @@ import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import AdminUsers from './pages/AdminUsers';
 import AdminUserProfile from './pages/AdminUserProfile';
+import AdminCompanyClaims from './pages/AdminCompanyClaims';
+import AdminCompanyEdit from './pages/AdminCompanyEdit';
 import EmployerPublicProfile from './pages/EmployerPublicProfile';
 import EmployerDirectory from './pages/EmployerDirectory';
 
@@ -184,6 +186,10 @@ const InnerAppShell: React.FC = () => {
           {/* SEO category pages for role + location combinations */}
           <Route path="/jobs/category/:slug" element={<JobCategoryPage />} />
           {/* Employer directory + public employer profile pages */}
+          {/* New canonical URLs */}
+          <Route path="/companies" element={<EmployerDirectory />} />
+          <Route path="/companies/:slug" element={<EmployerPublicProfile />} />
+          {/* Backwards-compatible old URLs */}
           <Route path="/employers" element={<EmployerDirectory />} />
           <Route path="/employers/:slug" element={<EmployerPublicProfile />} />
           <Route path="/login" element={<Login />} />
@@ -258,6 +264,30 @@ const InnerAppShell: React.FC = () => {
             element={
               <PrivateRoute>
                 <AdminUserProfile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/companies/new"
+            element={
+              <PrivateRoute>
+                <AdminCompanyEdit />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/companies/:slug"
+            element={
+              <PrivateRoute>
+                <AdminCompanyEdit />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/company-claims"
+            element={
+              <PrivateRoute>
+                <AdminCompanyClaims />
               </PrivateRoute>
             }
           />

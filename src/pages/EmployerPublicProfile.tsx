@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -11,6 +11,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Button,
 } from '@mui/material';
 import { ReactComponent as ContactAddressIcon } from '../assets/icons/contact-address.svg';
 import { ReactComponent as ContactEmailIcon } from '../assets/icons/contact-email.svg';
@@ -18,9 +19,11 @@ import { ReactComponent as ContactPhoneIcon } from '../assets/icons/contact-phon
 import { ReactComponent as ContactInstagramIcon } from '../assets/icons/contact-instagram.svg';
 import { ReactComponent as ContactWebsiteIcon } from '../assets/icons/contact-website.svg';
 import { db } from '../firebase';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Job } from '../types/job';
 import JobList from '../components/jobs/JobList';
+import { useAuth } from '../contexts/AuthContext';
+import { useSnackbar } from 'notistack';
 
 interface EmployerPublicProfileData {
   companyName?: string | null;
@@ -40,14 +43,26 @@ interface EmployerPublicProfileData {
   ownerUid?: string | null;
 }
 
+interface CompanyClaimState {
+  id: string;
+  status: string;
+}
+
 const EmployerPublicProfile: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { currentUser, isSuperAdmin } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
   const [data, setData] = useState<EmployerPublicProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [notFound, setNotFound] = useState<boolean>(false);
   const [employerJobs, setEmployerJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState<boolean>(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [claim, setClaim] = useState<CompanyClaimState | null>(null);
+  const [claimLoading, setClaimLoading] = useState<boolean>(false);
+  const [claimSubmitting, setClaimSubmitting] = useState<boolean>(false);
+  const [isAdminRole, setIsAdminRole] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -77,6 +92,71 @@ const EmployerPublicProfile: React.FC = () => {
     void load();
   }, [slug]);
 
+  // Determine if current user is an admin (from their profile prefs)
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!currentUser) {
+        if (!cancelled) setIsAdminRole(false);
+        return;
+      }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const data = snap.exists() ? (snap.data() as any) : undefined;
+        if (!cancelled) setIsAdminRole(data?.role === 'admin');
+      } catch {
+        if (!cancelled) setIsAdminRole(false);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
+
+  // Load any existing claim by the current user for this company
+  useEffect(() => {
+    if (!slug || !currentUser) {
+      setClaim(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadClaim = async () => {
+      try {
+        setClaimLoading(true);
+        const claimsRef = collection(db, 'companyClaims');
+        const q = query(
+          claimsRef,
+          where('companySlug', '==', slug),
+          where('claimantUid', '==', currentUser.uid)
+        );
+        const snap = await getDocs(q);
+        if (cancelled) return;
+        if (!snap.empty) {
+          const docSnap = snap.docs[0];
+          const docData = docSnap.data() as any;
+          setClaim({ id: docSnap.id, status: docData.status || 'pending' });
+        } else {
+          setClaim(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setClaim(null);
+        }
+      } finally {
+        if (!cancelled) setClaimLoading(false);
+      }
+    };
+
+    void loadClaim();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, currentUser]);
+
   const toMillis = (ts: any): number => {
     if (!ts) return 0;
     if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
@@ -99,7 +179,7 @@ const EmployerPublicProfile: React.FC = () => {
     const isArchived = (job: Job): boolean => {
       const created = toMillis((job as any).createdAt || (job as any).updatedAt);
       if (!created) return false;
-      const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+      const TWO_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
       return Date.now() - created > TWO_WEEKS_MS;
     };
 
@@ -146,6 +226,53 @@ const EmployerPublicProfile: React.FC = () => {
     .filter((v): v is string => !!v && v.trim().length > 0);
   const benefits = Array.isArray(data?.benefits) ? data!.benefits! : [];
 
+  const isOwned = !!data?.ownerUid;
+  const isOwnedByCurrentUser =
+    !!data?.ownerUid && !!currentUser && data!.ownerUid === currentUser.uid;
+
+  const isAdmin = !!currentUser && (isSuperAdmin || isAdminRole);
+
+  const handleSubmitClaim = async () => {
+    if (!slug) return;
+
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    if (isOwned && !isOwnedByCurrentUser) {
+      enqueueSnackbar('This company profile is already managed by another account.', {
+        variant: 'error',
+      });
+      return;
+    }
+
+    if (claim && claim.status !== 'rejected') {
+      // Already have a pending or approved claim; nothing to do.
+      return;
+    }
+
+    try {
+      setClaimSubmitting(true);
+      const claimsRef = collection(db, 'companyClaims');
+      const docRef = await addDoc(claimsRef, {
+        companySlug: slug,
+        companyName,
+        claimantUid: currentUser.uid,
+        claimantEmail: currentUser.email || null,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      setClaim({ id: docRef.id, status: 'pending' });
+      enqueueSnackbar('Your claim has been submitted for review.', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Failed to submit claim. Please try again.', { variant: 'error' });
+    } finally {
+      setClaimSubmitting(false);
+    }
+  };
+
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="public-employer-profile">
       <Paper elevation={0} sx={{ p: 4 }} className="public-employer-profile__card">
@@ -164,7 +291,7 @@ const EmployerPublicProfile: React.FC = () => {
           </>
         ) : (
           <>
-            {/* Header: company name + short description + living wage tag */}
+            {/* Header: title, then sub-row with Living Wage chip + claim aligned */}
             <Box mb={4} className="public-employer-profile__header">
               <Typography
                 variant="h2"
@@ -176,15 +303,20 @@ const EmployerPublicProfile: React.FC = () => {
                 {companyName}
               </Typography>
 
-              {(shortDescription || data?.livingWageEmployer) && (
+              <Box
+                mt={1}
+                display={{ xs: 'block', md: 'flex' }}
+                alignItems="center"
+                justifyContent="space-between"
+                className="public-employer-profile__subheaderRow"
+              >
                 <Box
-                  mt={1}
                   display="flex"
-                  alignItems="center"
+                  alignItems="flex-start"
                   flexWrap="wrap"
                   columnGap={2}
                   rowGap={1}
-                  className="public-employer-profile__subheaderRow"
+                  mb={{ xs: 1.5, md: 0 }}
                 >
                   {shortDescription && (
                     <Typography
@@ -197,17 +329,86 @@ const EmployerPublicProfile: React.FC = () => {
                     </Typography>
                   )}
 
-                  {data?.livingWageEmployer && (
-                    <Chip
-                      label="Living Wage Employer"
-                      color="success"
-                      variant="outlined"
-                      className="public-employer-profile__livingWageChip"
-                    />
+                  <Box display="flex" flexDirection="column" alignItems="flex-start" gap={0.5}>
+                    {data?.livingWageEmployer && (
+                      <Chip
+                        label="Living Wage"
+                        color="success"
+                        variant="outlined"
+                        className="public-employer-profile__livingWageChip"
+                      />
+                    )}
+                    {employerJobs.length > 0 && (
+                      <Typography
+                        variant="body2"
+                        className="public-employer-profile__liveJobsCount"
+                      >
+                        <span
+                          className="employer-directory__liveDot"
+                          aria-hidden="true"
+                        />
+                        {employerJobs.length === 1
+                          ? '1 live job'
+                          : `${employerJobs.length} live jobs`}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                {/* Right: claim / ownership callout */}
+                <Box
+                  textAlign={{ xs: 'left', md: 'right' }}
+                  className="public-employer-profile__claim"
+                >
+                  {/* If owned by the current user, show a small ownership note */}
+                  {isOwned && isOwnedByCurrentUser && (
+                    <Typography variant="body2" color="text.secondary">
+                      You manage this company profile.
+                    </Typography>
+                  )}
+
+                  {/* If owned by someone else, show nothing at all */}
+                  {!isOwned && (
+                    claimLoading ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Checking claim status...
+                      </Typography>
+                    ) : claim && claim.status === 'pending' ? (
+                      <Typography variant="body2" color="text.secondary">
+                        You have requested to manage this company. An admin will review your claim.
+                      </Typography>
+                    ) : claim && claim.status === 'rejected' ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Your previous claim for this company was rejected. If you believe this is a mistake,
+                        please contact support.
+                      </Typography>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleSubmitClaim}
+                        disabled={claimSubmitting}
+                      >
+                        Claim this company
+                      </Button>
+                    )
                   )}
                 </Box>
-              )}
+              </Box>
             </Box>
+
+            {isAdmin && slug && (
+              <Box mb={3} className="public-employer-profile__adminActions">
+                <Button
+                  variant="text"
+                  size="small"
+                  component={RouterLink}
+                  to={`/admin/companies/${slug}`}
+                >
+                  Edit company as admin
+                </Button>
+              </Box>
+            )}
 
             <Box
               display={{ xs: 'block', md: 'flex' }}

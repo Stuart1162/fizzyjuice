@@ -14,12 +14,14 @@ import {
   SelectChangeEvent,
   TextField,
   Typography,
+  Button,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Job } from '../types/job';
 import '../styles/employer-directory.css';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DirectoryEmployer {
   id: string;
@@ -59,11 +61,12 @@ const toMillis = (ts: any): number => {
 const isArchived = (job: Job): boolean => {
   const created = toMillis((job as any).createdAt || (job as any).updatedAt);
   if (!created) return false;
-  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+  const TWO_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
   return Date.now() - created > TWO_WEEKS_MS;
 };
 
 const EmployerDirectory: React.FC = () => {
+  const { currentUser, isSuperAdmin } = useAuth();
   const [employers, setEmployers] = useState<DirectoryEmployer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,30 @@ const EmployerDirectory: React.FC = () => {
   const [businessTypeFilter, setBusinessTypeFilter] = useState<string[]>([]);
   const [onlyLivingWage, setOnlyLivingWage] = useState(false);
   const [liveJobCounts, setLiveJobCounts] = useState<Record<string, number>>({});
+
+  const [isAdminRole, setIsAdminRole] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!currentUser) {
+        if (!cancelled) setIsAdminRole(false);
+        return;
+      }
+      try {
+        const prefRef = doc(db, 'users', currentUser.uid, 'prefs', 'profile');
+        const snap = await getDoc(prefRef);
+        const data = snap.exists() ? (snap.data() as any) : undefined;
+        if (!cancelled) setIsAdminRole(data?.role === 'admin');
+      } catch {
+        if (!cancelled) setIsAdminRole(false);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     const load = async () => {
@@ -188,6 +215,8 @@ const EmployerDirectory: React.FC = () => {
     onlyLivingWage,
   ]);
 
+  const isAdmin = !!currentUser && (isSuperAdmin || isAdminRole);
+
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="employer-directory">
       <Box mb={4} className="employer-directory__header">
@@ -199,21 +228,27 @@ const EmployerDirectory: React.FC = () => {
         >
           Companies
         </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          className="employer-directory__intro"
-        >
-          Hospitality companies that care about their people.
-        </Typography>
       </Box>
+
+      {isAdmin && (
+        <Box mb={3} textAlign="right" className="employer-directory__adminActions">
+          <Button
+            variant="outlined"
+            size="small"
+            component={RouterLink}
+            to="/admin/companies/new"
+          >
+            New company profile
+          </Button>
+        </Box>
+      )}
 
       <Box
         mb={3}
         display="flex"
         flexDirection={{ xs: 'column', md: 'row' }}
         gap={2}
-        alignItems="flex-start"
+        alignItems={{ xs: 'flex-start', md: 'center' }}
         className="employer-directory__filtersRow employer-directory__filtersRow--location"
       >
         <TextField
@@ -267,7 +302,7 @@ const EmployerDirectory: React.FC = () => {
               className="employer-directory__livingWageCheckbox"
             />
           }
-          label="Living Wage Employer only"
+          label="Pays Living Wage"
           className="employer-directory__livingWageToggle"
         />
       </Box>
@@ -306,14 +341,18 @@ const EmployerDirectory: React.FC = () => {
               pb={2.5}
               borderBottom="1px dotted rgba(59,25,6,0.2)"
               className="employer-directory__item"
+              component={RouterLink}
+              to={`/companies/${e.slug}`}
+              sx={{
+                textDecoration: 'none',
+                color: 'inherit',
+                display: 'block',
+              }}
             >
               <Typography
                 variant="h5"
-                component={RouterLink}
-                to={`/employers/${e.slug}`}
+                component="div"
                 sx={{
-                  textDecoration: 'none',
-                  color: 'text.primary',
                   fontFamily: 'Anton, sans-serif',
                   letterSpacing: '-0.04em',
                   display: 'block',
@@ -329,15 +368,6 @@ const EmployerDirectory: React.FC = () => {
                   className="employer-directory__itemDescription"
                 >
                   {e.shortDescription}
-                </Typography>
-              )}
-              {e.ownerUid && liveJobCounts[e.ownerUid] > 0 && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  className="employer-directory__itemLiveJobs"
-                >
-                  {liveJobCounts[e.ownerUid]} live {liveJobCounts[e.ownerUid] === 1 ? 'job' : 'jobs'}
                 </Typography>
               )}
               <Box
@@ -368,6 +398,20 @@ const EmployerDirectory: React.FC = () => {
                     className="employer-directory__itemLivingWageTag"
                   />
                 </Box>
+              )}
+              {e.ownerUid && liveJobCounts[e.ownerUid] > 0 && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                  className="employer-directory__itemLiveJobs"
+                >
+                  <span
+                    className="employer-directory__liveDot"
+                    aria-hidden="true"
+                  />
+                  {liveJobCounts[e.ownerUid]} live {liveJobCounts[e.ownerUid] === 1 ? 'job' : 'jobs'}
+                </Typography>
               )}
             </Box>
           ))}
