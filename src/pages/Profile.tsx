@@ -278,7 +278,6 @@ const Profile: React.FC = () => {
 
       // Keep a lightweight, public employer profile in a separate collection, keyed by slug.
       // Any Firestore permission issues here should not block saving the main profile.
-      let employerProfileUpdated = false;
       if (role === 'employer' && nextSlug) {
         try {
           const publicRef = doc(db, 'employerProfiles', nextSlug);
@@ -302,7 +301,6 @@ const Profile: React.FC = () => {
             updatedAt: new Date().toISOString(),
           }, { merge: true });
           setPublicEmployerSlug(nextSlug);
-          employerProfileUpdated = true;
         } catch (e) {
           console.error('Employer profile update failed in Profile page:', e);
         }

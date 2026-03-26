@@ -17,12 +17,11 @@ import {
   Button,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Job } from '../types/job';
 import '../styles/employer-directory.css';
 import { useAuth } from '../contexts/AuthContext';
-import { useSnackbar } from 'notistack';
 
 interface DirectoryEmployer {
   id: string;
@@ -68,7 +67,6 @@ const isArchived = (job: Job): boolean => {
 
 const EmployerDirectory: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
-  const { enqueueSnackbar } = useSnackbar();
   const [employers, setEmployers] = useState<DirectoryEmployer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
