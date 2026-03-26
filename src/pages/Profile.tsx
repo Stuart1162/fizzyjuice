@@ -276,29 +276,36 @@ const Profile: React.FC = () => {
       }
       await setDoc(profileRef, profilePayload, { merge: true });
 
-      // Keep a lightweight, public employer profile in a separate collection, keyed by slug
+      // Keep a lightweight, public employer profile in a separate collection, keyed by slug.
+      // Any Firestore permission issues here should not block saving the main profile.
+      let employerProfileUpdated = false;
       if (role === 'employer' && nextSlug) {
-        const publicRef = doc(db, 'employerProfiles', nextSlug);
-        await setDoc(publicRef, {
-          companyName: companyName || displayName || currentUser.email || null,
-          location: companyLocation || null,
-          postcode: companyPostcode || null,
-          shortDescription: employerShortDescription || null,
-          about: employerAbout || null,
-          culture: employerCulture || null,
-          benefits: employerBenefits && employerBenefits.length > 0 ? employerBenefits : [],
-          businessTypes: employerBusinessTypes && employerBusinessTypes.length > 0 ? employerBusinessTypes : [],
-          livingWageEmployer: livingWageEmployer,
-          addressLine1: addressLine1 || null,
-          addressLine2: addressLine2 || null,
-          telephone: employerTelephone || null,
-          email: applicationEmail || null,
-          website: websiteUrl || null,
-          instagram: instagramUrl || null,
-          ownerUid: currentUser.uid,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-        setPublicEmployerSlug(nextSlug);
+        try {
+          const publicRef = doc(db, 'employerProfiles', nextSlug);
+          await setDoc(publicRef, {
+            companyName: companyName || displayName || currentUser.email || null,
+            location: companyLocation || null,
+            postcode: companyPostcode || null,
+            shortDescription: employerShortDescription || null,
+            about: employerAbout || null,
+            culture: employerCulture || null,
+            benefits: employerBenefits && employerBenefits.length > 0 ? employerBenefits : [],
+            businessTypes: employerBusinessTypes && employerBusinessTypes.length > 0 ? employerBusinessTypes : [],
+            livingWageEmployer: livingWageEmployer,
+            addressLine1: addressLine1 || null,
+            addressLine2: addressLine2 || null,
+            telephone: employerTelephone || null,
+            email: applicationEmail || null,
+            website: websiteUrl || null,
+            instagram: instagramUrl || null,
+            ownerUid: currentUser.uid,
+            updatedAt: new Date().toISOString(),
+          }, { merge: true });
+          setPublicEmployerSlug(nextSlug);
+          employerProfileUpdated = true;
+        } catch (e) {
+          console.error('Employer profile update failed in Profile page:', e);
+        }
       }
       enqueueSnackbar('Profile updated', { variant: 'success' });
     } catch (e: any) {
@@ -404,7 +411,7 @@ const Profile: React.FC = () => {
               variant="text"
               color="primary"
               component={RouterLink}
-              to={`/employers/${publicEmployerSlug}`}
+              to={`/companies/${publicEmployerSlug}`}
               className="profile__publicLink"
             >
               View public profile

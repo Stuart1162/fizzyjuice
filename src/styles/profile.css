@@ -134,6 +134,8 @@ li.public-employer-profile__contactItem {
   margin:3px 0;
 }
 
+
+
 .public-employer-profile__contactIcon {
   min-width: 32px; /* override MUI default */
   display: flex;
@@ -185,6 +187,27 @@ div.public-employer-profile__benefitChip {
 .public-employer-profile__contactLink:hover,
 .public-employer-profile__contactLink:focus {
   text-decoration: underline;
+}
+
+/* Live jobs count on public employer profile – match directory card style */
+.public-employer-profile__liveJobsCount {
+  color: rgb(255, 30, 0);
+  font-weight: 500;
+}
+
+.public-employer-profile__liveJobsCount .employer-directory__liveDot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgb(255, 30, 0);
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: employer-directory-liveDot-pulse 1.4s ease-in-out infinite;
+}
+
+.public-employer-profile .jobRow {
+  padding:0;
 }
 
 /* Tablet styles */

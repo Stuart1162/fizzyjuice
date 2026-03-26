@@ -40,25 +40,61 @@ div.employer-directory__filtersRow {
   padding-top:40px;
 }
 
-div.employer-directory__item {
+a.employer-directory__item {
   border:1px dotted rgba(59, 25, 6, 0.4);
   padding-bottom: 1.5rem;
   padding:20px;
+  margin-bottom:0;
 }
 
+a.employer-directory__item:hover {
+  background-color: rgba(255,255,255,0.3);
+}
 
-
-a.employer-directory__itemName {
+div.employer-directory__itemName {
   text-decoration: none;
   letter-spacing: -1%;
 }
 
-a.employer-directory__itemName:hover {
+.employer-directory__item:hover .employer-directory__itemName {
   text-decoration: underline;
 }
 
+p.employer-directory__itemLiveJobs {
+  color:rgb(255, 30, 0);
+  font-weight:500;
+}
+
+.employer-directory__itemLiveJobs .employer-directory__liveDot {
+  display:inline-block;
+  width:5px;
+  height:5px;
+  border-radius:999px;
+  background: rgb(255, 30, 0);
+  margin-right:6px;
+  vertical-align:middle;
+  animation: employer-directory-liveDot-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes employer-directory-liveDot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 h6.employer-directory__itemDescription {
-  margin-top:0;
+  margin-top:4px;
+  line-height:1.2;
+  margin-bottom:4px;
 }
 
 div.employer-directory__itemMeta {
