@@ -28,6 +28,7 @@ import AdminCompanyClaims from './pages/AdminCompanyClaims';
 import AdminCompanyEdit from './pages/AdminCompanyEdit';
 import EmployerPublicProfile from './pages/EmployerPublicProfile';
 import EmployerDirectory from './pages/EmployerDirectory';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Create a theme instance
 const theme = createTheme({
@@ -195,6 +196,7 @@ const InnerAppShell: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route
             path="/post-job"
             element={
@@ -320,6 +322,13 @@ const InnerAppShell: React.FC = () => {
             style={{ color: 'inherit', textDecoration: 'underline' }}
           >
             Sitemap
+          </a>
+          {'  •  '}
+          <a
+            href="/privacy"
+            style={{ color: 'inherit', textDecoration: 'underline' }}
+          >
+            Privacy policy
           </a>
         </Typography>
       </footer>
