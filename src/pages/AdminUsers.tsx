@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 // Shape for a user profile document located at users/{uid}/prefs/profile
@@ -13,6 +13,7 @@ interface UserProfileDoc {
   role?: 'jobseeker' | 'employer' | 'admin';
   publicEmployerSlug?: string | null;
   companyName?: string | null;
+  createdAt?: any;
 }
 
 interface JobLite {
@@ -114,6 +115,7 @@ const AdminUsers: React.FC = () => {
               role: data?.role || undefined,
               publicEmployerSlug: data?.publicEmployerSlug || null,
               companyName: data?.companyName || null,
+              createdAt: data?.createdAt ?? null,
             };
           });
         if (cancelled) return;
@@ -172,8 +174,31 @@ const AdminUsers: React.FC = () => {
   }, [profiles]);
 
   const filteredProfiles = useMemo(() => {
-    if (selectedRole === 'all') return profiles;
-    return profiles.filter((p) => p.role === selectedRole);
+    const getMillis = (p: UserProfileDoc): number => {
+      const v = p.createdAt as any;
+      if (!v) return 0;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        const t = Date.parse(v);
+        return Number.isNaN(t) ? 0 : t;
+      }
+      if (v instanceof Date) return v.getTime();
+      if (v instanceof Timestamp) return v.toMillis();
+      if (v && typeof (v as any).toMillis === 'function') {
+        try {
+          return (v as any).toMillis();
+        } catch {
+          return 0;
+        }
+      }
+      return 0;
+    };
+
+    const base =
+      selectedRole === 'all' ? profiles : profiles.filter((p) => p.role === selectedRole);
+
+    // Newest first
+    return [...base].sort((a, b) => getMillis(b) - getMillis(a));
   }, [profiles, selectedRole]);
 
   const handleRequestDelete = (profile: UserProfileDoc) => {
