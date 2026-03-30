@@ -92,6 +92,9 @@ const Dashboard: React.FC = () => {
   const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
   const [strengthCounts, setStrengthCounts] = useState<Record<string, number>>({});
   const [jobseekersWithPrefs, setJobseekersWithPrefs] = useState<number>(0);
+  const [hasLoadedAnalytics, setHasLoadedAnalytics] = useState(false);
+  const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
+  const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
 
   // Load user preferences (strengths) and profile (role)
   useEffect(() => {
@@ -137,7 +140,11 @@ const Dashboard: React.FC = () => {
   // Load analytics for superadmin/admin: aggregate jobseeker preferences across all users
   useEffect(() => {
     const run = async () => {
+      // Only load analytics when the User Analytics tab is actually opened,
+      // and ensure we do this work at most once per mount.
       if (!canSeeAnalytics) return;
+      if (hasLoadedAnalytics) return;
+      if (manageTab !== 'analytics') return;
       setAnalyticsLoading(true);
       try {
         // Prefer a collection group read of all 'prefs' docs, and filter to the 'jobseeker' doc
@@ -187,10 +194,11 @@ const Dashboard: React.FC = () => {
         }
       } finally {
         setAnalyticsLoading(false);
+        setHasLoadedAnalytics(true);
       }
     };
-    run();
-  }, [canSeeAnalytics]);
+    void run();
+  }, [canSeeAnalytics, manageTab, hasLoadedAnalytics]);
 
   const filteredJobs = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -298,10 +306,6 @@ const Dashboard: React.FC = () => {
 
   // Admin-only pagination state for Live Jobs tab
   const [livePage, setLivePage] = useState<number>(1);
-
-  // Tab selection for manage area
-  const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
-  const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
 
   const isAdminLike = isSuperAdmin || userRole === 'admin';
 
@@ -422,13 +426,20 @@ const Dashboard: React.FC = () => {
           const appsRef = collection(db, 'applications');
           const counts: Record<string, number> = {};
           const jobIds = myData.map(j => j.id).filter(Boolean) as string[];
-
-          for (const jid of jobIds) {
-            const appsQuery = query(appsRef, where('jobId', '==', jid));
-            const appsSnap = await getDocs(appsQuery);
-            counts[jid] = appsSnap.size;
+          if (jobIds.length > 0) {
+            await Promise.all(
+              jobIds.map(async (jid) => {
+                try {
+                  const appsQuery = query(appsRef, where('jobId', '==', jid));
+                  const appsSnap = await getDocs(appsQuery);
+                  counts[jid] = appsSnap.size;
+                } catch {
+                  // Leave count at default 0 on failure for this job
+                  if (typeof counts[jid] !== 'number') counts[jid] = 0;
+                }
+              })
+            );
           }
-
           setApplicationCounts(counts);
         } catch (e) {
           console.error('Failed to load application counts', e);
@@ -436,10 +447,17 @@ const Dashboard: React.FC = () => {
         }
 
         // For Personalised list: fetch all jobs regardless of owner, but filter out drafts for non-admins
-        const allSnap = await getDocs(baseRef);
-        const allData = allSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
+        const isAdminLikeLocal = isSuperAdmin || userRole === 'admin';
+        let allData: Job[];
+        if (isAdminLikeLocal) {
+          // Admins already loaded all jobs into myData; reuse to avoid a second full collection read.
+          allData = myData;
+        } else {
+          const allSnap = await getDocs(baseRef);
+          allData = allSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
+        }
         // Filter out drafts for non-admin users
-        const filteredAllData = allData.filter(job => !job.draft || (isSuperAdmin || userRole === 'admin'));
+        const filteredAllData = allData.filter(job => !job.draft || isAdminLikeLocal);
         setAllJobs(filteredAllData);
 
         // Load aggregate metrics (views, saves, applies) for all jobs
