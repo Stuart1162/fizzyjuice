@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { db } from '../firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -81,124 +81,9 @@ const Register: React.FC = () => {
         }
       }
 
-      // Persist role (and initial employer details) to profile and company profile
+      // Persist role (and initial employer details) to profile
       if (cred.user?.uid) {
-        const uid = cred.user.uid;
-        const profileRef = doc(db, 'users', uid, 'prefs', 'profile');
-        const nowIso = new Date().toISOString();
-
-        // For employers, attempt to reuse or claim an existing company profile by slug.
-        // Any Firestore permission issues here should not block account creation.
-        let finalEmployerSlug = publicEmployerSlug;
-        if (formData.role === 'employer' && publicEmployerSlug) {
-          try {
-            const baseRef = doc(db, 'employerProfiles', publicEmployerSlug);
-            const existingSnap = await getDoc(baseRef);
-
-            if (existingSnap.exists()) {
-              const existing = existingSnap.data() as any;
-              const existingOwnerUid = existing?.ownerUid as string | null | undefined;
-
-              if (!existingOwnerUid) {
-                // Admin-created, unclaimed profile – claim it for this employer without overwriting content
-                await setDoc(
-                  baseRef,
-                  {
-                    ownerUid: uid,
-                    email: formData.email,
-                    updatedAt: nowIso,
-                  },
-                  { merge: true }
-                );
-              } else if (existingOwnerUid === uid) {
-                // Existing profile already owned by this user – just make sure contact details are up to date
-                await setDoc(
-                  baseRef,
-                  {
-                    email: formData.email,
-                    updatedAt: nowIso,
-                  },
-                  { merge: true }
-                );
-              } else {
-                // Slug is already owned by another account – generate a unique slug for this new employer
-                let uniqueSlug = publicEmployerSlug;
-                let suffix = 2;
-                while (suffix < 20) {
-                  const candidate = `${publicEmployerSlug}-${suffix}`;
-                  const candidateRef = doc(db, 'employerProfiles', candidate);
-                  const candidateSnap = await getDoc(candidateRef);
-                  if (!candidateSnap.exists()) {
-                    uniqueSlug = candidate;
-                    break;
-                  }
-                  suffix++;
-                }
-                if (uniqueSlug === publicEmployerSlug) {
-                  uniqueSlug = `${publicEmployerSlug}-${uid.slice(0, 6)}`;
-                }
-
-                finalEmployerSlug = uniqueSlug;
-                const newRef = doc(db, 'employerProfiles', finalEmployerSlug);
-                await setDoc(
-                  newRef,
-                  {
-                    companyName: formData.businessName || formData.displayName || formData.email || null,
-                    location: null,
-                    postcode: null,
-                    shortDescription: null,
-                    about: null,
-                    culture: null,
-                    benefits: [],
-                    businessTypes: [],
-                    livingWageEmployer: null,
-                    addressLine1: null,
-                    addressLine2: null,
-                    telephone: null,
-                    email: formData.email,
-                    website: null,
-                    instagram: null,
-                    ownerUid: uid,
-                    createdAt: nowIso,
-                    updatedAt: nowIso,
-                  },
-                  { merge: true }
-                );
-              }
-            } else {
-              // No existing profile with this slug – create a fresh one
-              await setDoc(
-                baseRef,
-                {
-                  companyName: formData.businessName || formData.displayName || formData.email || null,
-                  location: null,
-                  postcode: null,
-                  shortDescription: null,
-                  about: null,
-                  culture: null,
-                  benefits: [],
-                  businessTypes: [],
-                  livingWageEmployer: null,
-                  addressLine1: null,
-                  addressLine2: null,
-                  telephone: null,
-                  email: formData.email,
-                  website: null,
-                  instagram: null,
-                  ownerUid: uid,
-                  createdAt: nowIso,
-                  updatedAt: nowIso,
-                },
-                { merge: true }
-              );
-            }
-          } catch (e) {
-            // Swallow Firestore permission/validation errors here so signup can still succeed
-            console.error('Employer profile setup failed during registration:', e);
-            finalEmployerSlug = null;
-          }
-        }
-
+        const profileRef = doc(db, 'users', cred.user.uid, 'prefs', 'profile');
         const profilePayload: any = {
           role: formData.role,
           displayName: formData.displayName,
@@ -206,12 +91,37 @@ const Register: React.FC = () => {
           // Keep both names for backward-compat, but use companyName going forward
           companyName: formData.businessName || null,
           businessName: formData.businessName || null,
-          createdAt: nowIso,
+          createdAt: new Date().toISOString(),
         };
-        if (formData.role === 'employer' && finalEmployerSlug) {
-          profilePayload.publicEmployerSlug = finalEmployerSlug;
+        if (formData.role === 'employer' && publicEmployerSlug) {
+          profilePayload.publicEmployerSlug = publicEmployerSlug;
         }
         await setDoc(profileRef, profilePayload, { merge: true });
+
+        // For employers, also create a minimal public employer profile document keyed by slug
+        if (formData.role === 'employer' && publicEmployerSlug) {
+          const publicRef = doc(db, 'employerProfiles', publicEmployerSlug);
+          await setDoc(publicRef, {
+            companyName: formData.businessName || formData.displayName || formData.email || null,
+            location: null,
+            postcode: null,
+            shortDescription: null,
+            about: null,
+            culture: null,
+            benefits: [],
+            businessTypes: [],
+            livingWageEmployer: null,
+            addressLine1: null,
+            addressLine2: null,
+            telephone: null,
+            email: formData.email,
+            website: null,
+            instagram: null,
+            ownerUid: cred.user.uid,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }, { merge: true });
+        }
       }
       enqueueSnackbar('Account created successfully!', { variant: 'success' });
       // Redirect: jobseeker -> onboarding, employer -> dashboard

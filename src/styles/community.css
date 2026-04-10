@@ -1,0 +1,317 @@
+:root {
+  --community-deep: #1f0b02;
+  --community-amber: #ffb347;
+  --community-rose: #ff6b6b;
+  --community-cream: #fbf9f4;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+
+.communityPage {
+  background: var(--community-cream);
+  padding: 72px 0 96px;
+
+  .communityContainer {
+    max-width: 100%;
+  }
+}
+
+.communityIntro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  max-width: 100%;
+  margin: 0 auto 48px;
+  border-bottom:2px dotted rgba(59, 25, 6, 0.4);
+  gap: 12px;
+}
+
+.communityActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+span.communityActionsLabel {
+  font-size: 1rem;
+  letter-spacing: -1%;
+  color: var(--community-deep);
+  opacity: 0.6;
+  margin-left:10px;
+}
+
+.communityActionsLinks {
+  a.communityActionLink {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size: 1rem;
+    color: #1f0b02;
+    text-decoration: none;
+    position: relative;
+    border:1px solid #1f0b02;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-left:10px;
+  }
+
+  
+  a.communityActionLink:hover {
+    opacity: 1;
+    background:#FF610B
+  }
+}
+
+.communityHeroCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.communityHeroCards .communityHeroCard {
+  min-height: 550px;
+}
+
+@media (max-width: 1200px) {
+  .communityHeroCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .communityHeroCards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.communityLabel {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--community-rose);
+}
+
+h1.communityTitle {
+  font-size: clamp(5.5rem, 12vw, 8.75rem);
+  margin: 12px 0;
+  letter-spacing: -2%;
+}
+
+.communitySubtitle {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+div.communityFilters {
+  justify-content: left;
+  margin-bottom: 1.5rem;
+
+  .communityFilterChip {
+    background-color: transparent;
+    
+    span {
+      font-family:"Anton", Impact, sans-serif;
+      font-size:24px;
+      letter-spacing: -1%;;
+    }
+  }
+
+  .communityFilterChip--active {
+    span {
+      color: #FF610B;
+    }
+  }
+}
+
+.communityState {
+  padding: 80px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.communityHeroCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background-size: cover;
+  background-position: center;
+  border-radius: 24px;
+  padding: 24px;
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition:all 0.2s;
+  
+  &:hover {
+    border-radius:0;
+    transition:all 0.2s;
+
+    .communityHeroTitle {
+      color:#FF610B;
+    }
+  }
+}
+
+.communityHeroCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  pointer-events: none;
+}
+
+.communityHeroContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 100%;
+}
+
+.communityHeroDate {
+  font-size: 0.85rem;
+  letter-spacing: 0em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.communityHeroTitle {
+  font-family: 'Anton', Impact, sans-serif;
+  font-size: clamp(3.5rem, 5vw, 4.75rem);
+  line-height: 1;
+  letter-spacing: -1%;
+  display: block;
+}
+
+.communityBadge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 999px;
+  text-transform: inherit;
+}
+
+.communityHeroExcerpt {
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.communityHeroMeta {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.communityGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+
+@media (max-width: 1200px) {
+  .communityGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .communityGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  h1.communityTitle {
+    font-size:clamp(3.5rem, 10vw, 6.75rem)
+  }
+
+  div.communityActions {
+    margin: 0 0 24px;
+  }
+
+  span.communityActionsLabel {
+    margin-left:0;
+  }
+
+  a.communityActionLink {
+    margin-left:0 !important;
+    margin-right:10px !important;
+  }
+
+  a.communityCard {
+    min-height: 300px;
+    padding:20px;
+  }
+
+  
+}
+
+.communityGridItem {
+  list-style: none;
+}
+
+
+.communityCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 520px;
+  border-radius: 0px;
+  padding: 28px;
+  color: #fff;
+  text-decoration: none;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+      transition:all 0.2s;
+
+  &:hover {
+      border-radius:10px;
+      transition:all 0.2s;
+
+  }
+}
+
+.communityCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.15));
+  border-radius: 24px;
+  pointer-events: none;
+}
+
+.communityCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+.communityCard:hover::after {
+  background:none;
+}
+
+.communityCardDate {
+  font-size: 0.8rem;
+  letter-spacing: -1%;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+span.communityCardHeading {
+  font-family: 'Anton', Impact, sans-serif;
+  font-size: clamp(3rem, 4vw, 3.8rem);
+  line-height: 1;
+  letter-spacing: -1%;
+}
+
+@media (max-width: 600px) {
+  .communityHeroCard {
+    border-radius: 24px;
+    padding: 24px;
+  }
+
+  .communityGrid {
+    gap: 18px;
+  }
+}
