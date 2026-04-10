@@ -10,7 +10,6 @@ import {
   Box,
   CircularProgress,
   Button,
-  Link as MuiLink,
   Snackbar,
   Alert,
 } from '@mui/material';
@@ -89,21 +88,6 @@ const JobApplicationsPage: React.FC = () => {
     };
     run();
   }, [currentUser, isSuperAdmin, jobId]);
-
-  const formatDate = (ts: any): string => {
-    if (!ts) return '';
-    if (typeof ts?.toDate === 'function') {
-      return ts.toDate().toLocaleString();
-    }
-    if (typeof ts?.seconds === 'number') {
-      return new Date(ts.seconds * 1000).toLocaleString();
-    }
-    try {
-      return new Date(ts).toLocaleString();
-    } catch {
-      return '';
-    }
-  };
 
   const newCount = useMemo(() => {
     if (!applications || applications.length === 0) return 0;
