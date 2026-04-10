@@ -184,6 +184,8 @@ div.home__locationInput,
 div.home__roleOptions,
 div.home__contractOptions,
 div.home__shiftsOptions {
+  margin-top: 8px;
+  padding: 8px 12px;
 }
 
 span.home__roleCheckbox,
@@ -349,10 +351,28 @@ div.home__shiftCheckbox {
     margin-top:12px;
   }
 
-  .jobView__openIconBtn svg {
+  a.jobView__openIconBtn {
+    color: inherit;
+    transition: color 160ms ease;
+  }
+
+  a.jobView__openIconBtn:hover,
+  a.jobView__openIconBtn:focus-visible {
+    background-color: transparent;
+  }
+
+  a.jobView__openIconBtn svg {
     width:1.25em;
     height:1.25em;
     margin-top:8px;
+    transition: color 160ms ease, fill 160ms ease;
+  }
+
+  a.jobView__openIconBtn:hover .jobView__openIconLabel,
+  a.jobView__openIconBtn:focus-visible .jobView__openIconLabel,
+  a.jobView__openIconBtn:hover svg,
+  a.jobView__openIconBtn:focus-visible svg {
+    color:#3F0000;
   }
 
   a.jobView__applyButton {

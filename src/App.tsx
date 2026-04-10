@@ -29,6 +29,8 @@ import AdminCompanyEdit from './pages/AdminCompanyEdit';
 import EmployerPublicProfile from './pages/EmployerPublicProfile';
 import EmployerDirectory from './pages/EmployerDirectory';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Community from './pages/Community';
+import CommunityPost from './pages/CommunityPost';
 
 // Create a theme instance
 const theme = createTheme({
@@ -193,6 +195,9 @@ const InnerAppShell: React.FC = () => {
           {/* Backwards-compatible old URLs */}
           <Route path="/employers" element={<EmployerDirectory />} />
           <Route path="/employers/:slug" element={<EmployerPublicProfile />} />
+          {/* Community blog */}
+          <Route path="/community" element={<Community />} />
+          <Route path="/community/:slug" element={<CommunityPost />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
