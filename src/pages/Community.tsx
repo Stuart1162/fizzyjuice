@@ -5,6 +5,7 @@ import '../styles/community.css';
 import { CommunityCategory, CommunityPostSummary } from '../types/sanity';
 import { fetchCommunityCategories, fetchCommunityPosts } from '../services/sanityQueries';
 import { urlFor } from '../services/sanityClient';
+import fohSvg from '../assets/foh.svg';
 
 const formatDate = (iso?: string) => {
   if (!iso) return null;
@@ -54,37 +55,39 @@ const Community: React.FC = () => {
 
   return (
     <Box className="communityPage">
-      <Container maxWidth="lg" className="communityContainer">
-        <Box className="communityIntro">
-          <Typography variant="h2" component="h1" className="communityTitle">
-            Community
-          </Typography>
-          <Box className="communityActions">
-            <Typography component="span" className="communityActionsLabel">
-              Share your story
-            </Typography>
-            <Stack direction="row" spacing={3} className="communityActionsLinks">
-              <Typography
-                component="a"
-                href="https://tally.so/r/MeJXkp"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="communityActionLink"
-              >
-                Employer
+      <Box className="communityHero">
+        <Box className="communityHeroContent">
+          <Box className="communityIntro">
+            <Box component="img" src={fohSvg} alt="Front of House" className="communityTitle" />
+            <Box className="communityActions">
+              <Typography component="span" className="communityActionsLabel">
+                Share a story
               </Typography>
-              <Typography
-                component="a"
-                href="https://tally.so/r/WOM2xN"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="communityActionLink"
-              >
-                Community Spotlight
-              </Typography>
-            </Stack>
+              <Stack direction="row" spacing={3} className="communityActionsLinks">
+                <Typography
+                  component="a"
+                  href="https://tally.so/r/MeJXkp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="communityActionLink"
+                >
+                  Employers
+                </Typography>
+                <Typography
+                  component="a"
+                  href="https://tally.so/r/WOM2xN"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="communityActionLink"
+                >
+                  Community
+                </Typography>
+              </Stack>
+            </Box>
           </Box>
         </Box>
+      </Box>
+      <Container maxWidth="lg" className="communityContainer">
 
         {showFilters && categories.length > 0 && (
           <Stack direction="row" spacing={1} className="communityFilters" flexWrap="wrap" justifyContent="center">

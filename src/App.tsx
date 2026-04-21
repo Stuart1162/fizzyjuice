@@ -167,11 +167,13 @@ export default App;
 const InnerAppShell: React.FC = () => {
   const location = useLocation();
   const isPostJob = location.pathname.startsWith('/post-job');
+  const isCommunityPage = location.pathname.startsWith('/community');
   return (
     <div className="app">
       <Header />
       <main
         className="page-main"
+        id={isCommunityPage ? "community" : undefined}
         style={{
           minHeight: 'calc(100vh - 64px - 56px)',
           padding: '20px 0',
@@ -301,6 +303,7 @@ const InnerAppShell: React.FC = () => {
         </Routes>
       </main>
       <footer
+        className={`${isCommunityPage ? "community-footer" : ""} ${location.pathname.startsWith('/community/') && location.pathname !== '/community' ? "community-post-footer" : ""}`}
         style={{
           textAlign: 'center',
           padding: '20px',

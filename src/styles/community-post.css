@@ -1,5 +1,16 @@
 .communityPostPage {
-  background: #fbf9f4;
+  background-image: url('../assets/creambg.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* Apply creambg.webp background to footer on Community post pages */
+body .communityPostPage footer.community-footer {
+  background-image: url('../assets/creambg.webp') !important;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .communityPostHero {
@@ -32,7 +43,7 @@ h1.communityPostHeroTitle {
   font-size: clamp(4rem, 7vw, 5.5rem);
   line-height: 0.9;
   margin: 12px 0 0;
-  color:#FBF9F4;
+  color:#e3e0d8;
 }
 
 p.communityPostHeroDek {
@@ -40,7 +51,7 @@ p.communityPostHeroDek {
   max-width: 720px;
   line-height: 1.2;
   font-family: 'Anton', Impact, sans-serif;  
-  color:#FBF9F4;
+  color:#e3e0d8;
 }
 
 .communityPostHero .communityPostBreadcrumbs a {
@@ -63,7 +74,7 @@ div.communityPostDetails {
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  margin: 12px 0 40px;
+  margin: 12px 0 0px;
   padding: 0 0 16px;
   border-bottom:2px dotted #3f0000;
 }
@@ -79,7 +90,7 @@ div.communityPostDetails {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 48px;
 }
 
 div.communityPostDetailsMeta {
@@ -88,6 +99,7 @@ div.communityPostDetailsMeta {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  display: none;
 }
 
 .communityPostDetailsRight {
@@ -110,6 +122,10 @@ div.communityPostDetailsMeta {
 .communityPostShareIcon {
   border: 1px solid rgba(31, 11, 2, 0.15);
   background: #fff;
+
+  svg {
+    fill: #3b1906;
+  }
 }
 
 .communityPostDek {
@@ -121,35 +137,36 @@ div.communityPostDetailsMeta {
 div.communityPostLayout {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
-  gap: 40px;
+  gap: 24px;
 }
 
 div.communityPostMain {
   font-size: 1.05rem;
   line-height: 1.7;
+  padding-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
   padding-right: 15%;
-  border-right: 1px solid rgba(31, 11, 2, 0.1);
+  border-right: 0px solid rgba(31, 11, 2, 0.1);
 }
 
 div.communityPostMain h2,
 div.communityPostMain h3,
 div.communityPostMain h4 {
   font-family: 'Anton', Impact, sans-serif;
-  letter-spacing: -0.01em;
+  letter-spacing: -1%;
   margin: 1.5rem 0 0.5rem;
 }
 
 div.communityPostMain h2 {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(2rem, 4vw, 2.2rem);
   font-weight:500;
   line-height: 1.2;
 }
 
 div.communityPostMain h3 {
-  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-size: clamp(1.5rem, 3vw, 1.5rem);
   font-weight:500;
   line-height: 1.2;
   margin:8px 0 4px;
@@ -163,6 +180,7 @@ div.communityPostMain h4 {
 
 div.communityPostMain p {
   margin: 0 0 1.1rem;
+  letter-spacing: -1%;
 }
 
 div.communityPostMain p + p {
@@ -174,9 +192,11 @@ div.communityPostMain p + p {
   flex-direction: column;
   gap: 12px;
   position: sticky;
-  top: 40px;
+  top: 64px;
   align-self: flex-start;
   padding-top: 2rem;
+  padding-left: 2rem;
+  border-left:2px dotted #3b1906;
 
   a {
     color: #FF7100;
@@ -200,6 +220,9 @@ div.communityPostMain p + p {
   margin: 0 0 0.75rem;
 }
 
+footer.community-post-footer {
+  background-image: url('../assets/creambg.webp') !important;
+}
 .sidebarCardHeading {
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -262,16 +285,26 @@ div.communityPostMain p + p {
 }
 
 .communityRelatedCard {
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: 4px;
+  padding: 12px;
   text-decoration: none;
   color: #fff;
-  min-height: 240px;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   background-size: cover;
   background-position: center;
+
+  a, p, h6 {
+    color: #fff;
+  }
+
+  h6 {
+    font-family: 'Anton', Impact, sans-serif;
+    font-size:2rem;
+    line-height: 1.2;
+  }
 }
 
 .communityPostFooter {
@@ -297,7 +330,8 @@ div.communityPostMain p + p {
 .communityPostBreadcrumbs a {
   color: #3f0000;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing:-1%;
 }
 
 .communityPostBreadcrumbs a:hover {
@@ -358,11 +392,31 @@ div.communityPostMain p + p {
   }
 
   .communityPostHero {
-    min-height: 50vh;
+    min-height: 70vh;
   }
 
   .communityPostShareInline {
     gap: 8px;
+  }
+
+  .communityPostPage {
+    background-size:100%;
+  }
+
+  div.communityPostHeroContent {
+    padding: 0 16px;
+  }
+
+  div.communityPostInner {
+    padding: 4px 16px 72px;
+  }
+  div.communityPostMain {
+    padding-top: 8px;
+  }
+
+  .communityPostAside {
+    padding-left:0;
+    border-left:0;
   }
 }
 
@@ -373,7 +427,7 @@ div.communityPostMain p + p {
   }
 
   div.communityPostInner {
-    padding: 4px 24px 72px;
+    padding: 4px 16px 72px;
   }
 
   h1.communityPostHeroTitle {

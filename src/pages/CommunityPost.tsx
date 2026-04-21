@@ -359,7 +359,6 @@ const CommunityPost: React.FC = () => {
 
             {related.length > 0 && (
               <Box className="communityPostRelated">
-                <Typography variant="h6">More pours from the community</Typography>
                 <Box className="communityRelatedList">
                   {related.map((relPost) => (
                     <Box

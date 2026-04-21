@@ -3,17 +3,61 @@
   --community-amber: #ffb347;
   --community-rose: #ff6b6b;
   --community-cream: #fbf9f4;
+  --community-bg: #fbf9f4;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 
-.communityPage {
-  background: var(--community-cream);
-  padding: 72px 0 96px;
+main#community {
+  padding-top:0 !important;
+  padding-bottom: 0 !important;
+}
 
-  .communityContainer {
-    max-width: 100%;
-  }
+/* Apply bg4.webp background to footer on Community page only */
+footer.community-footer {
+  background-image: url('../assets/bg4.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.communityPage {
+  background-image: url('../assets/bg4.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  padding: 0 0 96px;
+}
+
+.communityHero {
+  width: 100%;
+  min-height: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 104px;
+}
+
+.communityHero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* background: linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.6)); */
+}
+
+.communityHeroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  width: 100%;
+  padding: 0 24px;
+  margin: 0 auto;
+}
+
+div.communityContainer {
+  max-width: 100%;
+  padding:0;
 }
 
 .communityIntro {
@@ -22,15 +66,23 @@
   align-items: flex-start;
   text-align: left;
   max-width: 100%;
-  margin: 0 auto 48px;
-  border-bottom:2px dotted rgba(59, 25, 6, 0.4);
+  margin: 0 0 0px;
+  border-bottom: 2px dotted #3b1906;
   gap: 12px;
+  color: #fff;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-bottom: 2px dotted #3b1906;
+    padding-bottom: 20px;
+  }
 }
 
 .communityActions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items:anchor-center;
   gap: 6px;
   margin: 0 0 12px;
 }
@@ -38,8 +90,8 @@
 span.communityActionsLabel {
   font-size: 1rem;
   letter-spacing: -1%;
-  color: var(--community-deep);
-  opacity: 0.6;
+  color: #3b1906;
+  opacity: 0.8;
   margin-left:10px;
 }
 
@@ -47,10 +99,10 @@ span.communityActionsLabel {
   a.communityActionLink {
     font-family: 'Anton', Impact, sans-serif;
     font-size: 1rem;
-    color: #1f0b02;
+    color: #3b1906;
     text-decoration: none;
     position: relative;
-    border:1px solid #1f0b02;
+    border:1px solid #3b1906;
     padding: 4px 12px;
     border-radius: 4px;
     margin-left:10px;
@@ -59,7 +111,7 @@ span.communityActionsLabel {
   
   a.communityActionLink:hover {
     opacity: 1;
-    background:#FF610B
+    background:#FF610B;
   }
 }
 
@@ -93,9 +145,12 @@ span.communityActionsLabel {
 }
 
 h1.communityTitle {
-  font-size: clamp(5.5rem, 12vw, 8.75rem);
+  font-size: clamp(8.5rem, 17vw, 15rem);
   margin: 12px 0;
+  color:#3b1906;
   letter-spacing: -2%;
+  line-height: 0.9;
+  text-transform: uppercase;
 }
 
 .communitySubtitle {
@@ -172,6 +227,8 @@ div.communityFilters {
   justify-content: space-between;
   align-items: flex-start;
   height: 100%;
+  border-bottom: 0px dotted #3b1906;
+
 }
 
 .communityHeroDate {
@@ -208,18 +265,50 @@ div.communityFilters {
 .communityGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
+  gap: 0;
+
+}
+
+.communityGridItem {
+  list-style: none;
+  border-right: 2px dotted #3b1906;
+  border-bottom:2px dotted #3b1906;
+  padding: 24px;
+}
+
+.communityGridItem:nth-child(3n) {
+  border-right: none;
+}
+
+.communityGridItem:nth-last-child(-n+3) {
+  border-bottom: none;
 }
 
 @media (max-width: 1200px) {
   .communityGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  
+  .communityGridItem:nth-child(2n) {
+    border-right: none;
+  }
+  
+  .communityGridItem:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
 }
 
 @media (max-width: 720px) {
   .communityGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  
+  .communityGridItem {
+    border-right: none;
+  }
+  
+  .communityGridItem:last-child {
+    border-bottom: none;
   }
 
   h1.communityTitle {
@@ -258,7 +347,7 @@ div.communityFilters {
   justify-content: space-between;
   min-height: 520px;
   border-radius: 0px;
-  padding: 28px;
+  padding: 20px;
   color: #fff;
   text-decoration: none;
   background-size: cover;
@@ -278,7 +367,7 @@ div.communityFilters {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.15));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2));
   border-radius: 24px;
   pointer-events: none;
 }
@@ -300,7 +389,7 @@ div.communityFilters {
 
 span.communityCardHeading {
   font-family: 'Anton', Impact, sans-serif;
-  font-size: clamp(3rem, 4vw, 3.8rem);
+  font-size: clamp(3rem, 5vw, 3.8rem);
   line-height: 1;
   letter-spacing: -1%;
 }
@@ -311,7 +400,34 @@ span.communityCardHeading {
     padding: 24px;
   }
 
+  .communityPage {
+    background-size:contain;
+    background-repeat: repeat;
+  }
+
   .communityGrid {
-    gap: 18px;
+    gap: 4px;
+  }
+  
+  .communityIntro {
+    img {
+      border-bottom:0;
+    }
+  }
+
+  span.communityActionsLabel {
+    font-weight: 500;
+  }
+
+  .communityHeroContent {
+    padding:0 16px;
+  }
+
+  .communityGridItem {
+    padding: 16px;
+  }
+
+  a.communityCard {
+    min-height: 360px;
   }
 }
