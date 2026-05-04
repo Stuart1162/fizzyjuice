@@ -138,29 +138,31 @@ const Community: React.FC = () => {
           </Box>
         ) : (
           <Box className="communityGrid">
-            {filteredPosts.map((post) => (
-              <Box key={post._id} className="communityGridItem">
-                <Box
-                  component={RouterLink}
-                  to={`/community/${post.slug}`}
-                  className="communityCard"
-                  style={{
-                    backgroundImage: `url(${urlFor(post.heroImage)
-                      ?.width(1200)
-                      .height(900)
-                      .fit('crop')
-                      .url() || ''})`,
-                  }}
-                >
-                  <Typography variant="subtitle2" className="communityCardDate">
-                    {formatDate(post.publishedAt) || 'Fresh drop'}
-                  </Typography>
-                  <Typography component="span" className="communityCardHeading">
-                    {post.title}
-                  </Typography>
+            {filteredPosts.map((post) => {
+              const heroImageUrl = post.heroImage
+                ? urlFor(post.heroImage)?.width(1200).height(900).fit('crop').url()
+                : null;
+              return (
+                <Box key={post._id} className="communityGridItem">
+                  <Box
+                    component={RouterLink}
+                    to={`/community/${post.slug}`}
+                    className="communityCard"
+                    style={{
+                      backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
+                      backgroundColor: heroImageUrl ? undefined : '#3b1906',
+                    }}
+                  >
+                    <Typography variant="subtitle2" className="communityCardDate">
+                      {formatDate(post.publishedAt) || 'Fresh drop'}
+                    </Typography>
+                    <Typography component="span" className="communityCardHeading">
+                      {post.title}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         )}
       </Container>
