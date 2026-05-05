@@ -12,6 +12,7 @@ const Header: React.FC = () => {
   const [userRole, setUserRole] = useState<'jobseeker' | 'employer' | 'admin' | null>(null);
   const location = useLocation();
   const isPostJob = location.pathname.startsWith('/post-job');
+  const isCommunityPage = location.pathname.startsWith('/community');
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleMobile = () => setMobileOpen((v) => !v);
 
@@ -42,7 +43,7 @@ const Header: React.FC = () => {
   }, [currentUser]);
 
   return (
-    <AppBar position="fixed" elevation={0} className="navbar" sx={{ backgroundColor: isPostJob ? '#FFFFFF' : undefined }}>
+    <AppBar position="fixed" elevation={0} className={`navbar ${isCommunityPage ? 'transparent' : ''}`} sx={{ backgroundColor: isPostJob ? '#FFFFFF' : undefined }}>
       <Container className="navbar__container">
         <Toolbar disableGutters className="navbar__toolbar">
           {/** Left: logo */}

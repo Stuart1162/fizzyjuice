@@ -29,6 +29,8 @@ import AdminCompanyEdit from './pages/AdminCompanyEdit';
 import EmployerPublicProfile from './pages/EmployerPublicProfile';
 import EmployerDirectory from './pages/EmployerDirectory';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Community from './pages/Community';
+import CommunityPost from './pages/CommunityPost';
 
 // Create a theme instance
 const theme = createTheme({
@@ -165,11 +167,13 @@ export default App;
 const InnerAppShell: React.FC = () => {
   const location = useLocation();
   const isPostJob = location.pathname.startsWith('/post-job');
+  const isCommunityPage = location.pathname.startsWith('/community');
   return (
     <div className="app">
       <Header />
       <main
         className="page-main"
+        id={isCommunityPage ? "community" : undefined}
         style={{
           minHeight: 'calc(100vh - 64px - 56px)',
           padding: '20px 0',
@@ -184,6 +188,8 @@ const InnerAppShell: React.FC = () => {
           <Route path="/jobs/:id" element={<JobDetail />} />
           <Route path="/jobs/:id/apply" element={<ApplyJobPage />} />
           <Route path="/jobs/:id/applied" element={<ApplySuccess />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/community/:slug" element={<CommunityPost />} />
           {/* SEO category pages for role + location combinations */}
           <Route path="/jobs/category/:slug" element={<JobCategoryPage />} />
           {/* Employer directory + public employer profile pages */}
@@ -297,6 +303,7 @@ const InnerAppShell: React.FC = () => {
         </Routes>
       </main>
       <footer
+        className={`${isCommunityPage ? "community-footer" : ""} ${location.pathname.startsWith('/community/') && location.pathname !== '/community' ? "community-post-footer" : ""}`}
         style={{
           textAlign: 'center',
           padding: '20px',
