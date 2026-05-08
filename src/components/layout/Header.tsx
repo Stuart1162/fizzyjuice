@@ -68,6 +68,7 @@ const Header: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/admin/users">Users</Button>
                 )}
                 <Button color="inherit" component={RouterLink} to="/companies">Companies</Button>
+                <Button color="inherit" component={RouterLink} to="/community">Front of House</Button>
                 {userRole === 'jobseeker' && (
                   <Button
                     color="inherit"
@@ -88,6 +89,7 @@ const Header: React.FC = () => {
             ) : (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
                 <Button color="inherit" component={RouterLink} to="/companies">Companies</Button>
+                <Button color="inherit" component={RouterLink} to="/community">Front of House</Button>
                 <Button variant="outlined" color="inherit" component={RouterLink} to="/login" className="navbar__signin">Sign in</Button>
                 <Button variant="contained" color="primary" component={RouterLink} to="/post-job">Post a job</Button>
               </Box>
@@ -121,6 +123,11 @@ const Header: React.FC = () => {
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/companies" className="navbar__drawerItem">
                     <ListItemText primary="Companies" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/community" className="navbar__drawerItem">
+                    <ListItemText primary="Front of House" />
                   </ListItemButton>
                 </ListItem>
                 {userRole === 'jobseeker' && (
@@ -159,6 +166,11 @@ const Header: React.FC = () => {
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/companies" className="navbar__drawerItem">
                     <ListItemText primary="Companies" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/community" className="navbar__drawerItem">
+                    <ListItemText primary="Front of House" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>

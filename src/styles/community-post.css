@@ -39,7 +39,8 @@ div.communityPostHeroContent {
 }
 
 h1.communityPostHeroTitle {
-  font-family: 'Anton', Impact, sans-serif;
+  font-family: 'Copernicus';
+  font-weight:400;
   font-size: clamp(4rem, 7vw, 5.5rem);
   line-height: 0.9;
   margin: 12px 0 0;
@@ -47,11 +48,10 @@ h1.communityPostHeroTitle {
 }
 
 p.communityPostHeroDek {
-  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-size: clamp(1.4rem, 2vw, 1.6rem);
   max-width: 720px;
   line-height: 1.2;
-  font-family: 'Anton', Impact, sans-serif;  
-  color:#e3e0d8;
+font-family: 'Copernicus', sans-serif;  color:#e3e0d8;
 }
 
 .communityPostHero .communityPostBreadcrumbs a {
@@ -154,7 +154,7 @@ div.communityPostMain {
 div.communityPostMain h2,
 div.communityPostMain h3,
 div.communityPostMain h4 {
-  font-family: 'Anton', Impact, sans-serif;
+  font-family: 'Copernicus', sans-serif;
   letter-spacing: -1%;
   margin: 1.5rem 0 0.5rem;
 }
@@ -166,10 +166,10 @@ div.communityPostMain h2 {
 }
 
 div.communityPostMain h3 {
-  font-size: clamp(1.5rem, 3vw, 1.5rem);
+  font-size: clamp(2rem, 3vw, 2rem);
   font-weight:500;
   line-height: 1.2;
-  margin:8px 0 4px;
+  margin:12px 0 4px;
 }
 
 div.communityPostMain h4 {
@@ -208,10 +208,10 @@ div.communityPostMain p + p {
 
   h6 {
     text-transform: none;
-    font-family: 'Anton', Impact, sans-serif;
+    font-family: 'Copernicus', sans-serif;
     letter-spacing: -1%;
     font-weight: 500;
-    font-size:22px;
+    font-size:24px;
   }
 }
 
@@ -301,9 +301,10 @@ footer.community-post-footer {
   }
 
   h6 {
-    font-family: 'Anton', Impact, sans-serif;
+    font-family: 'Copernicus', sans-serif;
     font-size:2rem;
-    line-height: 1.2;
+    line-height: 1;
+    margin-top: 10px;
   }
 }
 

@@ -88,11 +88,13 @@ div.communityContainer {
 }
 
 span.communityActionsLabel {
-  font-size: 1rem;
+  font-size: 1.5rem;
   letter-spacing: -1%;
   color: #3b1906;
   opacity: 0.8;
   margin-left:10px;
+  font-family: 'Copernicus', sans-serif;
+  font-weight: 600;
 }
 
 .communityActionsLinks {
@@ -367,7 +369,7 @@ div.communityFilters {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.4));
   border-radius: 0px;
   pointer-events: none;
 }
@@ -388,7 +390,7 @@ div.communityFilters {
 }
 
 span.communityCardHeading {
-  font-family: 'Anton', Impact, sans-serif;
+  font-family: 'Copernicus', sans-serif;
   font-size: clamp(3rem, 5vw, 3.8rem);
   line-height: 1;
   letter-spacing: -1%;
