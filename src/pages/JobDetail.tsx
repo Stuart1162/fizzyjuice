@@ -28,6 +28,7 @@ import { Link as MuiLink } from '@mui/material';
 import { incrementApply, incrementView } from '../services/metrics';
 import '../styles/jobview.css';
 import { buildJobUrl } from '../utils/seo';
+import { getCompanyStrengths } from '../utils/job';
 
 const JobDetail: React.FC = () => {
   const { id: routeId } = useParams();
@@ -263,9 +264,10 @@ const JobDetail: React.FC = () => {
 
   const display = job.applicationDisplay || 'email';
   const isEmailPreferred = display === 'email';
+  const companyStrengths = getCompanyStrengths(job);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="jobViewPage">
+    <Container maxWidth="md" sx={{ mt: 4, mb: 6 }} className="jobViewPage jobViewPage--detail">
       <Box mb={3} className="jobViewPage__backRow">
         <IconButton onClick={() => navigate('/')} color="primary" sx={{ mb: 2 }} className="jobViewPage__backBtn">
           <ArrowBackIcon />
@@ -350,12 +352,15 @@ const JobDetail: React.FC = () => {
               {job.description}
             </ReactMarkdown>
           </Box>
-          {job.companyStrengths && job.companyStrengths.length > 0 && (
-            <Box mt={2} display="flex" flexWrap="wrap" gap={1} className="jobView__strengthsList jobViewPage__strengthsInline">
-              {job.companyStrengths.map((s, index) => (
+        </Box>
+
+        {companyStrengths.length > 0 && (
+          <Box mb={4} className="jobViewPage__section jobViewPage__strengths">
+            <Box display="flex" flexWrap="wrap" gap={1} className="jobView__strengthsList">
+              {companyStrengths.map((strength, index) => (
                 <Chip
-                  key={index}
-                  label={s}
+                  key={`${job.id}-strength-${index}`}
+                  label={strength}
                   color="success"
                   variant="outlined"
                   size="small"
@@ -363,8 +368,8 @@ const JobDetail: React.FC = () => {
                 />
               ))}
             </Box>
-          )}
-        </Box>
+          </Box>
+        )}
 
         {job.wordOnTheStreet && (
           <Box mb={4} className="jobView__adminNote jobViewPage__section jobViewPage__greenFlagsSection">

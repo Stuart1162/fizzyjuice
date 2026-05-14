@@ -21,7 +21,8 @@
 
 div.jobViewPage__backRow {
   margin-bottom: 0;
-  margin-top:4rem;
+  margin-top:2rem;
+  display:none;
 }
 
 button.jobViewPage__backBtn {
@@ -76,10 +77,11 @@ div.jobViewPage__strengthChip {
 
 div.jobViewPage__strengthChip span {
   font-size:0.9rem;
-  border:1px solid #3B1906;
+  border:0px solid #3B1906;
   color:#3B1906;
   border-radius: 18px;
   padding:4px 12px;
+  background:rgba(0,0,0,0.1);
 }
 
 div.jobViewPage__section {
@@ -197,6 +199,7 @@ div.jobViewPage__greenFlagsSection h5 {
   margin-bottom: 0;
 }
 
+a.jobView__applyButton,
 button.jobView__applyButton {
   min-width: 140px;
   width:auto;
@@ -231,7 +234,62 @@ button.applySuccessPage__primaryButton--viewJob {
 @media (max-width: 599.95px) {
   /* Add job view mobile-specific overrides here */
 
+  button.applyJobPage__cvButton,
+  button.applyJobPage__submitButton {
+    padding:10px 0;  
+  }
+
   button.jobViewPage__applyButton {
     padding:10px 0;
+  }
+
+  .jobViewPage {
+    padding-top: 4rem;
+  }
+
+  a.jobView__applyButton,
+  button.jobView__applyButton {
+    font-size: 1.1rem;
+    padding:10px 0;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .jobView__openLinkBtn {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: #6b5b51 !important;
+    margin-top: 0px !important;
+  }
+
+  .jobView__openLinkBtn:hover {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .applyJobPage__cvButton,
+  .applyJobPage__submitButton {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .jobViewPage--detail .jobViewPage__backRow {
+    display: none;
+  }
+
+  div.jobViewPage__section {
+    margin-bottom:12px;
+  }
+
+  .jobViewPage__applySection {
+    margin-top: 24px;
+  }
+
+  p.jobViewPage__applyText {
+    margin-bottom: 24px;
+  }
+
+  .jobViewPage--detail .jobViewPage__bottomBackBtn,
+  .jobViewPage--detail .jobViewPage__bottomApplyWrap {
+    display: none;
   }
 }

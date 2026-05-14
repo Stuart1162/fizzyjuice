@@ -45,6 +45,7 @@ a.employer-directory__item {
   padding-bottom: 1.5rem;
   padding:20px;
   margin-bottom:0;
+  position: relative;
 }
 
 a.employer-directory__item:hover {
@@ -140,5 +141,24 @@ div.employer-directory__itemLivingWageTag {
   .employer-directory__searchInput {
     max-width: 320px;
     flex: 0 0 320px;
+  }
+}
+
+@media (max-width: 599.95px) {
+  .employer-directory__businessTypeFilter {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .employer-directory__businessTypeFilter .MuiInputBase-root,
+  .employer-directory__businessTypeFilter .MuiOutlinedInput-root {
+    width: 100%;
+  }
+
+  .employer-directory__itemLivingWageTag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin-top: 0;
   }
 }

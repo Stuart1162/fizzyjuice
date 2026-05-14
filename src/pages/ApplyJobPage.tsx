@@ -365,7 +365,13 @@ const ApplyJobPage: React.FC = () => {
             </Typography>
           )}
           <Box mt={1}>
-            <Button variant="outlined" size="small" onClick={handlePickCv} disabled={profileLoading || submitting}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handlePickCv}
+              disabled={profileLoading || submitting}
+              className="applyJobPage__cvButton"
+            >
               {cvOverrideUrl ? 'Replace CV' : 'Upload or replace CV'}
             </Button>
             <input
@@ -399,6 +405,7 @@ const ApplyJobPage: React.FC = () => {
             fullWidth
             onClick={handleSubmit}
             disabled={submitting || profileLoading}
+            className="applyJobPage__submitButton"
           >
             {submitting ? 'Sending application...' : 'Send application'}
           </Button>
