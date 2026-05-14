@@ -27,6 +27,52 @@ h5.profile__title {
   gap: 16px;
 }
 
+h6.profile__subTitle {
+  font-size:1rem;
+}
+
+div.profile__nameInput,
+div.profile__emailInput {
+  max-width:96%;
+}
+
+.profile__jobseekerFields {
+  max-width: 96%;
+}
+
+.profile__availabilityOptions,
+.profile__shiftPrefsOptions,
+.profile__certificationsOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile__availabilityOptions .MuiFormControlLabel-root,
+.profile__shiftPrefsOptions .MuiFormControlLabel-root,
+.profile__certificationsOptions .MuiFormControlLabel-root {
+  margin: 0;
+}
+
+.profile__availabilityOptions .MuiCheckbox-root,
+.profile__shiftPrefsOptions .MuiCheckbox-root,
+.profile__certificationsOptions .MuiCheckbox-root {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.profile__cv h6,
+h6.profile__sectionTitle {
+    font-family: Anton, sans-serif;
+    font-size:1.5rem;
+    font-weight:500;
+  }
+
+.profile__cv h6 {
+  font-size: 2rem;
+}
+
+
 a.profile__publicLink {
   font-family: Anton;
   font-size: 1.2rem;
@@ -52,7 +98,7 @@ a.profile__publicLink {
 /* PUBLIC PROFILE */
 div.public-employer-profile {
   max-width:100%;
-  padding:0 24px;
+  padding:0 12px;
   margin-top:6rem;
 }
 
@@ -85,6 +131,27 @@ div.public-employer-profile__body {
 .public-employer-profile__body h6 {
   font-family: Anton;
   letter-spacing: -1%;
+}
+
+.public-employer-profile__heroMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.public-employer-profile__heroMeta .public-employer-profile__itemLivingWageTag,
+.public-employer-profile__heroMeta .public-employer-profile__liveJobsCount {
+  display: block;
+  width: 100%;
+}
+
+.public-employer-profile__liveJobsCount--leading {
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 div.public-employer-profile__left {
@@ -218,7 +285,7 @@ div.public-employer-profile__benefitChip {
 /* Mobile styles */
 @media (max-width: 599.95px) {
   /* Add profile mobile-specific overrides here */
-  .profile { padding: 0 16px; }
+  .profile { padding: 0 16px;padding-top:3rem; }
   div.profile__card { padding: 24px 0; border: none; background-color: transparent; }
   
   h5.profile__title { 
@@ -229,8 +296,53 @@ div.public-employer-profile__benefitChip {
     font-weight: 500;
     line-height: 1.1;
 }
+
+h1.public-employer-profile__companyName {
+  line-height:1;
+}
+
+div.profile__availability,
+div.profile__shiftPrefs,
+div.profile__certifications {
+  margin-bottom:1rem;
+  margin-top: 2rem;
+}
+
+.profile__jobseekerDetails,
+.profile__cv {
+  border-bottom:1px dotted #ccc;
+  padding-bottom:2rem;
+  margin-bottom:1rem;
+}
+
+  .profile__cvActions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .profile__cvActions > * {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .profile__cvActions .MuiButton-root {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .profile__cvActions button {
+    background:rgba(0,0,0,0.1);
+  }
   
   .profile__actions { gap: 8px; }
+
+  .profile__actions button {
+    padding:10px 20px;
+  }
+
   .profile__saveBtn { flex: 1; }
 
   /* On mobile, remove the left border from the public employer profile right column */

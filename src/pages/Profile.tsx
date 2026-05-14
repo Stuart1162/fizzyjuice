@@ -884,7 +884,7 @@ const Profile: React.FC = () => {
               <Box className="profile__cv">
                 <Typography variant="subtitle1">CV</Typography>
                 {cvUrl ? (
-                  <Box display="flex" alignItems="center" gap={2} mt={1}>
+                  <Box display="flex" alignItems="center" gap={2} mt={1} className="profile__cvActions">
                     <Button
                       variant="outlined"
                       href={cvUrl as string}
@@ -912,7 +912,7 @@ const Profile: React.FC = () => {
                     </Button>
                   </Box>
                 ) : (
-                  <Box mt={1} display="flex" alignItems="center" gap={2}>
+                  <Box mt={1} display="flex" alignItems="center" gap={2} className="profile__cvActions">
                     <Typography variant="body2">No CV uploaded.</Typography>
                     <Button
                       variant="contained"

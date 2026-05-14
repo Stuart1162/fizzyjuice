@@ -36,6 +36,7 @@ import '../../styles/joblist.css';
 import '../../styles/jobview.css';
 import { incrementApply, incrementView } from '../../services/metrics';
 import { buildJobPath } from '../../utils/seo';
+import { getCompanyStrengths } from '../../utils/job';
 
 interface JobListFilters {
   location?: string;
@@ -310,7 +311,9 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
           </Typography>
         </Box>
       )}
-      {filteredJobs.length > 0 && filteredJobs.map((job) => (
+      {filteredJobs.length > 0 && filteredJobs.map((job) => {
+        const companyStrengths = getCompanyStrengths(job);
+        return (
           <Accordion
             key={job.id}
             disableGutters
@@ -459,13 +462,13 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
 
                 
 
-                {job.companyStrengths && job.companyStrengths.length > 0 && (
+                {companyStrengths.length > 0 && (
                   <Box mt={2} className="jobView__section jobView__strengths">
                     <Typography variant="subtitle2" gutterBottom>
                       Company strengths
                     </Typography>
                     <Box display="flex" flexWrap="wrap" gap={1} className="jobView__strengthsList">
-                      {job.companyStrengths.map((s, idx) => (
+                      {companyStrengths.map((s, idx) => (
                         <Chip key={`${job.id}-strength-${idx}`} label={s} color="success" variant="outlined" size="small" />
                       ))}
                     </Box>
@@ -524,7 +527,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                     // For email-based applications we handle the Apply button on the right-hand side
                     // but still show the job reference chip on the left
                     if (job.contactEmail && job.contactEmail.trim() !== '') {
-                      if (job.ref) {
+                      if (job.ref && !isMobile) {
                         return (
                           <Box className="jobView__applyWrap">
                             <Chip className="jobRefChip" label={`#${job.ref}`} size="small" variant="outlined" />
@@ -543,24 +546,7 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                   {/* Right side: Open Job link (new tab) and on-site Apply button for email jobs */}
                   {job.id && (
                     isMobile ? (
-                      <Box display="flex" flexDirection="column" alignItems="stretch" gap={1}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <IconButton
-                            component="a"
-                            href={buildJobPath(job)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="Open job in new tab"
-                            className="jobView__openIconBtn"
-                          >
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                              <Typography variant="body2" className="jobView__openIconLabel">
-                                Open in new tab
-                              </Typography>
-                              <OpenInNewIcon fontSize="small" />
-                            </Box>
-                          </IconButton>
-                        </Box>
+                      <Box display="flex" flexDirection="column" alignItems="stretch" gap={1.5}>
                         {job.contactEmail && job.contactEmail.trim() !== '' && (
                           <Button
                             className="jobView__applyButton"
@@ -571,6 +557,27 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
                           >
                             Apply Now
                           </Button>
+                        )}
+                        <Button
+                          component="a"
+                          href={buildJobPath(job)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="jobView__applyButton jobView__openLinkBtn"
+                          variant="contained"
+                          fullWidth
+                          endIcon={<OpenInNewIcon fontSize="small" />}
+                        >
+                          Open in new tab
+                        </Button>
+                        {job.ref && (
+                          <Chip
+                            className="jobRefChip"
+                            label={`#${job.ref}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ alignSelf: 'flex-start' }}
+                          />
                         )}
                       </Box>
                     ) : (
@@ -609,7 +616,8 @@ const JobList: React.FC<JobListProps> = ({ filterText = '', filters, jobsOverrid
             )}
           </AccordionDetails>
         </Accordion>
-      ))}
+      );
+      })}
     </Box>
     {/* Save Prompt Dialog for signed-out users */}
     <Dialog

@@ -291,6 +291,16 @@ const EmployerPublicProfile: React.FC = () => {
           </>
         ) : (
           <>
+            {employerJobs.length > 0 && (
+              <Typography
+                variant="body2"
+                className="public-employer-profile__liveJobsCount public-employer-profile__liveJobsCount--leading"
+              >
+                <span className="employer-directory__liveDot" aria-hidden="true" />
+                {employerJobs.length === 1 ? '1 live job' : `${employerJobs.length} live jobs`}
+              </Typography>
+            )}
+
             {/* Header: title, then sub-row with Living Wage chip + claim aligned */}
             <Box mb={4} className="public-employer-profile__header">
               <Typography
@@ -312,9 +322,9 @@ const EmployerPublicProfile: React.FC = () => {
               >
                 <Box
                   display="flex"
+                  flexDirection="column"
                   alignItems="flex-start"
-                  flexWrap="wrap"
-                  columnGap={2}
+                  gap={0.5}
                   rowGap={1}
                   mb={{ xs: 1.5, md: 0 }}
                 >
@@ -329,7 +339,13 @@ const EmployerPublicProfile: React.FC = () => {
                     </Typography>
                   )}
 
-                  <Box display="flex" flexDirection="column" alignItems="flex-start" gap={0.5}>
+                  <Box
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="flex-start"
+                    gap={0.5}
+                    className="public-employer-profile__heroMeta"
+                  >
                     {data?.livingWageEmployer && (
                       <Chip
                         label="Living Wage"
@@ -337,20 +353,6 @@ const EmployerPublicProfile: React.FC = () => {
                         variant="outlined"
                         className="public-employer-profile__livingWageChip"
                       />
-                    )}
-                    {employerJobs.length > 0 && (
-                      <Typography
-                        variant="body2"
-                        className="public-employer-profile__liveJobsCount"
-                      >
-                        <span
-                          className="employer-directory__liveDot"
-                          aria-hidden="true"
-                        />
-                        {employerJobs.length === 1
-                          ? '1 live job'
-                          : `${employerJobs.length} live jobs`}
-                      </Typography>
                     )}
                   </Box>
                 </Box>
