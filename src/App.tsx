@@ -23,6 +23,7 @@ import Personalise from './pages/Personalise';
 import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import AdminUsers from './pages/AdminUsers';
+import AdminJobseekers from './pages/AdminJobseekers';
 import AdminUserProfile from './pages/AdminUserProfile';
 import AdminCompanyClaims from './pages/AdminCompanyClaims';
 import AdminCompanyEdit from './pages/AdminCompanyEdit';
@@ -264,6 +265,14 @@ const InnerAppShell: React.FC = () => {
             element={
               <PrivateRoute>
                 <AdminUsers />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin/jobseekers"
+            element={
+              <PrivateRoute>
+                <AdminJobseekers />
               </PrivateRoute>
             }
           />

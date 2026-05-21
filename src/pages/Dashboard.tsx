@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { collection, collectionGroup, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app, { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Job } from '../types/job';
 import { JobMetrics } from '../services/metrics';
@@ -95,6 +96,7 @@ const Dashboard: React.FC = () => {
   const [hasLoadedAnalytics, setHasLoadedAnalytics] = useState(false);
   const [manageTab, setManageTab] = useState<'live' | 'drafts' | 'archive' | 'analytics'>('live');
   const [manageTabAutoSet, setManageTabAutoSet] = useState(false);
+  const functions = useMemo(() => getFunctions(app), []);
 
   // Load user preferences (strengths) and profile (role)
   useEffect(() => {
@@ -421,31 +423,6 @@ const Dashboard: React.FC = () => {
         const myData = mySnap.docs.map(d => ({ id: d.id, ...d.data() })) as Job[];
         setJobs(myData);
 
-        // Load application counts for the jobs shown in Manage Posts
-        try {
-          const appsRef = collection(db, 'applications');
-          const counts: Record<string, number> = {};
-          const jobIds = myData.map(j => j.id).filter(Boolean) as string[];
-          if (jobIds.length > 0) {
-            await Promise.all(
-              jobIds.map(async (jid) => {
-                try {
-                  const appsQuery = query(appsRef, where('jobId', '==', jid));
-                  const appsSnap = await getDocs(appsQuery);
-                  counts[jid] = appsSnap.size;
-                } catch {
-                  // Leave count at default 0 on failure for this job
-                  if (typeof counts[jid] !== 'number') counts[jid] = 0;
-                }
-              })
-            );
-          }
-          setApplicationCounts(counts);
-        } catch (e) {
-          console.error('Failed to load application counts', e);
-          setApplicationCounts({});
-        }
-
         // For Personalised list: fetch all jobs regardless of owner, but filter out drafts for non-admins
         const isAdminLikeLocal = isSuperAdmin || userRole === 'admin';
         let allData: Job[];
@@ -460,16 +437,25 @@ const Dashboard: React.FC = () => {
         const filteredAllData = allData.filter(job => !job.draft || isAdminLikeLocal);
         setAllJobs(filteredAllData);
 
-        // Load aggregate metrics (views, saves, applies) for all jobs
-        try {
-          const metricsSnap = await getDocs(collection(db, 'jobMetrics'));
-          const metricsMap: Record<string, JobMetrics> = {};
-          metricsSnap.docs.forEach((d) => {
-            metricsMap[d.id] = d.data() as JobMetrics;
-          });
-          setJobMetrics(metricsMap);
-        } catch (e) {
-          console.error('Failed to load job metrics', e);
+        // Load insights (application counts + metrics) through callable to avoid direct Firestore permissions issues
+        const jobIds = myData.map((j) => j.id).filter(Boolean) as string[];
+        if (jobIds.length > 0) {
+          try {
+            const insightsFn = httpsCallable(functions, 'getJobInsights');
+            const insightsRes = await insightsFn({ jobIds });
+            const payload = insightsRes?.data as {
+              applicationCounts?: Record<string, number>;
+              jobMetrics?: Record<string, JobMetrics>;
+            };
+            setApplicationCounts(payload?.applicationCounts || {});
+            setJobMetrics(payload?.jobMetrics || {});
+          } catch (insightsError) {
+            console.error('Failed to load job insights', insightsError);
+            setApplicationCounts({});
+            setJobMetrics({});
+          }
+        } else {
+          setApplicationCounts({});
           setJobMetrics({});
         }
       } catch (err) {
@@ -480,7 +466,7 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchJobs();
-  }, [currentUser, isSuperAdmin, userRole]);
+  }, [currentUser, isSuperAdmin, userRole, functions]);
 
   const handleApprove = async (jobId: string) => {
     try {

@@ -46,6 +46,21 @@ const EMPLOYER_BUSINESS_TYPE_OPTIONS: string[] = [
   'Other',
 ];
 
+const JOB_ROLE_OPTIONS = [
+  'Baker',
+  'Chef',
+  'Head Chef',
+  'Barista',
+  'Front of House',
+  'Catering',
+  'Kitchen Porter',
+  'Butcher',
+  'Breakfast Chef',
+  'Pizza Chef',
+  'Manager',
+  'Other',
+] as const;
+
 const Profile: React.FC = () => {
   const { currentUser, signOut } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
@@ -77,6 +92,7 @@ const Profile: React.FC = () => {
   const [shiftPreference, setShiftPreference] = useState<string[]>([]);
   const [yearsExperience, setYearsExperience] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [jobRoleInterests, setJobRoleInterests] = useState<string[]>([]);
   const [certFoodSafety, setCertFoodSafety] = useState(false);
   const [certRSA, setCertRSA] = useState(false);
   const [certFirstAid, setCertFirstAid] = useState(false);
@@ -167,6 +183,11 @@ const Profile: React.FC = () => {
             setShiftPreference((data.shiftPreference || []) as string[]);
           } else if (typeof data?.shiftPreference === 'string') {
             setShiftPreference([data.shiftPreference]);
+          }
+          if (Array.isArray(data?.jobRoleInterests)) {
+            setJobRoleInterests((data.jobRoleInterests || []) as string[]);
+          } else if (typeof data?.jobRoleInterests === 'string' && data.jobRoleInterests) {
+            setJobRoleInterests([data.jobRoleInterests]);
           }
           if (typeof data?.yearsExperience === 'string') {
             setYearsExperience(data.yearsExperience);
@@ -264,6 +285,7 @@ const Profile: React.FC = () => {
         shiftPreference: shiftPreference && shiftPreference.length > 0 ? shiftPreference : [],
         yearsExperience: yearsExperience || null,
         linkedinUrl: linkedinUrl || null,
+        jobRoleInterests: jobRoleInterests && jobRoleInterests.length > 0 ? jobRoleInterests : [],
         certFoodSafety,
         certRSA,
         certFirstAid,
@@ -722,6 +744,35 @@ const Profile: React.FC = () => {
                         }
                         label="Casual"
                       />
+                    </Box>
+                  </Box>
+                  <Box mt={2} className="profile__roles">
+                    <Typography variant="subtitle2" className="profile__subTitle">Roles you're interested in</Typography>
+                    <Box className="profile__roleOptions">
+                      {JOB_ROLE_OPTIONS.map((option) => {
+                        const checked = jobRoleInterests.includes(option);
+                        return (
+                          <FormControlLabel
+                            key={option}
+                            control={
+                              <Checkbox
+                                checked={checked}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  setJobRoleInterests((prev) => {
+                                    if (isChecked) {
+                                      return prev.includes(option) ? prev : [...prev, option];
+                                    }
+                                    return prev.filter((role) => role !== option);
+                                  });
+                                }}
+                                disabled={loading}
+                              />
+                            }
+                            label={option}
+                          />
+                        );
+                      })}
                     </Box>
                   </Box>
                   <Box mt={2} className="profile__shiftPrefs">

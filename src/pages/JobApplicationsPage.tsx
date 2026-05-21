@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { collection, doc, getDoc, getDocs, query, where, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app, { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Container,
@@ -32,6 +33,22 @@ interface ApplicationRecord {
   status?: 'new' | 'shortlisted' | 'rejected';
 }
 
+const mapApplicationRecord = (raw: any): ApplicationRecord => ({
+  id: raw?.id,
+  jobId: raw?.jobId ?? null,
+  jobTitle: raw?.jobTitle,
+  employerId: raw?.employerId ?? null,
+  employerEmail: raw?.employerEmail ?? null,
+  applicantId: raw?.applicantId ?? null,
+  applicantName: raw?.applicantName ?? null,
+  applicantEmail: raw?.applicantEmail ?? null,
+  coverLetter: raw?.coverLetter ?? null,
+  cvUrl: raw?.cvUrl ?? null,
+  profileSummary: raw?.profileSummary ?? null,
+  appliedAt: raw?.appliedAt ?? null,
+  status: raw?.status ?? 'new',
+});
+
 const JobApplicationsPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { currentUser, isSuperAdmin } = useAuth();
@@ -44,6 +61,7 @@ const JobApplicationsPage: React.FC = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusMessageOpen, setStatusMessageOpen] = useState(false);
+  const functions = useMemo(() => getFunctions(app), []);
 
   useEffect(() => {
     const run = async () => {
@@ -66,7 +84,12 @@ const JobApplicationsPage: React.FC = () => {
         const jobData = { id: snap.id, ...snap.data() } as Job;
         setJob(jobData);
 
-        const isOwner = (jobData as any).createdBy === currentUser.uid;
+        const ownerFields = [
+          (jobData as any).createdBy,
+          (jobData as any).ownerUid,
+          (jobData as any).employerId,
+        ].filter(Boolean) as string[];
+        const isOwner = ownerFields.includes(currentUser.uid);
         const canView = isSuperAdmin || isOwner;
         setAllowed(canView);
         if (!canView) {
@@ -74,11 +97,11 @@ const JobApplicationsPage: React.FC = () => {
           return;
         }
 
-        const appsRef = collection(db, 'applications');
-        const appsQuery = query(appsRef, where('jobId', '==', jobId));
-        const appsSnap = await getDocs(appsQuery);
-        const rows: ApplicationRecord[] = appsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
-        setApplications(rows);
+        const listFn = httpsCallable(functions, 'listJobApplications');
+        const response = await listFn({ jobId });
+        const payload = response?.data as { applications?: any[] };
+        const rows = Array.isArray(payload?.applications) ? payload.applications : [];
+        setApplications(rows.map(mapApplicationRecord));
       } catch (e) {
         console.error('Failed to load applications', e);
         setError('Failed to load applications.');
@@ -87,7 +110,7 @@ const JobApplicationsPage: React.FC = () => {
       }
     };
     run();
-  }, [currentUser, isSuperAdmin, jobId]);
+  }, [currentUser, isSuperAdmin, jobId, functions]);
 
   const newCount = useMemo(() => {
     if (!applications || applications.length === 0) return 0;

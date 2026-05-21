@@ -5,6 +5,15 @@
   display: block;
 }
 
+@media (min-width: 900px) {
+  .profile__availabilityOptions,
+  .profile__shiftPrefsOptions,
+  .profile__roleOptions,
+  .profile__certificationsOptions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* Card */
 div.profile__card {
   border-radius: 12px;
@@ -36,29 +45,48 @@ div.profile__emailInput {
   max-width:96%;
 }
 
+div.profile__cv,
+div.profile__actions,
+div.profile__jobseekerDetails {
+  border-top:2px dotted rgba(59, 25, 6, 0.4);
+  padding-top:12px;
+  margin-top:24px;
+}
+
 .profile__jobseekerFields {
   max-width: 96%;
 }
 
 .profile__availabilityOptions,
 .profile__shiftPrefsOptions,
+.profile__roleOptions,
 .profile__certificationsOptions {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 3;
+  gap: 8px;
+  row-gap: 0px;
+  margin:4px 0 24px;
 }
 
 .profile__availabilityOptions .MuiFormControlLabel-root,
 .profile__shiftPrefsOptions .MuiFormControlLabel-root,
+.profile__roleOptions .MuiFormControlLabel-root,
 .profile__certificationsOptions .MuiFormControlLabel-root {
   margin: 0;
 }
 
 .profile__availabilityOptions .MuiCheckbox-root,
 .profile__shiftPrefsOptions .MuiCheckbox-root,
+.profile__roleOptions .MuiCheckbox-root,
 .profile__certificationsOptions .MuiCheckbox-root {
   padding-left: 0;
   margin-left: 0;
+  padding-top:4px;
+  padding-bottom:4px;
+}
+
+.profile__roles {
+  margin-top: 12px;
 }
 
 .profile__cv h6,
@@ -66,7 +94,7 @@ h6.profile__sectionTitle {
     font-family: Anton, sans-serif;
     font-size:1.5rem;
     font-weight:500;
-  }
+}
 
 .profile__cv h6 {
   font-size: 2rem;
@@ -91,9 +119,6 @@ a.profile__publicLink {
   align-items: center;
   margin-top: 8px;
 }
-
-.profile__logoutBtn {}
-.profile__saveBtn {}
 
 /* PUBLIC PROFILE */
 div.public-employer-profile {
@@ -123,9 +148,6 @@ div.public-employer-profile__header {
   padding-bottom: 24px;
   border-bottom: 2px dotted rgba(59, 25, 6, 0.4);
   margin-bottom:0;
-}
-
-div.public-employer-profile__body {
 }
 
 .public-employer-profile__body h6 {
