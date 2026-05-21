@@ -65,10 +65,13 @@ const Header: React.FC = () => {
             {currentUser ? (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
                 {(isSuperAdmin || userRole === 'admin') && (
-                  <Button color="inherit" component={RouterLink} to="/admin/users">Users</Button>
+                  <>
+                    <Button color="inherit" component={RouterLink} to="/admin/users">Users</Button>
+                    <Button color="inherit" component={RouterLink} to="/admin/jobseekers">Jobseekers</Button>
+                  </>
                 )}
-                <Button color="inherit" component={RouterLink} to="/companies">Companies</Button>
-                <Button color="inherit" component={RouterLink} to="/community">Front of House</Button>
+                <Button color="inherit" component={RouterLink} to="/companies">Directory</Button>
+                <Button color="inherit" component={RouterLink} to="/community">Community</Button>
                 {userRole === 'jobseeker' && (
                   <Button
                     color="inherit"
@@ -120,14 +123,21 @@ const Header: React.FC = () => {
                     </ListItemButton>
                   </ListItem>
                 )}
+                {(isSuperAdmin || userRole === 'admin') && (
+                  <ListItem disablePadding>
+                    <ListItemButton component={RouterLink} to="/admin/jobseekers" className="navbar__drawerItem">
+                      <ListItemText primary="Jobseekers" />
+                    </ListItemButton>
+                  </ListItem>
+                )}
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/companies" className="navbar__drawerItem">
-                    <ListItemText primary="Companies" />
+                    <ListItemText primary="Directory" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/community" className="navbar__drawerItem">
-                    <ListItemText primary="Front of House" />
+                    <ListItemText primary="Community" />
                   </ListItemButton>
                 </ListItem>
                 {userRole === 'jobseeker' && (

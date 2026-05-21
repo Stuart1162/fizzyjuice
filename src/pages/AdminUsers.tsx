@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar } from '@mui/material';
+import { Container, Typography, Paper, Box, Table, TableHead, TableRow, TableCell, TableBody, Chip, CircularProgress, Alert, FormControl, InputLabel, Select, MenuItem, Stack, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Snackbar, TablePagination } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, collectionGroup, getDocs, doc, getDoc, deleteDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -34,6 +34,8 @@ const AdminUsers: React.FC = () => {
   const [deletingUid, setDeletingUid] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [creatingEmployerUid, setCreatingEmployerUid] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const ROWS_PER_PAGE = 30;
 
   // Fetch admin role for current user
   useEffect(() => {
@@ -201,6 +203,26 @@ const AdminUsers: React.FC = () => {
     return [...base].sort((a, b) => getMillis(b) - getMillis(a));
   }, [profiles, selectedRole]);
 
+  useEffect(() => {
+    setPage(0);
+  }, [selectedRole]);
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(filteredProfiles.length / ROWS_PER_PAGE) - 1);
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [filteredProfiles.length, page, ROWS_PER_PAGE]);
+
+  const paginatedProfiles = useMemo(() => {
+    const start = page * ROWS_PER_PAGE;
+    return filteredProfiles.slice(start, start + ROWS_PER_PAGE);
+  }, [filteredProfiles, page, ROWS_PER_PAGE]);
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
   const handleRequestDelete = (profile: UserProfileDoc) => {
     if (currentUser && profile.uid === currentUser.uid) {
       setSnackbar({ message: 'You cannot delete your own user from this page.', severity: 'error' });
@@ -307,7 +329,7 @@ const AdminUsers: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredProfiles.map((p) => (
+            {paginatedProfiles.map((p) => (
               <TableRow key={p.uid}>
                 <TableCell>{p.displayName || '—'}</TableCell>
                 <TableCell>{p.email || '—'}</TableCell>
@@ -389,6 +411,17 @@ const AdminUsers: React.FC = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          count={filteredProfiles.length}
+          rowsPerPage={ROWS_PER_PAGE}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPageOptions={[ROWS_PER_PAGE]}
+          labelRowsPerPage="Rows per page"
+          showFirstButton
+          showLastButton
+        />
         <Dialog open={!!deleteTarget} onClose={() => (deletingUid ? null : setDeleteTarget(null))}>
           <DialogTitle>Delete user</DialogTitle>
           <DialogContent>

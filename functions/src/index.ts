@@ -10,6 +10,95 @@ const db = admin.firestore();
 //   firebase functions:config:set resend.apikey="<KEY>" notify.admin_emails="info@fizzyjuice.uk" notify.from_email="no-reply@fizzyjuice.uk" notify.from_name="Fizzy Juice"
 const cfg = functions.config() as any;
 
+const superAdminEnv = [
+  (cfg?.app?.superadmins as string) || '',
+  process.env.SUPERADMIN_EMAILS || '',
+  process.env.REACT_APP_SUPERADMIN_EMAIL || '',
+]
+  .filter(Boolean)
+  .join(',');
+
+const SUPERADMIN_EMAILS = new Set(
+  superAdminEnv
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+function isSuperAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return SUPERADMIN_EMAILS.has(email.toLowerCase());
+}
+
+async function loadUserRole(uid: string): Promise<string | null> {
+  try {
+    const snap = await db.doc(`users/${uid}/prefs/profile`).get();
+    if (!snap.exists) return null;
+    const data = snap.data() as any;
+    return typeof data?.role === 'string' ? data.role : null;
+  } catch (err) {
+    console.warn('Failed to load user role for', uid, err);
+    return null;
+  }
+}
+
+async function isAdminUser(uid: string, email?: string | null): Promise<boolean> {
+  if (isSuperAdminEmail(email)) return true;
+  const role = await loadUserRole(uid);
+  return role === 'admin';
+}
+
+function normalizeAppliedAt(value: any): number | null {
+  if (!value) return null;
+  if (typeof value?.toMillis === 'function') {
+    try {
+      return value.toMillis();
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+}
+
+async function ensureJobAccess(
+  jobId: string,
+  uid: string,
+  isAdmin: boolean
+): Promise<{ data: FirebaseFirestore.DocumentData; ownerUid: string | null }> {
+  const jobSnap = await db.doc(`jobs/${jobId}`).get();
+  if (!jobSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Job not found');
+  }
+  const data = jobSnap.data() || {};
+  const ownerUid = (data.createdBy || data.ownerUid || data.employerId || null) as string | null;
+  if (!isAdmin && ownerUid !== uid) {
+    throw new functions.https.HttpsError('permission-denied', 'You do not have access to this job');
+  }
+  return { data, ownerUid };
+}
+
+async function filterAccessibleJobIds(jobIds: string[], uid: string, isAdmin: boolean): Promise<string[]> {
+  if (jobIds.length === 0) return [];
+  const unique = Array.from(new Set(jobIds));
+  const refs = unique.map((jobId) => db.doc(`jobs/${jobId}`));
+  const snaps = await db.getAll(...refs);
+  const allowed: string[] = [];
+  snaps.forEach((snap, idx) => {
+    if (!snap.exists) return;
+    const data = snap.data() || {};
+    const ownerUid = (data.createdBy || data.ownerUid || data.employerId || null) as string | null;
+    if (isAdmin || ownerUid === uid) {
+      allowed.push(unique[idx]);
+    }
+  });
+  return allowed;
+}
+
 function getAdminRecipients(): string[] {
   const raw = (cfg?.notify?.admin_emails as string) || '';
   return raw.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -104,3 +193,71 @@ export const onJobDraftCreate = functions.firestore
       console.error('onJobDraftCreate error', err);
     }
   });
+
+export const listJobApplications = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'You must be signed in.');
+  }
+  const jobId = typeof data?.jobId === 'string' ? data.jobId.trim() : '';
+  if (!jobId) {
+    throw new functions.https.HttpsError('invalid-argument', 'jobId is required');
+  }
+  const email = (context.auth.token?.email as string | undefined) || null;
+  const isAdmin = await isAdminUser(context.auth.uid, email);
+  await ensureJobAccess(jobId, context.auth.uid, isAdmin);
+
+  const appsSnap = await db.collection('applications').where('jobId', '==', jobId).get();
+  const applications = appsSnap.docs.map((docSnap) => {
+    const appData = docSnap.data() as any;
+    return {
+      id: docSnap.id,
+      jobId: appData.jobId || null,
+      jobTitle: appData.jobTitle || null,
+      employerId: appData.employerId || null,
+      employerEmail: appData.employerEmail || null,
+      applicantId: appData.applicantId || null,
+      applicantName: appData.applicantName || null,
+      applicantEmail: appData.applicantEmail || null,
+      coverLetter: appData.coverLetter || null,
+      cvUrl: appData.cvUrl || null,
+      profileSummary: appData.profileSummary || null,
+      appliedAt: normalizeAppliedAt(appData.appliedAt),
+      status: appData.status || 'new',
+    };
+  });
+
+  return { applications };
+});
+
+export const getJobInsights = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'You must be signed in.');
+  }
+  const rawIds = Array.isArray(data?.jobIds) ? data.jobIds : [];
+  const jobIds = rawIds.filter((id: any) => typeof id === 'string' && id.trim().length > 0) as string[];
+  if (jobIds.length === 0) {
+    return { applicationCounts: {}, jobMetrics: {} };
+  }
+  const email = (context.auth.token?.email as string | undefined) || null;
+  const isAdmin = await isAdminUser(context.auth.uid, email);
+  const allowedIds = await filterAccessibleJobIds(jobIds, context.auth.uid, isAdmin);
+  if (allowedIds.length === 0) {
+    throw new functions.https.HttpsError('permission-denied', 'No access to the requested jobs');
+  }
+
+  const applicationCounts: Record<string, number> = {};
+  const jobMetrics: Record<string, Record<string, any>> = {};
+
+  await Promise.all(
+    allowedIds.map(async (jobId) => {
+      const [appsSnap, metricsSnap] = await Promise.all([
+        db.collection('applications').where('jobId', '==', jobId).get(),
+        db.doc(`jobMetrics/${jobId}`).get(),
+      ]);
+      applicationCounts[jobId] = appsSnap.size;
+      jobMetrics[jobId] = (metricsSnap.exists ? (metricsSnap.data() as any) : {}) || {};
+    })
+  );
+
+  return { applicationCounts, jobMetrics };
+});
