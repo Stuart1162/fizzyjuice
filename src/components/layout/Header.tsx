@@ -51,14 +51,6 @@ const Header: React.FC = () => {
             <Box component="img" src="/smiley.svg" alt="Fizzy Juice" className="navbar__logo" />
           </Box>
 
-          {/** Center: tagline (only for logged-out) */}
-          {!currentUser && (
-            <Box className="navbar__tagline" display={{ xs: 'none', sm: 'block' }}>
-              <Typography variant="body1" className="navbar__taglineText">
-                A jobs board of companies that care about people as much as food
-              </Typography>
-            </Box>
-          )}
 
           {/** Right: actions - desktop */}
           <Box className="navbar__actions navbar__actions--desktop">
@@ -70,6 +62,7 @@ const Header: React.FC = () => {
                     <Button color="inherit" component={RouterLink} to="/admin/jobseekers">Jobseekers</Button>
                   </>
                 )}
+                <Button color="inherit" component={RouterLink} to="/about">About</Button>
                 <Button color="inherit" component={RouterLink} to="/companies">Directory</Button>
                 <Button color="inherit" component={RouterLink} to="/community">Community</Button>
                 {userRole === 'jobseeker' && (
@@ -91,8 +84,9 @@ const Header: React.FC = () => {
               </Box>
             ) : (
               <Box display={{ xs: 'none', sm: 'flex' }} alignItems="center" gap={2}>
-                <Button color="inherit" component={RouterLink} to="/companies">Companies</Button>
-                <Button color="inherit" component={RouterLink} to="/community">Front of House</Button>
+                <Button color="inherit" component={RouterLink} to="/about">About</Button>
+                <Button color="inherit" component={RouterLink} to="/companies">Directory</Button>
+                <Button color="inherit" component={RouterLink} to="/community">Community</Button>
                 <Button variant="outlined" color="inherit" component={RouterLink} to="/login" className="navbar__signin">Sign in</Button>
                 <Button variant="contained" color="primary" component={RouterLink} to="/post-job">Post a job</Button>
               </Box>
@@ -130,6 +124,11 @@ const Header: React.FC = () => {
                     </ListItemButton>
                   </ListItem>
                 )}
+                <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/about" className="navbar__drawerItem">
+                    <ListItemText primary="About" />
+                  </ListItemButton>
+                </ListItem>
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/companies" className="navbar__drawerItem">
                     <ListItemText primary="Directory" />
@@ -174,13 +173,18 @@ const Header: React.FC = () => {
               ) : (
                 <>
                 <ListItem disablePadding>
+                  <ListItemButton component={RouterLink} to="/about" className="navbar__drawerItem">
+                    <ListItemText primary="About" />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/companies" className="navbar__drawerItem">
-                    <ListItemText primary="Companies" />
+                    <ListItemText primary="Directory" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                   <ListItemButton component={RouterLink} to="/community" className="navbar__drawerItem">
-                    <ListItemText primary="Front of House" />
+                    <ListItemText primary="Community" />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>

@@ -30,6 +30,7 @@ import AdminCompanyEdit from './pages/AdminCompanyEdit';
 import EmployerPublicProfile from './pages/EmployerPublicProfile';
 import EmployerDirectory from './pages/EmployerDirectory';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import About from './pages/About';
 import Community from './pages/Community';
 import CommunityPost from './pages/CommunityPost';
 
@@ -204,6 +205,7 @@ const InnerAppShell: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/about" element={<About />} />
           <Route
             path="/post-job"
             element={
